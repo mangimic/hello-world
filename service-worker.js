@@ -5,7 +5,7 @@
    ============================================================ */
 
 // Version des Caches – bei Änderungen hochzählen, damit Geräte neu laden.
-const CACHE_NAME = "felix-app-v1";
+const CACHE_NAME = "felix-app-v2";
 
 // Dateien, die für den Offline-Betrieb gespeichert werden.
 const ASSETS = [
