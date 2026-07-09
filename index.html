@@ -89,6 +89,15 @@ button:active{transform:scale(0.97);}
 .hint{background:#fff8e6; border-left:4px solid var(--yellow); padding:12px 14px; border-radius:8px; font-size:20px; margin:12px 0;}
 .example-box{background:var(--soft); border-radius:14px; padding:14px; font-size:19px; margin:10px 0;}
 
+/* Lösung */
+.gate-count{background:var(--soft); border-radius:12px; padding:12px; margin:8px 0; font-size:17px;}
+.final-solution{background:#eaf7f0; border-radius:14px; padding:16px; font-size:18px; line-height:1.7;}
+.final-solution ol{padding-left:22px; margin:6px 0 0;}
+.final-solution li{margin:8px 0;}
+.btn-locked{background:#e6e9ee; color:#9aa6b4;}
+#worksheet .sol-list{padding-left:22px;}
+#worksheet .sol-list li{margin:8px 0;}
+
 /* =========================================================
    BLUMENTOPF-SKALA (Selbst-Einschätzung, wie bei der Lehrerin)
    4 Stufen: Topf → Keim → Pflanze → Blüte. Ohne Noten.
@@ -238,6 +247,7 @@ button:active{transform:scale(0.97);}
       <div class="example-box" id="exStich">…</div>
       <button class="btn-secondary btn-small" id="showExampleBtn">Beispielsatz zeigen</button>
       <div class="hint" id="exampleSentence" style="display:none;"></div>
+      <button class="btn-secondary btn-small" id="nextExampleBtn" style="display:none;">Zeig mir ein weiteres Beispiel</button>
     </div>
 
     <div class="card">
@@ -264,6 +274,38 @@ button:active{transform:scale(0.97);}
 
     <div class="card">
       <button class="btn-green" id="toFlowerBtn">Fertig geschrieben? → Meine Blume</button>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       LÖSUNG (mit Hürde: erst selbst versuchen)
+       ========================================================== -->
+  <section id="screen-solution" class="screen">
+    <div class="card">
+      <h2>🔑 Lösung</h2>
+      <p>Die Lösung zeigt dir, wie ein guter Text aussehen kann.
+      Aber <b>erst selbst versuchen!</b> 💪</p>
+    </div>
+
+    <div class="card" id="gateCard">
+      <h3>Erst selbst probieren</h3>
+
+      <p class="muted"><b>1)</b> Hast du es selbst versucht? Tippe nach jedem Versuch:</p>
+      <button class="btn-secondary btn-small" id="tryBtn">Ich habe es versucht</button>
+      <div class="gate-count">Versuche: <b><span id="tryCount">0</span> / 3</b></div>
+
+      <p class="muted mt"><b>2)</b> Welche Schritte hast du schon auf dein Blatt geschrieben?</p>
+      <ul class="checklist" id="writtenList"></ul>
+
+      <div class="hint" id="gateStatus"></div>
+      <button class="btn-primary btn-locked" id="showSolutionBtn" disabled>🔒 Lösung anzeigen</button>
+    </div>
+
+    <div class="card" id="solutionCard" style="display:none;">
+      <h3>So kann ein guter Text aussehen</h3>
+      <div id="solutionText" class="final-solution"></div>
+      <button class="btn-green mt" id="printSolutionBtn" style="width:100%;">Lösung drucken</button>
+      <button class="btn-quiet" id="resetSolutionBtn" style="width:100%;">Neu versuchen</button>
     </div>
   </section>
 
@@ -317,6 +359,7 @@ button:active{transform:scale(0.97);}
   <button class="nav-item active" data-nav="start"><span class="ni">🏠</span>Start</button>
   <button class="nav-item" data-nav="basics"><span class="ni">📖</span>Üben</button>
   <button class="nav-item" data-nav="sheet"><span class="ni">🖨️</span>Arbeitsblatt</button>
+  <button class="nav-item" data-nav="solution"><span class="ni">🔑</span>Lösung</button>
   <button class="nav-item" data-nav="flower"><span class="ni">🌱</span>Meine Blume</button>
 </nav>
 
@@ -338,7 +381,16 @@ const REZEPTE = {
   waffel:{ name:"Waffelrezept", emoji:"🧇", titel:"Mein Waffelrezept",
     zutaten:"5 Eier, 250 g Zucker, 250 g weiche Butter, 500 g Mehl, 1 Päckchen Vanillezucker, 1 Päckchen Backpulver, 500 ml Milch, Puderzucker, Waffeleisen",
     stich:"Eier, Zucker, Butter – Schüssel – Mixer",
-    beispiel:"Zuerst gebe ich die Eier, den Zucker und die weiche Butter in eine Schüssel und verrühre alles mit dem Mixer.",
+    beispiele:[
+      "Zuerst gebe ich die Eier, den Zucker und die weiche Butter in eine Schüssel und verrühre alles mit dem Mixer.",
+      "Danach füge ich die Milch hinzu und rühre alles zu einem glatten Teig.",
+      "Zum Schluss lege ich die fertige Waffel auf einen Teller und bestreue sie mit Puderzucker."],
+    loesung:[
+      "Zuerst gebe ich 5 Eier, 250 g Zucker und 250 g weiche Butter in eine Schüssel und verrühre alles mit dem Mixer.",
+      "Anschließend gebe ich 500 g Mehl, ein Päckchen Vanillezucker und ein Päckchen Backpulver dazu und vermische es.",
+      "Danach füge ich 500 ml Milch hinzu und rühre alles zu einem glatten Teig.",
+      "Nun gebe ich den Teig mit einem Löffel in das heiße Waffeleisen und backe die Waffeln.",
+      "Zum Schluss lege ich die fertige Waffel auf einen Teller, bestreue sie mit Puderzucker und genieße sie."],
     schritte:[
       {lead:"Schritt 1", cue:"5 Eier + 250 g Zucker + 250 g weiche Butter → Schüssel → verrühren"},
       {lead:"Schritt 2", cue:"500 g Mehl + Vanillezucker + Backpulver → dazugeben → vermischen"},
@@ -349,7 +401,16 @@ const REZEPTE = {
   toast:{ name:"Toast machen", emoji:"🍞", titel:"So mache ich einen Toast",
     zutaten:"2 Scheiben Toastbrot, Butter, Toaster, Messer, Teller",
     stich:"Brot – Toaster – warten",
-    beispiel:"Zuerst nehme ich zwei Scheiben Toastbrot aus der Packung und stecke sie in den Toaster.",
+    beispiele:[
+      "Zuerst nehme ich zwei Scheiben Toastbrot aus der Packung und stecke sie in den Toaster.",
+      "Anschließend schalte ich den Toaster ein und warte, bis das Brot goldbraun ist.",
+      "Zum Schluss bestreiche ich den fertigen Toast mit Butter."],
+    loesung:[
+      "Zuerst nehme ich zwei Scheiben Toastbrot aus der Packung.",
+      "Anschließend stecke ich die Scheiben in den Toaster.",
+      "Danach schalte ich den Toaster ein und warte, bis das Brot goldbraun ist.",
+      "Nun nehme ich den fertigen Toast vorsichtig heraus.",
+      "Zum Schluss bestreiche ich den Toast mit Butter und esse ihn."],
     schritte:[
       {lead:"Schritt 1", cue:"2 Scheiben Toastbrot → aus der Packung nehmen"},
       {lead:"Schritt 2", cue:"Scheiben → in den Toaster stecken"},
@@ -360,7 +421,16 @@ const REZEPTE = {
   flieger:{ name:"Papierflieger basteln", emoji:"✈️", titel:"So bastle ich einen Papierflieger",
     zutaten:"1 rechteckiges Blatt Papier",
     stich:"Papier – Mitte – falten",
-    beispiel:"Zuerst lege ich ein rechteckiges Blatt Papier vor mich auf den Tisch.",
+    beispiele:[
+      "Zuerst lege ich ein Blatt Papier vor mich auf den Tisch und falte es in der Mitte.",
+      "Danach falte ich die beiden oberen Ecken zur Mittellinie.",
+      "Zum Schluss werfe ich meinen fertigen Papierflieger."],
+    loesung:[
+      "Zuerst lege ich ein rechteckiges Blatt Papier vor mich auf den Tisch.",
+      "Anschließend falte ich das Blatt in der Mitte und öffne es wieder.",
+      "Danach falte ich die beiden oberen Ecken zur Mittellinie.",
+      "Nun klappe ich das Papier zusammen und falte die Flügel nach unten.",
+      "Zum Schluss nehme ich den fertigen Papierflieger und werfe ihn."],
     schritte:[
       {lead:"Schritt 1", cue:"Blatt Papier → auf den Tisch legen"},
       {lead:"Schritt 2", cue:"Blatt → in der Mitte falten → wieder öffnen"},
@@ -371,7 +441,16 @@ const REZEPTE = {
   fahrrad:{ name:"Fahrrad putzen", emoji:"🚲", titel:"So putze ich mein Fahrrad",
     zutaten:"Eimer, warmes Wasser, Seife, Lappen, trockenes Tuch",
     stich:"Eimer – Wasser – Lappen",
-    beispiel:"Zuerst hole ich einen Eimer mit warmem Wasser und etwas Seife.",
+    beispiele:[
+      "Zuerst hole ich einen Eimer mit warmem Wasser und etwas Seife.",
+      "Anschließend wische ich den Rahmen mit einem nassen Lappen sauber.",
+      "Zum Schluss reibe ich das Fahrrad mit einem trockenen Tuch trocken."],
+    loesung:[
+      "Zuerst hole ich einen Eimer mit warmem Wasser und etwas Seife.",
+      "Anschließend tauche ich einen Lappen in das Wasser und wringe ihn aus.",
+      "Danach wische ich den Rahmen des Fahrrads mit dem Lappen sauber.",
+      "Nun putze ich die Räder und die Kette vorsichtig.",
+      "Zum Schluss reibe ich das Fahrrad mit einem trockenen Tuch trocken."],
     schritte:[
       {lead:"Schritt 1", cue:"Eimer → mit warmem Wasser + Seife → holen"},
       {lead:"Schritt 2", cue:"Lappen → ins Wasser tauchen → auswringen"},
@@ -382,7 +461,16 @@ const REZEPTE = {
   angeln:{ name:"Mein Angeltag", emoji:"🎣", titel:"Mein Angeltag am See",
     zutaten:"Angelrute, Angelrolle mit Schnur, Haken, Pose, Köder (Wurm oder Made), Kescher, Eimer, Angelkoffer",
     stich:"Rute – Schnur – Haken",
-    beispiel:"Zuerst packe ich meine Angelrute, den Köder und den Kescher in die Tasche und gehe zum See.",
+    beispiele:[
+      "Zuerst packe ich meine Angelrute, den Köder und den Kescher in die Tasche und gehe zum See.",
+      "Danach befestige ich einen Wurm am Haken und werfe die Schnur ins Wasser.",
+      "Zum Schluss keschere ich vorsichtig einen Hecht und schaue ihn mir genau an."],
+    loesung:[
+      "Zuerst packe ich meine Angelrute, den Köder und den Kescher in die Tasche und gehe zum See.",
+      "Anschließend stecke ich die Rute zusammen, fädle die Schnur durch die Ringe und binde den Haken an.",
+      "Danach befestige ich einen Wurm oder eine Made am Haken.",
+      "Nun werfe ich die Schnur ins Wasser und beobachte ruhig die Pose.",
+      "Zum Schluss keschere ich den Fisch vorsichtig und schaue mir den Hecht, Zander oder die Rotfeder genau an."],
     schritte:[
       {lead:"Schritt 1", cue:"Angelrute + Köder + Kescher → in die Tasche → zum See gehen"},
       {lead:"Schritt 2", cue:"Rute zusammenstecken → Schnur durch die Ringe → Haken anbinden"},
@@ -464,6 +552,11 @@ let rezept = "waffel";
 // Auswahl der Töpfe pro Kriterium (1..4 oder 0 = nicht gewählt)
 let sel = { inhalt:[0,0,0,0], sprache:[0,0,0,0] };
 let formCheck = [false,false,false,false];
+// Grundlagen: aktuelles Beispiel
+let exampleIdx = 0;
+// Lösung: Hürde (nur in der Sitzung, nicht gespeichert)
+let tries = 0;
+let written = [false,false,false,false,false];
 
 const $ = (id)=>document.getElementById(id);
 
@@ -495,7 +588,7 @@ function buildRecipes(){
     const div=document.createElement("div");
     div.className="choice"+(key===rezept?" selected":"");
     div.innerHTML=`<span class="emoji">${r.emoji}</span>${r.name}`;
-    div.onclick=()=>{ rezept=key; save(); buildRecipes(); buildBasics(); buildWorksheet(); };
+    div.onclick=()=>{ rezept=key; resetSolutionState(); save(); buildRecipes(); buildBasics(); buildWorksheet(); };
     grid.appendChild(div);
   });
 }
@@ -506,8 +599,22 @@ function buildRecipes(){
 function buildBasics(){
   $("starterChips").innerHTML = SATZANFAENGE.map(a=>`<span class="chip">${a}</span>`).join("");
   $("exStich").textContent = "📝 " + REZEPTE[rezept].stich;
+  // Beispiel zurücksetzen (wird erst auf Knopfdruck gezeigt)
+  exampleIdx = 0;
   $("exampleSentence").style.display="none";
-  $("exampleSentence").textContent = "✅ " + REZEPTE[rezept].beispiel;
+  $("nextExampleBtn").style.display="none";
+}
+function renderExample(){
+  const bs = REZEPTE[rezept].beispiele;
+  $("exampleSentence").textContent = "✅ " + bs[exampleIdx % bs.length];
+  $("exampleSentence").style.display="block";
+  // "weiteres Beispiel" nur anbieten, wenn es mehrere gibt
+  $("nextExampleBtn").style.display = bs.length>1 ? "block" : "none";
+}
+function nextExample(){
+  const bs = REZEPTE[rezept].beispiele;
+  exampleIdx = (exampleIdx+1) % bs.length;
+  renderExample();
 }
 
 /* ============================================================
@@ -575,6 +682,70 @@ function buildWorksheet(){
 function printWorksheet(){
   // Arbeitsblatt in den Druckbereich kopieren und drucken
   $("printArea").innerHTML = '<div id="worksheet">'+$("worksheet").innerHTML+'</div>';
+  window.print();
+}
+
+/* ============================================================
+   LÖSUNG – erst nach 3 Versuchen + 3 geschriebenen Schritten
+   ============================================================ */
+function resetSolutionState(){
+  tries = 0;
+  written = [false,false,false,false,false];
+  const sc=$("solutionCard"); if(sc) sc.style.display="none";
+}
+function buildSolution(){
+  // Versuche-Zähler
+  $("tryCount").textContent = tries;
+  // Häkchen "welche Schritte geschrieben"
+  const ul=$("writtenList"); ul.innerHTML="";
+  for(let i=0;i<5;i++){
+    const li=document.createElement("li");
+    li.innerHTML=`<input type="checkbox" ${written[i]?"checked":""}> <span>Schritt ${i+1} geschrieben</span>`;
+    li.querySelector("input").onchange=(e)=>{ written[i]=e.target.checked; updateGate(); };
+    li.onclick=(e)=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; written[i]=b.checked; updateGate(); } };
+    ul.appendChild(li);
+  }
+  $("solutionCard").style.display="none";
+  updateGate();
+}
+function updateGate(){
+  const writtenCount = written.filter(Boolean).length;
+  const okTries = tries>=3, okWritten = writtenCount>=3;
+  const ok = okTries && okWritten;
+  const btn=$("showSolutionBtn");
+  btn.disabled = !ok;
+  btn.classList.toggle("btn-locked", !ok);
+  btn.textContent = ok ? "Lösung anzeigen" : "🔒 Lösung anzeigen";
+  const status=$("gateStatus");
+  if(ok){
+    status.textContent = "Super, du hast fleißig geübt! Jetzt darfst du die Lösung ansehen. 🌟";
+  }else{
+    const teile=[];
+    if(!okTries) teile.push("noch "+(3-tries)+"× „Ich habe es versucht“");
+    if(!okWritten) teile.push("mindestens "+Math.max(0,3-writtenCount)+" Schritt(e) mehr abhaken");
+    status.textContent = "Fast! Du brauchst noch: " + teile.join(" und ") + ".";
+  }
+}
+function tryOnce(){
+  if(tries<3) tries++;
+  $("tryCount").textContent = tries;
+  updateGate();
+}
+function solutionInner(){
+  const r=REZEPTE[rezept];
+  return `
+    <div class="ws-head"><span class="pen">✏️</span><h2>${r.titel}</h2></div>
+    <p><b>Das brauche ich:</b> ${r.zutaten}</p>
+    <ol class="sol-list">${r.loesung.map(s=>`<li>${s}</li>`).join("")}</ol>`;
+}
+function showSolution(){
+  if($("showSolutionBtn").disabled) return;
+  $("solutionText").innerHTML = solutionInner();
+  $("solutionCard").style.display="block";
+  $("solutionCard").scrollIntoView({behavior:"smooth"});
+}
+function printSolution(){
+  $("printArea").innerHTML = '<div id="worksheet">'+solutionInner()+'</div>';
   window.print();
 }
 
@@ -651,10 +822,11 @@ function resetFlower(){
    ============================================================ */
 function goNav(nav){
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", b.dataset.nav===nav));
-  const map = {start:"screen-start", basics:"screen-basics", sheet:"screen-sheet", flower:"screen-flower"};
+  const map = {start:"screen-start", basics:"screen-basics", sheet:"screen-sheet", solution:"screen-solution", flower:"screen-flower"};
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   if(nav==="sheet") buildWorksheet();
   if(nav==="basics") buildBasics();
+  if(nav==="solution") buildSolution();
   if(nav==="flower") buildFlower();
   $(map[nav]).classList.add("active");
   window.scrollTo(0,0);
@@ -673,8 +845,15 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("toBasicsBtn").onclick=()=>goNav("basics");
   $("toSheetBtn").onclick=()=>goNav("sheet");
   $("toFlowerBtn").onclick=()=>goNav("flower");
-  $("showExampleBtn").onclick=()=>{ $("exampleSentence").style.display="block"; };
+  $("showExampleBtn").onclick=renderExample;
+  $("nextExampleBtn").onclick=nextExample;
   $("printBtn").onclick=printWorksheet;
+
+  // Lösung
+  $("tryBtn").onclick=tryOnce;
+  $("showSolutionBtn").onclick=showSolution;
+  $("printSolutionBtn").onclick=printSolution;
+  $("resetSolutionBtn").onclick=()=>{ resetSolutionState(); buildSolution(); };
   $("resetFlowerBtn").onclick=()=>{ if(confirm("Einschätzung zurücksetzen?")) resetFlower(); };
 
   document.querySelectorAll(".nav-item").forEach(b=>{ b.onclick=()=>goNav(b.dataset.nav); });
