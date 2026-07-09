@@ -616,14 +616,17 @@ function vgFlower(c){ renderFlower(c, MODULES.vorgang.self, store.vorgang.self);
    MODUL 2: SUBJEKTE (Grammatik, interaktiv)
    ============================================================ */
 const SUBJ_SAETZE = [
-  {woerter:["Der","kleine","Junge","spielt","mit","dem","Ball."], subj:[0,1,2], frage:"Wer oder was spielt mit dem Ball?"},
-  {woerter:["Ein","Mädchen","streichelt","die","süße","Katze."], subj:[0,1], frage:"Wer oder was streichelt die süße Katze?"},
-  {woerter:["Der","Postbote","kommt","mit","dem","Fahrrad."], subj:[0,1], frage:"Wer oder was kommt mit dem Fahrrad?"},
-  {woerter:["Der","Mann","öffnet","die","Tür."], subj:[0,1], frage:"Wer oder was öffnet die Tür?"},
-  {woerter:["Der","Ball","springt","hoch."], subj:[0,1], frage:"Wer oder was springt hoch?"},
-  {woerter:["Schildkröten","sind","Reptilien."], subj:[0], frage:"Wer oder was sind Reptilien?"},
-  {woerter:["Ihr","Panzer","schützt","sie","vor","Gefahren."], subj:[0,1], frage:"Wer oder was schützt sie vor Gefahren?"},
-  {woerter:["Sie","fressen","Früchte","und","Gemüse."], subj:[0], frage:"Wer oder was frisst Früchte und Gemüse?"}
+  {woerter:["Der","kleine","Junge","spielt","mit","dem","Ball."], subj:[0,1,2], subjektText:"Der kleine Junge", art:"wer", frage:"Wer oder was spielt mit dem Ball?"},
+  {woerter:["Ein","Mädchen","streichelt","die","süße","Katze."], subj:[0,1], subjektText:"Ein Mädchen", art:"wer", frage:"Wer oder was streichelt die süße Katze?"},
+  {woerter:["Der","Postbote","kommt","mit","dem","Fahrrad."], subj:[0,1], subjektText:"Der Postbote", art:"wer", frage:"Wer oder was kommt mit dem Fahrrad?"},
+  {woerter:["Der","Mann","öffnet","die","Tür."], subj:[0,1], subjektText:"Der Mann", art:"wer", frage:"Wer oder was öffnet die Tür?"},
+  {woerter:["Der","Ball","springt","hoch."], subj:[0,1], subjektText:"Der Ball", art:"was", frage:"Wer oder was springt hoch?"},
+  {woerter:["Schildkröten","sind","Reptilien."], subj:[0], subjektText:"Schildkröten", art:"was", frage:"Wer oder was sind Reptilien?"},
+  {woerter:["Ihr","Panzer","schützt","sie","vor","Gefahren."], subj:[0,1], subjektText:"Ihr Panzer", art:"was", frage:"Wer oder was schützt sie vor Gefahren?"},
+  {woerter:["Sie","fressen","Früchte","und","Gemüse."], subj:[0], subjektText:"Sie", art:"was", frage:"Wer oder was frisst Früchte und Gemüse?"},
+  {woerter:["Am","Morgen","singt","der","Vogel","laut."], subj:[3,4], subjektText:"der Vogel", art:"was", frage:"Wer oder was singt laut?"},
+  {woerter:["Heute","backt","die","Oma","einen","Kuchen."], subj:[2,3], subjektText:"die Oma", art:"wer", frage:"Wer oder was backt einen Kuchen?"},
+  {woerter:["Im","Garten","spielen","die","Kinder."], subj:[3,4], subjektText:"die Kinder", art:"wer", frage:"Wer oder was spielt im Garten?"}
 ];
 
 const KRIT_SUBJEKT = [
@@ -639,20 +642,26 @@ const KRIT_SUBJEKT_FORM = [
 ];
 
 let subjIdx = 0;
+let frageIdx = 0;
 
 // --- Bereich „Lernen" ---
 function sjLernen(c){
   c.innerHTML = `
     <div class="card"><h2>📖 Was ist das Subjekt?</h2>
       <p>Das <b>Subjekt</b> ist die Person oder Sache, <b>über die</b> im Satz etwas gesagt wird.
-      Oft steht es am Satzanfang.</p></div>
+      In jedem Satz gibt es ein Subjekt.</p></div>
     <div class="card"><h3>Die Zauberfrage 🪄</h3>
       <div class="hint">Frage: <b>„Wer oder was?“</b> + das Tun-Wort.</div>
-      <p class="muted">Die Antwort ist das Subjekt.</p></div>
+      <p class="muted">Die Antwort auf die Frage ist das Subjekt.</p></div>
     <div class="card"><h3>Beispiel</h3>
       <div class="sentence-box"><span class="word sel">Der</span> <span class="word sel">kleine</span> <span class="word sel">Junge</span> spielt mit dem Ball.</div>
       <p><b>Wer</b> spielt mit dem Ball? → <b>Der kleine Junge</b> (das ist das Subjekt, blau).</p></div>
-    <div class="card"><div class="hint">💡 Tipp: Bei <b>Personen</b> fragst du „<b>Wer?</b>“, bei <b>Dingen/Tieren</b> „<b>Was?</b>“.</div>
+    <div class="card"><h3>Gut zu wissen</h3>
+      <p>Das Subjekt kann <b>ein oder mehrere Wörter</b> sein.</p>
+      <p>Es steht oft am Anfang – aber <b>nicht immer</b>:</p>
+      <div class="sentence-box">Am Morgen singt <span class="word sel">der</span> <span class="word sel">Vogel</span> laut.</div>
+      <p><b>Wer oder was</b> singt? → <b>der Vogel</b>.</p></div>
+    <div class="card"><div class="hint">💡 Tipp: Bei <b>Personen</b> fragst du „<b>Wer?</b>“, bei <b>Dingen und Tieren</b> „<b>Was?</b>“.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
@@ -695,6 +704,41 @@ function sjUeben(c){
   c.querySelector("#nextBtn").onclick=()=>{ subjIdx=(subjIdx+1)%SUBJ_SAETZE.length; sjUeben(c); window.scrollTo(0,0); };
 }
 
+// --- Bereich „Frage" (Wer? oder Was?) ---
+function sjFrage(c){
+  if(frageIdx>=SUBJ_SAETZE.length) frageIdx=0;
+  const s=SUBJ_SAETZE[frageIdx];
+  c.innerHTML = `
+    <div class="card">
+      <h2>❓ Wer oder Was?</h2>
+      <p class="muted">Satz ${frageIdx+1} von ${SUBJ_SAETZE.length}</p>
+      <div class="sentence-box">${s.woerter.join(" ")}</div>
+      <p>Das Subjekt ist <b>${s.subjektText}</b>.<br>Fragst du danach mit <b>Wer</b> oder mit <b>Was</b>?</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" id="werBtn" style="flex:1; font-size:22px;">Wer?</button>
+        <button class="btn-secondary" id="wasBtn" style="flex:1; font-size:22px;">Was?</button>
+      </div>
+      <div id="ffb"></div>
+      <button class="btn-primary mt" id="nextF">Nächster Satz</button>
+    </div>`;
+  const check=(art)=>{
+    const correct = art===s.art;
+    const d=document.createElement("div");
+    d.className="feedback "+(correct?"ok":"tip");
+    if(correct){
+      d.textContent = (s.art==="wer")
+        ? "Richtig! „"+s.subjektText+"“ ist eine Person → Wer? 🌟"
+        : "Richtig! „"+s.subjektText+"“ ist ein Ding oder Tier → Was? 🌟";
+    }else{
+      d.textContent = "Fast! Überlege: Ist „"+s.subjektText+"“ eine Person (Wer?) oder ein Ding/Tier (Was?)?";
+    }
+    const fb=c.querySelector("#ffb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#werBtn").onclick=()=>check("wer");
+  c.querySelector("#wasBtn").onclick=()=>check("was");
+  c.querySelector("#nextF").onclick=()=>{ frageIdx=(frageIdx+1)%SUBJ_SAETZE.length; sjFrage(c); window.scrollTo(0,0); };
+}
+
 // --- Bereich „Blatt" ---
 function sjSheet(c){
   c.innerHTML = `
@@ -719,7 +763,8 @@ function sjWorksheetHTML(){
     <div class="ws-head"><span class="pen">🔍</span><h2>Subjekte – Wer oder was?</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Subjekt</b> blau.
-      Finde es mit der Frage „<b>Wer oder was?</b>“ + Tun-Wort und schreibe die Frage auf die Linie.</div>
+      Finde es mit der Frage „<b>Wer oder was?</b>“ + Tun-Wort und schreibe die Frage auf die Linie.
+      Denk daran: bei Personen fragst du „Wer?“, bei Dingen und Tieren „Was?“.</div>
     ${lines}`;
 }
 
@@ -747,6 +792,7 @@ const MODULES = {
     sections:[
       {id:"lernen", icon:"📖", label:"Lernen", render:sjLernen},
       {id:"ueben",  icon:"✏️", label:"Üben",   render:sjUeben},
+      {id:"frage",  icon:"❓", label:"Frage",  render:sjFrage},
       {id:"blatt",  icon:"🖨️", label:"Blatt",  render:sjSheet},
       {id:"blume",  icon:"🌱", label:"Blume",  render:sjFlower}
     ],
@@ -807,7 +853,7 @@ function buildModuleChooser(){
 }
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
-  subjIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  subjIdx=0; frageIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
