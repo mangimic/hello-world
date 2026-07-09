@@ -98,6 +98,7 @@ button:active{transform:scale(0.97);}
   border-bottom:3px solid transparent;}
 .word.sel{color:var(--blue-ink); font-weight:700; border-bottom-color:var(--blue-ink); background:#eaf1fc;}
 .word.selp{color:#b23b3b; font-weight:700; border-bottom-color:#b23b3b; background:#fbeceb;}
+.word.selr{color:#7a4fb3; font-weight:700; border-bottom-color:#7a4fb3; background:#f1ebfa;}
 @media (hover:hover){ .word:hover{background:#eef2f8;} }
 
 /* Lösung */
@@ -954,6 +955,382 @@ function praedWorksheetHTML(){
 // --- Bereich „Blume" ---
 function pjFlower(c){ renderFlower(c, MODULES.praedikat.self, store.praedikat.self); }
 
+// Kleine Hilfe: Themen-Auswahlkarten bauen (für die neuen Module)
+function themeCards(containerId, themen, current, onPick){
+  const grid=document.getElementById(containerId); grid.innerHTML="";
+  Object.keys(themen).forEach(key=>{
+    const t=themen[key];
+    const div=document.createElement("div");
+    div.className="choice"+(key===current?" selected":"");
+    div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
+    div.onclick=()=>onPick(key);
+    grid.appendChild(div);
+  });
+}
+
+/* ============================================================
+   MODUL 4: SATZGLIEDER (Subjekt + Prädikat)
+   ============================================================ */
+const SATZGLIED_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["Der","kleine","Junge","spielt","mit","dem","Ball."], subj:[0,1,2], praed:[3]},
+    {woerter:["Ein","Mädchen","streichelt","die","süße","Katze."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Postbote","kommt","mit","dem","Fahrrad."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Mann","öffnet","die","Tür."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Ball","springt","hoch."], subj:[0,1], praed:[2]},
+    {woerter:["Ihr","Panzer","schützt","sie","vor","Gefahren."], subj:[0,1], praed:[2]},
+    {woerter:["Am","Morgen","singt","der","Vogel","laut."], subj:[3,4], praed:[2]},
+    {woerter:["Heute","backt","die","Oma","einen","Kuchen."], subj:[2,3], praed:[1]},
+    {woerter:["Im","Garten","spielen","die","Kinder."], subj:[3,4], praed:[2]}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["Der","Angler","wirft","die","Schnur","aus."], subj:[0,1], praed:[2,5]},
+    {woerter:["Ein","großer","Hecht","schwimmt","im","See."], subj:[0,1,2], praed:[3]},
+    {woerter:["Die","Pose","taucht","plötzlich","unter."], subj:[0,1], praed:[2,4]},
+    {woerter:["Der","Junge","fängt","einen","Zander."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Wurm","zappelt","am","Haken."], subj:[0,1], praed:[2]},
+    {woerter:["Am","Ufer","sitzt","der","Angler","ruhig."], subj:[3,4], praed:[2]},
+    {woerter:["Im","Wasser","glänzen","die","Fische."], subj:[3,4], praed:[2]},
+    {woerter:["Der","Kescher","hebt","den","Fisch","heraus."], subj:[0,1], praed:[2,5]},
+    {woerter:["Zwei","Angler","teilen","sich","ein","Boot."], subj:[0,1], praed:[2]}
+  ]}
+};
+function satzgliedSaetze(){ return SATZGLIED_THEMEN[store.satzglieder.thema].saetze; }
+const KRIT_SATZGLIED = [
+  "Habe ich das Subjekt gefunden (Wer/Was?)?",
+  "Habe ich das Prädikat gefunden (Was tut?)?",
+  "Habe ich Subjekt (blau) und Prädikat (rot) unterschieden?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_SATZGLIED_FORM = [
+  "Ich habe ordentlich markiert.",
+  "Ich habe die Sätze genau gelesen.",
+  "Ich habe meine Antworten überprüft."
+];
+let sgIdx=0, sgPhase=0;
+function sgLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="sgThemes"></div></div>
+    <div class="card"><h2>📖 Subjekt + Prädikat</h2>
+      <p>Jeder Satz hat einen <b>Satzkern</b>: das <b>Subjekt</b> und das <b>Prädikat</b>.</p></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="sentence-box"><span class="word sel">Der</span> <span class="word sel">Junge</span> <span class="word selp">spielt</span> mit dem Ball.</div>
+      <p><b>Wer</b> spielt? → <b>Der Junge</b> (Subjekt, blau).<br>
+      <b>Was tut</b> er? → <b>spielt</b> (Prädikat, rot).</p></div>
+    <div class="card"><div class="hint">💡 Subjekt = <b>blau</b>, Prädikat = <b>rot</b>.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("sgThemes", SATZGLIED_THEMEN, store.satzglieder.thema, key=>{ store.satzglieder.thema=key; sgIdx=0; sgPhase=0; save(); sgLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function sgUeben(c){
+  const S=satzgliedSaetze();
+  if(sgIdx>=S.length) sgIdx=0;
+  const s=S[sgIdx];
+  const target = sgPhase===0 ? s.subj : s.praed;
+  const cls = sgPhase===0 ? "sel" : "selp";
+  const selected=new Set();
+  const instr = sgPhase===0
+    ? "Finde zuerst das <b>Subjekt</b> (Wer oder was?)."
+    : "Jetzt das <b>Prädikat</b> (Was tut / was passiert?).";
+  c.innerHTML=`
+    <div class="card">
+      <h2>🧩 Satzglieder</h2>
+      <p class="muted">Satz ${sgIdx+1} von ${S.length} · Teil ${sgPhase+1} von 2</p>
+      <div class="hint">${instr}</div>
+      <div class="sentence-box" id="gbox"></div>
+      <div id="gfb"></div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-secondary btn-small" id="checkBtn" style="flex:1;">Prüfen</button>
+        <button class="btn-primary btn-small" id="nextBtn" style="flex:1;">Nächster Satz</button>
+      </div>
+    </div>`;
+  const box=c.querySelector("#gbox");
+  s.woerter.forEach((w,i)=>{
+    const sp=document.createElement("span"); sp.className="word"; sp.textContent=w;
+    if(sgPhase===1 && s.subj.includes(i)){
+      sp.classList.add("sel"); // gefundenes Subjekt bleibt blau sichtbar
+    }else{
+      sp.onclick=()=>{ if(selected.has(i)){selected.delete(i);sp.classList.remove(cls);} else {selected.add(i);sp.classList.add(cls);} c.querySelector("#gfb").innerHTML=""; };
+    }
+    box.appendChild(sp); box.appendChild(document.createTextNode(" "));
+  });
+  c.querySelector("#checkBtn").onclick=()=>{
+    const chosen=[...selected].sort((a,b)=>a-b);
+    const correct = chosen.length===target.length && chosen.every((v,k)=>v===target[k]);
+    const fb=c.querySelector("#gfb");
+    if(correct){
+      if(sgPhase===0){ sgPhase=1; sgUeben(c); }
+      else{
+        const d=document.createElement("div"); d.className="feedback ok";
+        d.textContent="Geschafft! Subjekt (blau) und Prädikat (rot) gefunden. 🌟";
+        fb.innerHTML=""; fb.appendChild(d);
+      }
+    }else{
+      const d=document.createElement("div"); d.className="feedback tip";
+      d.textContent = sgPhase===0 ? "Fast! Frag: Wer oder was? – tippe nur das Subjekt an."
+                                  : "Fast! Frag: Was tut das Subjekt? – tippe nur das Prädikat an.";
+      fb.innerHTML=""; fb.appendChild(d);
+    }
+  };
+  c.querySelector("#nextBtn").onclick=()=>{ sgIdx=(sgIdx+1)%S.length; sgPhase=0; sgUeben(c); window.scrollTo(0,0); };
+}
+function sgSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus: <b>Subjekt blau</b>, <b>Prädikat rot</b> unterstreichen.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=sgWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function sgWorksheetHTML(){
+  const thema=SATZGLIED_THEMEN[store.satzglieder.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Unterstreiche das Subjekt blau und das Prädikat rot.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">🧩</span><h2>Satzglieder (${thema.name}) – Subjekt &amp; Prädikat</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Subjekt blau</b> (Wer/Was?)
+      und das <b>Prädikat rot</b> (Was tut?). Manche Prädikate haben zwei Teile.</div>
+    ${lines}`;
+}
+function sgFlower(c){ renderFlower(c, MODULES.satzglieder.self, store.satzglieder.self); }
+
+/* ============================================================
+   MODUL 5: WÖRTLICHE REDE
+   ============================================================ */
+const REDE_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["Die","Lehrerin","sagt:","Setzt","euch","bitte","hin!"], rede:[3,4,5,6]},
+    {woerter:["Der","Junge","ruft:","Ich","habe","gewonnen!"], rede:[3,4,5]},
+    {woerter:["Mama","fragt:","Hast","du","Hunger?"], rede:[2,3,4]},
+    {woerter:["Der","Mann","sagt:","Es","regnet","heute."], rede:[3,4,5]},
+    {woerter:["Das","Mädchen","flüstert:","Ich","habe","ein","Geheimnis."], rede:[3,4,5,6]}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["Der","Angler","ruft:","Ich","habe","einen","Zander!"], rede:[3,4,5,6]},
+    {woerter:["Der","Junge","sagt:","Der","Hecht","ist","riesig!"], rede:[3,4,5,6]},
+    {woerter:["Opa","fragt:","Beißt","schon","ein","Fisch?"], rede:[2,3,4,5]},
+    {woerter:["Der","Mann","ruft:","Die","Pose","geht","unter!"], rede:[3,4,5,6]},
+    {woerter:["Das","Kind","sagt:","Ich","mag","Rotfedern."], rede:[3,4,5]}
+  ]}
+};
+function redeSaetze(){ return REDE_THEMEN[store.rede.thema].saetze; }
+function redeQuoted(s){
+  const first=s.rede[0];
+  const begleit=s.woerter.slice(0,first).join(" ");
+  const gesprochen=s.woerter.slice(first).join(" ");
+  return begleit+" „"+gesprochen+"“";
+}
+const KRIT_REDE = [
+  "Habe ich erkannt, was gesagt wird?",
+  "Habe ich die Anführungszeichen richtig gesetzt?",
+  "Habe ich den Begleitsatz erkannt?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_REDE_FORM = [
+  "Ich habe die wörtliche Rede ordentlich markiert.",
+  "Ich habe die Sätze genau gelesen.",
+  "Ich habe meine Antworten überprüft."
+];
+let redeIdx=0;
+function redeLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="redeThemes"></div></div>
+    <div class="card"><h2>📖 Die wörtliche Rede</h2>
+      <p>Was jemand <b>genau sagt</b>, kommt in <b>Anführungszeichen</b> „ … “.
+      Davor steht der <b>Begleitsatz</b> mit einem <b>Doppelpunkt</b>.</p></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="sentence-box">Der Angler ruft: <span class="word selr">„Ich</span> <span class="word selr">habe</span> <span class="word selr">einen</span> <span class="word selr">Zander!“</span></div>
+      <p><b>Begleitsatz:</b> Der Angler ruft:<br><b>Wörtliche Rede:</b> „Ich habe einen Zander!“</p></div>
+    <div class="card"><div class="hint">💡 Das Satzzeichen (! ? .) steht <b>innerhalb</b> der Anführungszeichen.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("redeThemes", REDE_THEMEN, store.rede.thema, key=>{ store.rede.thema=key; redeIdx=0; save(); redeLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function redeUeben(c){
+  const S=redeSaetze();
+  if(redeIdx>=S.length) redeIdx=0;
+  const s=S[redeIdx];
+  const selected=new Set();
+  c.innerHTML=`
+    <div class="card">
+      <h2>💬 Wörtliche Rede</h2>
+      <p class="muted">Satz ${redeIdx+1} von ${S.length}</p>
+      <div class="hint">Tippe an, <b>was gesagt wird</b> (die wörtliche Rede).</div>
+      <div class="sentence-box" id="rbox"></div>
+      <div id="rfb"></div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-secondary btn-small" id="checkBtn" style="flex:1;">Prüfen</button>
+        <button class="btn-primary btn-small" id="nextBtn" style="flex:1;">Nächster Satz</button>
+      </div>
+    </div>`;
+  const box=c.querySelector("#rbox");
+  s.woerter.forEach((w,i)=>{
+    const sp=document.createElement("span"); sp.className="word"; sp.textContent=w;
+    sp.onclick=()=>{ if(selected.has(i)){selected.delete(i);sp.classList.remove("selr");} else {selected.add(i);sp.classList.add("selr");} c.querySelector("#rfb").innerHTML=""; };
+    box.appendChild(sp); box.appendChild(document.createTextNode(" "));
+  });
+  c.querySelector("#checkBtn").onclick=()=>{
+    const chosen=[...selected].sort((a,b)=>a-b);
+    const correct = chosen.length===s.rede.length && chosen.every((v,k)=>v===s.rede[k]);
+    const d=document.createElement("div");
+    d.className="feedback "+(correct?"ok":"tip");
+    if(correct){ d.innerHTML="Richtig! 🌟<br>So schreibt man es: <b>"+redeQuoted(s)+"</b>"; }
+    else{ d.textContent="Fast! Tippe genau die Wörter an, die gesprochen werden."; }
+    const fb=c.querySelector("#rfb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#nextBtn").onclick=()=>{ redeIdx=(redeIdx+1)%S.length; redeUeben(c); window.scrollTo(0,0); };
+}
+function redeSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und setze die <b>Anführungszeichen</b> mit der Hand.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=redeWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function redeWorksheetHTML(){
+  const thema=REDE_THEMEN[store.rede.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Setze die Anführungszeichen „ “ um die wörtliche Rede und unterstreiche sie.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">💬</span><h2>Wörtliche Rede (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Setze in jedem Satz die <b>Anführungszeichen</b> „ … “
+      um das, was gesagt wird, und unterstreiche die wörtliche Rede. Denk an den Doppelpunkt im Begleitsatz.</div>
+    ${lines}`;
+}
+function redeFlower(c){ renderFlower(c, MODULES.rede.self, store.rede.self); }
+
+/* ============================================================
+   MODUL 6: ZEITFORMEN (Präsens / Präteritum)
+   ============================================================ */
+const ZEIT_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {satz:"Der Junge spielt mit dem Ball.", form:"praesens"},
+    {satz:"Der Junge spielte mit dem Ball.", form:"praeteritum"},
+    {satz:"Die Oma backt einen Kuchen.", form:"praesens"},
+    {satz:"Die Oma backte einen Kuchen.", form:"praeteritum"},
+    {satz:"Die Kinder spielen im Garten.", form:"praesens"},
+    {satz:"Die Kinder spielten im Garten.", form:"praeteritum"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {satz:"Der Angler wirft die Schnur aus.", form:"praesens"},
+    {satz:"Der Angler warf die Schnur aus.", form:"praeteritum"},
+    {satz:"Der Hecht schwimmt im See.", form:"praesens"},
+    {satz:"Der Hecht schwamm im See.", form:"praeteritum"},
+    {satz:"Der Junge fängt einen Zander.", form:"praesens"},
+    {satz:"Der Junge fing einen Zander.", form:"praeteritum"}
+  ]}
+};
+function zeitSaetze(){ return ZEIT_THEMEN[store.zeit.thema].saetze; }
+const KRIT_ZEIT = [
+  "Habe ich Präsens (Gegenwart) erkannt?",
+  "Habe ich Präteritum (Vergangenheit) erkannt?",
+  "Habe ich auf das Zeitwort geachtet?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_ZEIT_FORM = [
+  "Ich habe die Sätze genau gelesen.",
+  "Ich habe die Zeitform bestimmt.",
+  "Ich habe meine Antworten überprüft."
+];
+let zeitIdx=0;
+function zeitLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="zeitThemes"></div></div>
+    <div class="card"><h2>📖 Präsens &amp; Präteritum</h2>
+      <p><b>Präsens</b> ist die <b>Gegenwart</b> (jetzt): <i>ich spiele</i>.<br>
+      <b>Präteritum</b> ist die <b>Vergangenheit</b> (früher): <i>ich spielte</i>.</p></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="example-box">Heute <b>spielt</b> der Junge. → Präsens (jetzt)<br>
+      Gestern <b>spielte</b> der Junge. → Präteritum (früher)</div></div>
+    <div class="card"><div class="hint">💡 Achte auf das <b>Zeitwort</b> (Verb) – es verändert sich.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("zeitThemes", ZEIT_THEMEN, store.zeit.thema, key=>{ store.zeit.thema=key; zeitIdx=0; save(); zeitLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function zeitUeben(c){
+  const S=zeitSaetze();
+  if(zeitIdx>=S.length) zeitIdx=0;
+  const s=S[zeitIdx];
+  c.innerHTML=`
+    <div class="card">
+      <h2>⏰ Zeitformen</h2>
+      <p class="muted">Satz ${zeitIdx+1} von ${S.length}</p>
+      <div class="sentence-box">${s.satz}</div>
+      <p>Steht der Satz in der <b>Gegenwart</b> oder in der <b>Vergangenheit</b>?</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" id="praesBtn" style="flex:1;">Jetzt<br><small>Präsens</small></button>
+        <button class="btn-secondary" id="praetBtn" style="flex:1;">Früher<br><small>Präteritum</small></button>
+      </div>
+      <div id="zfb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
+    </div>`;
+  const check=(form)=>{
+    const correct = form===s.form;
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    if(correct){ d.textContent = (s.form==="praesens")
+        ? "Richtig! Das passiert jetzt → Präsens (Gegenwart). 🌟"
+        : "Richtig! Das war früher → Präteritum (Vergangenheit). 🌟"; }
+    else{ d.textContent = "Fast! Schau auf das Zeitwort: Passiert es jetzt oder war es früher?"; }
+    const fb=c.querySelector("#zfb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#praesBtn").onclick=()=>check("praesens");
+  c.querySelector("#praetBtn").onclick=()=>check("praeteritum");
+  c.querySelector("#nextBtn").onclick=()=>{ zeitIdx=(zeitIdx+1)%S.length; zeitUeben(c); window.scrollTo(0,0); };
+}
+function zeitSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe die Zeitform mit der Hand dazu.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=zeitWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function zeitWorksheetHTML(){
+  const thema=ZEIT_THEMEN[store.zeit.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.satz}</div>
+      <div class="cue">Unterstreiche das Zeitwort. Schreibe die Zeitform: Präsens oder Präteritum?</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">⏰</span><h2>Zeitformen (${thema.name}) – Präsens &amp; Präteritum</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Lies jeden Satz. Unterstreiche das <b>Zeitwort</b> und schreibe dahinter,
+      ob der Satz in der <b>Gegenwart (Präsens)</b> oder <b>Vergangenheit (Präteritum)</b> steht.</div>
+    ${lines}`;
+}
+function zeitFlower(c){ renderFlower(c, MODULES.zeit.self, store.zeit.self); }
+
 /* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
@@ -990,6 +1367,36 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:pjFlower}
     ],
     self:{ groups:[{title:"Prädikat finden", fragen:KRIT_PRAED}], form:KRIT_PRAED_FORM }
+  },
+  satzglieder:{
+    id:"satzglieder", name:"Satzglieder", emoji:"🧩",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:sgLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:sgUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:sgSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:sgFlower}
+    ],
+    self:{ groups:[{title:"Subjekt & Prädikat", fragen:KRIT_SATZGLIED}], form:KRIT_SATZGLIED_FORM }
+  },
+  rede:{
+    id:"rede", name:"Wörtliche Rede", emoji:"💬",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:redeLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:redeUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:redeSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:redeFlower}
+    ],
+    self:{ groups:[{title:"Wörtliche Rede", fragen:KRIT_REDE}], form:KRIT_REDE_FORM }
+  },
+  zeit:{
+    id:"zeit", name:"Zeitformen", emoji:"⏰",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:zeitLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:zeitUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:zeitSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:zeitFlower}
+    ],
+    self:{ groups:[{title:"Zeitformen", fragen:KRIT_ZEIT}], form:KRIT_ZEIT_FORM }
   }
 };
 
@@ -1001,7 +1408,10 @@ let store = {
   lastModule:"vorgang",
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
   subjekt:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  satzglieder:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  rede:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  zeit:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -1022,6 +1432,18 @@ function load(){
     if(d.praedikat){
       if(PRAED_THEMEN[d.praedikat.thema]) store.praedikat.thema=d.praedikat.thema;
       if(d.praedikat.self) mergeSelf(store.praedikat.self, d.praedikat.self);
+    }
+    if(d.satzglieder){
+      if(SATZGLIED_THEMEN[d.satzglieder.thema]) store.satzglieder.thema=d.satzglieder.thema;
+      if(d.satzglieder.self) mergeSelf(store.satzglieder.self, d.satzglieder.self);
+    }
+    if(d.rede){
+      if(REDE_THEMEN[d.rede.thema]) store.rede.thema=d.rede.thema;
+      if(d.rede.self) mergeSelf(store.rede.self, d.rede.self);
+    }
+    if(d.zeit){
+      if(ZEIT_THEMEN[d.zeit.thema]) store.zeit.thema=d.zeit.thema;
+      if(d.zeit.self) mergeSelf(store.zeit.self, d.zeit.self);
     }
   }catch(e){}
 }
@@ -1054,7 +1476,7 @@ function buildModuleChooser(){
 }
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
-  subjIdx=0; frageIdx=0; praedIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
