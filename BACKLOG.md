@@ -1,4 +1,4 @@
-# Backlog – Felix Lern-App
+# Backlog – Lern-App
 
 Bewusst **vorerst entfernte** Funktionen, damit die App simpel bleibt.
 Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
@@ -8,7 +8,7 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 - **Arbeitsblatt drucken**: der schriftliche Teil wird mit der **Hand auf Papier**
   geübt (fördert die Handschrift)
 - **„Meine Blume"**: einfache Selbst-Einschätzung mit der **Blumentopf-Skala der
-  Lehrerin** (4 Stufen), **ohne Noten** – zeigt Felix, wo er gerade steht
+  Lehrerin** (4 Stufen), **ohne Noten** – zeigt dem Kind, wo es gerade steht
 
 ## Zurückgestellt (Backlog)
 - ⏱️ **Timeboxing**: Fokus-/Pausen-Timer (8 min / 2 min / 5 min), Pausen-Overlay
@@ -18,7 +18,7 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 - 🔄 **Export/Import** des Fortschritts als JSON (Gerätewechsel)
 - 🧠 **Konzentrations-Tracking** vorher/nachher
 - 👨‍👩‍👦 **Ausführlicher Elternbereich** mit Auswertung/Entwicklungsfeedback
-- 💬 **Online-Tipp-Übungen** (Sätze am Gerät schreiben) – erst wenn Felix
+- 💬 **Online-Tipp-Übungen** (Sätze am Gerät schreiben) – erst wenn das Kind
   schneller am PC tippt
 
 ## Ideen für später

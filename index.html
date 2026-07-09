@@ -9,11 +9,11 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Felix übt">
+<meta name="apple-mobile-web-app-title" content="Schreibprofi">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
 
-<title>Felix – Vorgangsbeschreibungen üben</title>
+<title>Vorgangsbeschreibungen üben</title>
 <style>
 /* =========================================================
    MOBILE-FIRST GRUNDLAYOUT
@@ -195,8 +195,10 @@ button:active{transform:scale(0.97);}
   <section id="screen-start" class="screen active">
     <div class="card center">
       <div style="font-size:46px;">✏️😊</div>
-      <h1>Hallo Felix!</h1>
+      <h1 id="greeting">Hallo!</h1>
       <p>Heute übst du <b>Vorgangsbeschreibungen</b>:<br>Schritt für Schritt genau beschreiben.</p>
+      <input id="nameInput" type="text" maxlength="20" placeholder="Dein Name (freiwillig)" style="max-width:280px; margin:6px auto 0; text-align:center;">
+      <p class="muted" style="font-size:13px; margin-top:6px;">Wird nur auf diesem Gerät gespeichert.</p>
     </div>
 
     <div class="card">
@@ -552,6 +554,8 @@ let rezept = "waffel";
 // Auswahl der Töpfe pro Kriterium (1..4 oder 0 = nicht gewählt)
 let sel = { inhalt:[0,0,0,0], sprache:[0,0,0,0] };
 let formCheck = [false,false,false,false];
+// Freiwilliger Name (nur lokal gespeichert, nicht im Code)
+let userName = "";
 // Grundlagen: aktuelles Beispiel
 let exampleIdx = 0;
 // Lösung: Hürde (nur in der Sitzung, nicht gespeichert)
@@ -563,9 +567,9 @@ const $ = (id)=>document.getElementById(id);
 /* ============================================================
    SPEICHERN (nur letzte Einschätzung – ganz einfach)
    ============================================================ */
-const KEY = "felix_simple";
+const KEY = "schreibtraining_v1";
 function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify({rezept, sel, formCheck})); }catch(e){}
+  try{ localStorage.setItem(KEY, JSON.stringify({rezept, sel, formCheck, name:userName})); }catch(e){}
 }
 function load(){
   try{
@@ -574,8 +578,13 @@ function load(){
       if(REZEPTE[d.rezept]) rezept=d.rezept;
       if(d.sel && d.sel.inhalt && d.sel.sprache) sel=d.sel;
       if(Array.isArray(d.formCheck)) formCheck=d.formCheck;
+      if(typeof d.name==="string") userName=d.name;
     }
   }catch(e){}
+}
+function updateGreeting(){
+  // textContent -> sicher gegen HTML-Eingaben
+  $("greeting").textContent = userName ? ("Hallo, "+userName+"!") : "Hallo!";
 }
 
 /* ============================================================
@@ -841,6 +850,12 @@ document.addEventListener("DOMContentLoaded",()=>{
   buildBasics();
   buildWorksheet();
   buildFlower();
+
+  // Freiwilliger Name (nur lokal)
+  const ni=$("nameInput");
+  ni.value=userName;
+  updateGreeting();
+  ni.oninput=()=>{ userName=ni.value.trim(); save(); updateGreeting(); };
 
   $("toBasicsBtn").onclick=()=>goNav("basics");
   $("toSheetBtn").onclick=()=>goNav("sheet");
