@@ -9,21 +9,21 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Schreibprofi">
+<meta name="apple-mobile-web-app-title" content="Lernprofi">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
 
-<title>Vorgangsbeschreibungen üben</title>
+<title>Deutsch üben</title>
 <style>
 /* =========================================================
    MOBILE-FIRST GRUNDLAYOUT
-   Ruhige Farben, große Touch-Flächen, wenig pro Bildschirm.
    ========================================================= */
 :root{
   --bg:#eef4fb; --card:#ffffff;
   --primary:#4a7fd6; --primary-dark:#3a67b0;
   --green:#5bb98c; --green-dark:#489a72;
   --yellow:#f5c451; --text:#2c3a4b; --muted:#6b7a8d; --soft:#dce7f4;
+  --blue-ink:#1c56b3;
   --radius:18px; --shadow:0 6px 18px rgba(60,90,140,0.12);
   --nav-h:66px; --tap:48px;
   --safe-bottom:env(safe-area-inset-bottom, 0px);
@@ -47,7 +47,7 @@ p{margin:0 0 12px;}
 .center{text-align:center;}
 .mt{margin-top:12px;}
 
-/* Buttons – min. 48px, kein Hover-Zwang */
+/* Buttons */
 button{
   font-family:inherit; font-size:18px; cursor:pointer; border:none; border-radius:14px;
   padding:14px 18px; min-height:var(--tap); touch-action:manipulation;
@@ -65,7 +65,7 @@ button:active{transform:scale(0.97);}
   .btn-green:hover{background:var(--green-dark);}
 }
 
-/* Rezept-Auswahl */
+/* Auswahl-Karten (Lernfeld / Thema) */
 .choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;}
 .choice{
   background:var(--soft); border:3px solid transparent; border-radius:16px; padding:18px 12px;
@@ -75,12 +75,12 @@ button:active{transform:scale(0.97);}
 .choice .emoji{display:block; font-size:34px; margin-bottom:6px;}
 .choice.selected{border-color:var(--primary); background:#e4eefb;}
 
-/* Satzanfänge-Chips */
+/* Chips */
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
 .chip{background:#e4eefb; border:2px solid var(--primary); color:var(--primary-dark);
   border-radius:20px; padding:8px 14px; font-weight:700; font-size:15px;}
 
-/* "So geht's" Schritte */
+/* "So geht's" */
 .howto{display:flex; flex-direction:column; gap:10px; margin-top:8px;}
 .howto-step{display:flex; align-items:center; gap:12px; background:var(--soft); border-radius:14px; padding:12px;}
 .howto-step .n{background:var(--primary); color:#fff; width:34px; height:34px; border-radius:50%;
@@ -88,6 +88,16 @@ button:active{transform:scale(0.97);}
 
 .hint{background:#fff8e6; border-left:4px solid var(--yellow); padding:12px 14px; border-radius:8px; font-size:20px; margin:12px 0;}
 .example-box{background:var(--soft); border-radius:14px; padding:14px; font-size:19px; margin:10px 0;}
+.feedback{margin-top:10px; padding:12px 14px; border-radius:12px; font-size:17px; font-weight:700;}
+.feedback.ok{background:#e6f6ee; color:var(--green-dark);}
+.feedback.tip{background:#fff8e6; color:#a67c19;}
+
+/* Wörter zum Antippen (Subjekt) */
+.sentence-box{font-size:22px; line-height:2.2; margin:10px 0;}
+.word{display:inline-block; padding:2px 6px; margin:2px 0; border-radius:8px; cursor:pointer;
+  border-bottom:3px solid transparent;}
+.word.sel{color:var(--blue-ink); font-weight:700; border-bottom-color:var(--blue-ink); background:#eaf1fc;}
+@media (hover:hover){ .word:hover{background:#eef2f8;} }
 
 /* Lösung */
 .gate-count{background:var(--soft); border-radius:12px; padding:12px; margin:8px 0; font-size:17px;}
@@ -98,12 +108,7 @@ button:active{transform:scale(0.97);}
 #worksheet .sol-list{padding-left:22px;}
 #worksheet .sol-list li{margin:8px 0;}
 
-/* =========================================================
-   BLUMENTOPF-SKALA (Selbst-Einschätzung, wie bei der Lehrerin)
-   4 Stufen: Topf → Keim → Pflanze → Blüte. Ohne Noten.
-   ========================================================= */
-.crit-group{margin-bottom:6px;}
-.crit-group h3{margin-top:14px;}
+/* Blumentopf-Skala */
 .crit{background:var(--soft); border-radius:14px; padding:12px; margin-bottom:10px;}
 .crit .frage{font-size:17px; font-weight:600; margin-bottom:8px;}
 .pot-row{display:flex; gap:8px; justify-content:space-between;}
@@ -117,26 +122,24 @@ button:active{transform:scale(0.97);}
 .pot.selected svg{opacity:1; filter:none;}
 .pot.selected .plabel{color:var(--green-dark);}
 
-/* Form/Rechtschreibung – nur Häkchen (OHNE Bewertung) */
+/* Häkchenliste */
 .checklist{list-style:none; padding:0; margin:0;}
 .checklist li{display:flex; align-items:center; gap:12px; padding:14px; background:var(--soft);
   border-radius:12px; margin-bottom:8px; font-size:17px; min-height:var(--tap); cursor:pointer;}
 .checklist input{width:26px; height:26px; flex:0 0 auto;}
 
-/* Ergebnis "Deine Blume" */
+/* "Deine Blume" */
 .bloom{background:#eaf7f0; border-radius:18px; padding:20px; text-align:center;}
 .bloom svg{width:120px; height:auto;}
 .bloom .txt{font-size:19px; font-weight:700; color:var(--green-dark); margin-top:8px;}
 
-/* =========================================================
-   UNTERE NAVIGATION
-   ========================================================= */
+/* Untere Navigation (dynamisch) */
 .bottom-nav{position:fixed; left:0; right:0; bottom:0; z-index:60; display:flex;
   background:var(--card); box-shadow:0 -4px 16px rgba(60,90,140,0.12); padding-bottom:var(--safe-bottom);}
 .nav-item{flex:1; background:transparent; border:none; display:flex; flex-direction:column;
   align-items:center; justify-content:center; gap:2px; height:var(--nav-h); min-height:var(--tap);
-  color:var(--muted); font-size:12px; font-weight:600; border-radius:0;}
-.nav-item .ni{font-size:24px; line-height:1;}
+  color:var(--muted); font-size:11px; font-weight:600; border-radius:0; padding:2px;}
+.nav-item .ni{font-size:23px; line-height:1;}
 .nav-item.active{color:var(--primary);}
 
 /* Screens */
@@ -148,13 +151,8 @@ button:active{transform:scale(0.97);}
   body{font-size:19px;}
 }
 
-/* =========================================================
-   ARBEITSBLATT (Bildschirm-Vorschau)
-   ========================================================= */
-#worksheet{
-  background:#fff; color:#000; border:1px solid #ccc; border-radius:8px;
-  padding:20px; font-size:16px;
-}
+/* Arbeitsblatt (Vorschau) */
+#worksheet{background:#fff; color:#000; border:1px solid #ccc; border-radius:8px; padding:20px; font-size:16px;}
 #worksheet .ws-head{display:flex; align-items:center; gap:12px; border:2px solid #000; border-radius:10px; padding:10px 14px; margin-bottom:14px;}
 #worksheet .ws-head .pen{font-size:30px;}
 #worksheet h2{font-size:19px; margin:0;}
@@ -164,16 +162,13 @@ button:active{transform:scale(0.97);}
 #worksheet .ws-step{margin:20px 0;}
 #worksheet .ws-step .lead{font-weight:700; margin-bottom:2px;}
 #worksheet .ws-step .cue{color:#555; font-size:14px; margin-bottom:12px;}
-/* handgeschriebene Zeilen – viel Platz für große Handschrift */
 #worksheet .writeline{border-bottom:1.6px solid #333; height:46px; margin:0 0 12px;}
 #worksheet .starters{font-size:14px; color:#333; border:1.2px dashed #666; border-radius:8px; padding:8px 10px; margin:12px 0;}
 #worksheet .ws-check{margin-top:12px;}
 #worksheet .ws-check .cline{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:15px;}
 #worksheet .ws-check .cbox{width:18px; height:18px; border:1.6px solid #000; border-radius:3px; flex:0 0 auto;}
 
-/* =========================================================
-   DRUCK: nur das Arbeitsblatt drucken
-   ========================================================= */
+/* Druck */
 @media print{
   @page{ margin:14mm; }
   body{background:#fff; padding:0; font-size:12pt;}
@@ -189,194 +184,152 @@ button:active{transform:scale(0.97);}
 <body>
 <div class="app">
 
-  <!-- ==========================================================
-       START
-       ========================================================== -->
-  <section id="screen-start" class="screen active">
+  <!-- ========== STARTSEITE: Lernfeld wählen ========== -->
+  <section id="screen-home" class="screen active">
     <div class="card center">
       <div style="font-size:46px;">✏️😊</div>
       <h1 id="greeting">Hallo!</h1>
-      <p>Heute übst du <b>Vorgangsbeschreibungen</b>:<br>Schritt für Schritt genau beschreiben.</p>
+      <p>Was möchtest du heute üben?</p>
       <input id="nameInput" type="text" maxlength="20" placeholder="Dein Name (freiwillig)" style="max-width:280px; margin:6px auto 0; text-align:center;">
       <p class="muted" style="font-size:13px; margin-top:6px;">Wird nur auf diesem Gerät gespeichert.</p>
     </div>
-
     <div class="card">
-      <h2>Welches Rezept?</h2>
-      <div class="choice-grid" id="recipeChoices"></div>
-    </div>
-
-    <div class="card">
-      <h2>So geht's</h2>
-      <div class="howto">
-        <div class="howto-step"><div class="n">1</div><div><b>Grundlagen üben</b> – am Bildschirm (kurz).</div></div>
-        <div class="howto-step"><div class="n">2</div><div><b>Auf Papier schreiben</b> – Arbeitsblatt drucken und mit der Hand schreiben.</div></div>
-        <div class="howto-step"><div class="n">3</div><div><b>Meine Blume</b> – selbst einschätzen, wie gut es geklappt hat.</div></div>
-      </div>
-      <button class="btn-primary mt" id="toBasicsBtn">Los: Grundlagen üben</button>
+      <h2>Wähle ein Lernfeld</h2>
+      <div class="choice-grid" id="moduleChooser"></div>
     </div>
   </section>
 
-  <!-- ==========================================================
-       GRUNDLAGEN (online, ohne Tippen)
-       ========================================================== -->
-  <section id="screen-basics" class="screen">
-    <div class="card">
-      <h2>📖 Grundlagen</h2>
-      <p class="muted">Lies kurz mit. Danach schreibst du auf Papier.</p>
-    </div>
-
-    <div class="card">
-      <h3>1) Verschiedene Satzanfänge</h3>
-      <p>Beginne nicht jeden Satz gleich. Diese Wörter helfen dir:</p>
-      <div class="chip-row" id="starterChips"></div>
-    </div>
-
-    <div class="card">
-      <h3>2) Denke an diese Fragen</h3>
-      <p>Ein guter Satz beantwortet möglichst:</p>
-      <div class="example-box">
-        🟦 <b>Was</b> nehme ich?<br>
-        🟩 <b>Wohin</b> kommt es?<br>
-        🟨 <b>Was</b> mache ich damit?<br>
-        🟧 <b>Womit</b> mache ich es?
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>3) So wird aus Stichworten ein Satz</h3>
-      <p>Stichworte:</p>
-      <div class="example-box" id="exStich">…</div>
-      <button class="btn-secondary btn-small" id="showExampleBtn">Beispielsatz zeigen</button>
-      <div class="hint" id="exampleSentence" style="display:none;"></div>
-      <button class="btn-secondary btn-small" id="nextExampleBtn" style="display:none;">Zeig mir ein weiteres Beispiel</button>
-    </div>
-
-    <div class="card">
-      <div class="hint">💡 Merke: <b>Ein Schritt = ein ganzer Satz.</b> Schreibe in der <b>Ich-Form</b> und setze am Ende einen <b>Punkt</b>.</div>
-      <button class="btn-primary" id="toSheetBtn">Weiter: Arbeitsblatt</button>
-    </div>
-  </section>
-
-  <!-- ==========================================================
-       ARBEITSBLATT (drucken)
-       ========================================================== -->
-  <section id="screen-sheet" class="screen">
-    <div class="card">
-      <h2>🖨️ Arbeitsblatt</h2>
-      <p>Drucke dein Arbeitsblatt aus und schreibe die Vorgangsbeschreibung <b>mit der Hand</b>.</p>
-      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button>
-      <p class="muted mt">Tipp: Im Druckfenster kannst du auch „Als PDF speichern" wählen.</p>
-    </div>
-
-    <div class="card">
-      <h3>Vorschau</h3>
-      <div id="worksheet"></div>
-    </div>
-
-    <div class="card">
-      <button class="btn-green" id="toFlowerBtn">Fertig geschrieben? → Meine Blume</button>
-    </div>
-  </section>
-
-  <!-- ==========================================================
-       LÖSUNG (mit Hürde: erst selbst versuchen)
-       ========================================================== -->
-  <section id="screen-solution" class="screen">
-    <div class="card">
-      <h2>🔑 Lösung</h2>
-      <p>Die Lösung zeigt dir, wie ein guter Text aussehen kann.
-      Aber <b>erst selbst versuchen!</b> 💪</p>
-    </div>
-
-    <div class="card" id="gateCard">
-      <h3>Erst selbst probieren</h3>
-
-      <p class="muted"><b>1)</b> Hast du es selbst versucht? Tippe nach jedem Versuch:</p>
-      <button class="btn-secondary btn-small" id="tryBtn">Ich habe es versucht</button>
-      <div class="gate-count">Versuche: <b><span id="tryCount">0</span> / 3</b></div>
-
-      <p class="muted mt"><b>2)</b> Welche Schritte hast du schon auf dein Blatt geschrieben?</p>
-      <ul class="checklist" id="writtenList"></ul>
-
-      <div class="hint" id="gateStatus"></div>
-      <button class="btn-primary btn-locked" id="showSolutionBtn" disabled>🔒 Lösung anzeigen</button>
-    </div>
-
-    <div class="card" id="solutionCard" style="display:none;">
-      <h3>So kann ein guter Text aussehen</h3>
-      <div id="solutionText" class="final-solution"></div>
-      <button class="btn-green mt" id="printSolutionBtn" style="width:100%;">Lösung drucken</button>
-      <button class="btn-quiet" id="resetSolutionBtn" style="width:100%;">Neu versuchen</button>
-    </div>
-  </section>
-
-  <!-- ==========================================================
-       MEINE BLUME (Selbst-Einschätzung, Blumentopf-Skala)
-       ========================================================== -->
-  <section id="screen-flower" class="screen">
-    <div class="card">
-      <h2>🌱 Meine Blume</h2>
-      <p>Schätze selbst ein – so wie deine Lehrerin es auch macht.
-      Tippe pro Zeile den Topf an, der am besten passt. <b>Es gibt keine Noten</b> –
-      deine Blume wächst mit jedem Schritt! 🌷</p>
-    </div>
-
-    <div class="card">
-      <div class="crit-group">
-        <h3>Inhalt</h3>
-        <div id="groupInhalt"></div>
-      </div>
-      <div class="crit-group">
-        <h3>Sprache</h3>
-        <div id="groupSprache"></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>Form &amp; Schrift <span class="muted">(ohne Bewertung)</span></h3>
-      <p class="muted">Nur zum Abhaken – hier gibt es nichts zu bewerten.</p>
-      <ul class="checklist" id="groupForm"></ul>
-    </div>
-
-    <div class="card">
-      <h3>Deine Blume</h3>
-      <div class="bloom">
-        <div id="bloomIcon"></div>
-        <div class="txt" id="bloomText">Tippe oben die Töpfe an, dann wächst deine Blume.</div>
-      </div>
-      <button class="btn-quiet mt" id="resetFlowerBtn" style="width:100%;">Neu einschätzen</button>
-    </div>
+  <!-- ========== INHALTSBEREICH (füllt das aktive Modul) ========== -->
+  <section id="screen-content" class="screen">
+    <div id="moduleContent"></div>
   </section>
 
 </div>
 
-<!-- Druckbereich (nur beim Drucken sichtbar) -->
+<!-- Druckbereich -->
 <div id="printArea"></div>
 
-<!-- ==========================================================
-     UNTERE NAVIGATION
-     ========================================================== -->
-<nav class="bottom-nav">
-  <button class="nav-item active" data-nav="start"><span class="ni">🏠</span>Start</button>
-  <button class="nav-item" data-nav="basics"><span class="ni">📖</span>Üben</button>
-  <button class="nav-item" data-nav="sheet"><span class="ni">🖨️</span>Arbeitsblatt</button>
-  <button class="nav-item" data-nav="solution"><span class="ni">🔑</span>Lösung</button>
-  <button class="nav-item" data-nav="flower"><span class="ni">🌱</span>Meine Blume</button>
-</nav>
+<!-- Untere Navigation (wird je Modul dynamisch aufgebaut) -->
+<nav class="bottom-nav" id="bottomNav"></nav>
 
 <script>
 "use strict";
 /* ============================================================
-   FELIX LERN-APP – simple, hybride Version
-   Online = Grundlagen (kein Tippen).
-   Papier = Arbeitsblatt zum Handschreiben (druckbar).
-   "Meine Blume" = Selbst-Einschätzung mit der Blumentopf-Skala
-   der Lehrerin (4 Stufen), ohne Noten.
-   Reines HTML/CSS/JS, offline nutzbar (PWA), Daten im localStorage.
+   LERN-APP – Modul-System („Lernfelder")
+   Jedes Lernfeld ist ein eigenständiges Modul mit eigenen
+   Bereichen (Reitern). Das Grundgerüst (Navigation, Blumentopf-
+   Selbstcheck, Druck, Speichern) ist generisch.
+   Neues Thema = neues Modul-Objekt in MODULES – sonst nichts.
+   Reines HTML/CSS/JS, offline (PWA), Daten nur im localStorage.
    ============================================================ */
 
-/* ---------- Inhalte ---------- */
+const $ = (id)=>document.getElementById(id);
+
+/* ============================================================
+   GEMEINSAME BAUSTEINE
+   ============================================================ */
+const POT_LABELS = ["fängt an","wächst","stark","aufgeblüht"];
+
+// Blumentopf-SVG in 4 Wachstumsstufen (Topf → Keim → Pflanze → Blüte)
+function potSVG(stufe){
+  const topf = `
+    <path d="M16 46 h28 l-4 20 h-20 z" fill="#c47a4a"/>
+    <rect x="13" y="41" width="34" height="7" rx="2.5" fill="#d98a58"/>
+    <ellipse cx="30" cy="44.5" rx="15" ry="2.6" fill="#5e3f24"/>`;
+  let p = "";
+  if(stufe===1){ p = `<ellipse cx="30" cy="43" rx="2.4" ry="1.5" fill="#7a5230"/>`; }
+  else if(stufe===2){ p = `
+      <path d="M30 44 V33" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="24.5" cy="35" rx="5" ry="3" fill="#5bb98c" transform="rotate(-25 24.5 35)"/>
+      <ellipse cx="35.5" cy="34" rx="5" ry="3" fill="#5bb98c" transform="rotate(25 35.5 34)"/>`; }
+  else if(stufe===3){ p = `
+      <path d="M30 44 V24" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="22.5" cy="34" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(-28 22.5 34)"/>
+      <ellipse cx="37.5" cy="32" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(28 37.5 32)"/>
+      <ellipse cx="24" cy="26" rx="5" ry="3" fill="#6ec79a" transform="rotate(-22 24 26)"/>`; }
+  else{ p = `
+      <path d="M30 44 V22" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <ellipse cx="22" cy="34" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(-28 22 34)"/>
+      <ellipse cx="38" cy="32" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(28 38 32)"/>
+      <g>
+        <circle cx="30" cy="14" r="4.2" fill="#f5c451"/>
+        <circle cx="30" cy="7.5" r="3.6" fill="#ef8fb3"/>
+        <circle cx="36.5" cy="12" r="3.6" fill="#ef8fb3"/>
+        <circle cx="34" cy="18.5" r="3.6" fill="#ef8fb3"/>
+        <circle cx="26" cy="18.5" r="3.6" fill="#ef8fb3"/>
+        <circle cx="23.5" cy="12" r="3.6" fill="#ef8fb3"/>
+      </g>`; }
+  return `<svg viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${p}${topf}</svg>`;
+}
+
+// Generischer Blumentopf-Selbstcheck: cfg = {groups:[{title,fragen:[]}], form:[]}
+//                                      st  = {groups:[[..]], form:[..]}
+function renderFlower(c, cfg, st){
+  c.innerHTML = `
+    <div class="card"><h2>🌱 Meine Blume</h2>
+      <p>Schätze selbst ein – so wie deine Lehrerin es auch macht. Tippe pro Zeile den Topf an,
+      der am besten passt. <b>Es gibt keine Noten</b> – deine Blume wächst mit jedem Schritt! 🌷</p></div>
+    <div class="card" id="flowerGroups"></div>
+    <div class="card"><h3>Form &amp; Schrift <span class="muted">(ohne Bewertung)</span></h3>
+      <p class="muted">Nur zum Abhaken.</p><ul class="checklist" id="flowerForm"></ul></div>
+    <div class="card"><h3>Deine Blume</h3>
+      <div class="bloom"><div id="bloomIcon"></div><div class="txt" id="bloomText"></div></div>
+      <button class="btn-quiet mt" id="flowerReset" style="width:100%;">Neu einschätzen</button></div>`;
+  const gc = c.querySelector("#flowerGroups");
+  cfg.groups.forEach((g,gi)=>{
+    const h=document.createElement("h3"); h.textContent=g.title; h.style.marginTop = gi ? "16px":"0"; gc.appendChild(h);
+    g.fragen.forEach((frage,i)=>{
+      const crit=document.createElement("div"); crit.className="crit";
+      crit.innerHTML=`<div class="frage">${frage}</div>`;
+      const row=document.createElement("div"); row.className="pot-row"; const pots=[];
+      for(let stufe=1; stufe<=4; stufe++){
+        const b=document.createElement("button");
+        b.className="pot"+(st.groups[gi][i]===stufe?" selected":"");
+        b.innerHTML=potSVG(stufe)+`<span class="plabel">${POT_LABELS[stufe-1]}</span>`;
+        b.onclick=()=>{ st.groups[gi][i]=stufe; save();
+          pots.forEach((pp,idx)=>pp.classList.toggle("selected", idx+1===stufe)); updateBloom(c,st); };
+        pots.push(b); row.appendChild(b);
+      }
+      crit.appendChild(row); gc.appendChild(crit);
+    });
+  });
+  const fl=c.querySelector("#flowerForm");
+  cfg.form.forEach((t,i)=>{
+    const li=document.createElement("li");
+    li.innerHTML=`<input type="checkbox" ${st.form[i]?"checked":""}> <span>${t}</span>`;
+    li.querySelector("input").onchange=e=>{ st.form[i]=e.target.checked; save(); };
+    li.onclick=e=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; st.form[i]=b.checked; save(); } };
+    fl.appendChild(li);
+  });
+  c.querySelector("#flowerReset").onclick=()=>{
+    if(confirm("Einschätzung zurücksetzen?")){ st.groups.forEach(a=>a.fill(0)); st.form.fill(false); save(); renderFlower(c,cfg,st); }
+  };
+  updateBloom(c,st);
+}
+function updateBloom(c, st){
+  const all=[].concat(...st.groups).filter(v=>v>0);
+  const icon=c.querySelector("#bloomIcon"), txt=c.querySelector("#bloomText");
+  if(!all.length){ icon.innerHTML=potSVG(1); txt.textContent="Tippe oben die Töpfe an, dann wächst deine Blume."; return; }
+  const avg=all.reduce((a,b)=>a+b,0)/all.length;
+  const stufe=Math.max(1,Math.min(4,Math.round(avg)));
+  icon.innerHTML=potSVG(stufe);
+  txt.textContent={
+    1:"🌱 Dein Pflänzchen fängt an zu wachsen. Toll, dass du geübt hast!",
+    2:"🌿 Deine Pflanze wächst schön. Weiter so!",
+    3:"🌷 Deine Blume wird richtig stark! Super gemacht.",
+    4:"🌸 Wow, deine Blume ist voll aufgeblüht! Klasse Arbeit."
+  }[stufe];
+}
+
+// Generisches Drucken: Inhalt in den Druckbereich, dann drucken
+function printHTML(inner){
+  $("printArea").innerHTML = '<div id="worksheet">'+inner+'</div>';
+  window.print();
+}
+
+/* ============================================================
+   MODUL 1: VORGANGSBESCHREIBUNG
+   ============================================================ */
 const SATZANFAENGE = ["Zuerst","Anschließend","Danach","Nun","Als Nächstes","Zum Schluss"];
 
 const REZEPTE = {
@@ -482,8 +435,6 @@ const REZEPTE = {
     ]}
 };
 
-/* Kriterien der Selbst-Einschätzung – entsprechen dem Bewertungsbogen
-   der Lehrerin (Inhalt / Sprache / Form), als freundliche Ich-Fragen. */
 const KRIT_INHALT = [
   "Habe ich eine passende Überschrift gefunden?",
   "Habe ich alle Zutaten und Hilfsmittel aufgelistet?",
@@ -496,382 +447,416 @@ const KRIT_SPRACHE = [
   "Habe ich abwechslungsreiche Satzanfänge benutzt?",
   "Habe ich durchgängig die Ich-Form benutzt?"
 ];
-const KRIT_FORM = [ /* OHNE Bewertung – nur Häkchen */
+const KRIT_FORM = [
   "Ich habe gut lesbar und ordentlich geschrieben.",
   "Ich habe die Satzanfänge groß geschrieben.",
   "Ich habe die Sätze mit einem Punkt beendet.",
   "Ich habe meinen Text noch einmal durchgelesen."
 ];
 
-/* Beschriftung der 4 Blumentopf-Stufen (ohne Noten) */
-const POT_LABELS = ["fängt an","wächst","stark","aufgeblüht"];
+// Laufzeit-Zustand für die Lösungs-Hürde (nicht gespeichert)
+let vgTries = 0;
+let vgWritten = [false,false,false,false,false];
 
-/* ============================================================
-   BLUMENTOPF-SVG (4 Wachstums-Stufen)
-   Stufe 1 Topf mit Erde ... Stufe 4 aufgeblühte Blume.
-   ============================================================ */
-function potSVG(stufe){
-  // gemeinsamer Topf
-  const topf = `
-    <path d="M16 46 h28 l-4 20 h-20 z" fill="#c47a4a"/>
-    <rect x="13" y="41" width="34" height="7" rx="2.5" fill="#d98a58"/>
-    <ellipse cx="30" cy="44.5" rx="15" ry="2.6" fill="#5e3f24"/>`;
-  let pflanze = "";
-  if(stufe===1){
-    pflanze = `<ellipse cx="30" cy="43" rx="2.4" ry="1.5" fill="#7a5230"/>`;
-  }else if(stufe===2){
-    pflanze = `
-      <path d="M30 44 V33" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <ellipse cx="24.5" cy="35" rx="5" ry="3" fill="#5bb98c" transform="rotate(-25 24.5 35)"/>
-      <ellipse cx="35.5" cy="34" rx="5" ry="3" fill="#5bb98c" transform="rotate(25 35.5 34)"/>`;
-  }else if(stufe===3){
-    pflanze = `
-      <path d="M30 44 V24" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <ellipse cx="22.5" cy="34" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(-28 22.5 34)"/>
-      <ellipse cx="37.5" cy="32" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(28 37.5 32)"/>
-      <ellipse cx="24" cy="26" rx="5" ry="3" fill="#6ec79a" transform="rotate(-22 24 26)"/>`;
-  }else{
-    pflanze = `
-      <path d="M30 44 V22" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
-      <ellipse cx="22" cy="34" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(-28 22 34)"/>
-      <ellipse cx="38" cy="32" rx="6" ry="3.4" fill="#5bb98c" transform="rotate(28 38 32)"/>
-      <g>
-        <circle cx="30" cy="14" r="4.2" fill="#f5c451"/>
-        <circle cx="30" cy="7.5" r="3.6" fill="#ef8fb3"/>
-        <circle cx="36.5" cy="12" r="3.6" fill="#ef8fb3"/>
-        <circle cx="34" cy="18.5" r="3.6" fill="#ef8fb3"/>
-        <circle cx="26" cy="18.5" r="3.6" fill="#ef8fb3"/>
-        <circle cx="23.5" cy="12" r="3.6" fill="#ef8fb3"/>
-      </g>`;
-  }
-  return `<svg viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${pflanze}${topf}</svg>`;
-}
-
-/* ============================================================
-   ZUSTAND
-   ============================================================ */
-let rezept = "waffel";
-// Auswahl der Töpfe pro Kriterium (1..4 oder 0 = nicht gewählt)
-let sel = { inhalt:[0,0,0,0], sprache:[0,0,0,0] };
-let formCheck = [false,false,false,false];
-// Freiwilliger Name (nur lokal gespeichert, nicht im Code)
-let userName = "";
-// Grundlagen: aktuelles Beispiel
-let exampleIdx = 0;
-// Lösung: Hürde (nur in der Sitzung, nicht gespeichert)
-let tries = 0;
-let written = [false,false,false,false,false];
-
-const $ = (id)=>document.getElementById(id);
-
-/* ============================================================
-   SPEICHERN (nur letzte Einschätzung – ganz einfach)
-   ============================================================ */
-const KEY = "schreibtraining_v1";
-function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify({rezept, sel, formCheck, name:userName})); }catch(e){}
-}
-function load(){
-  try{
-    const d=JSON.parse(localStorage.getItem(KEY)||"null");
-    if(d){
-      if(REZEPTE[d.rezept]) rezept=d.rezept;
-      if(d.sel && d.sel.inhalt && d.sel.sprache) sel=d.sel;
-      if(Array.isArray(d.formCheck)) formCheck=d.formCheck;
-      if(typeof d.name==="string") userName=d.name;
-    }
-  }catch(e){}
-}
-function updateGreeting(){
-  // textContent -> sicher gegen HTML-Eingaben
-  $("greeting").textContent = userName ? ("Hallo, "+userName+"!") : "Hallo!";
-}
-
-/* ============================================================
-   START – Rezeptauswahl
-   ============================================================ */
-function buildRecipes(){
-  const grid=$("recipeChoices"); grid.innerHTML="";
+// --- Bereich „Thema" ---
+function vgThema(c){
+  c.innerHTML = `
+    <div class="card"><h2>📋 Thema wählen</h2>
+      <p class="muted">Wähle, worüber du eine Vorgangsbeschreibung schreibst.</p>
+      <div class="choice-grid" id="recipeChoices"></div></div>
+    <div class="card"><h2>So geht's</h2>
+      <div class="howto">
+        <div class="howto-step"><div class="n">1</div><div><b>Grundlagen üben</b> – am Bildschirm (kurz).</div></div>
+        <div class="howto-step"><div class="n">2</div><div><b>Auf Papier schreiben</b> – Arbeitsblatt drucken.</div></div>
+        <div class="howto-step"><div class="n">3</div><div><b>Meine Blume</b> – selbst einschätzen.</div></div>
+      </div>
+      <button class="btn-primary mt" id="toUeben">Los: Grundlagen üben</button></div>`;
+  const grid=c.querySelector("#recipeChoices");
   Object.keys(REZEPTE).forEach(key=>{
     const r=REZEPTE[key];
     const div=document.createElement("div");
-    div.className="choice"+(key===rezept?" selected":"");
+    div.className="choice"+(key===store.vorgang.rezept?" selected":"");
     div.innerHTML=`<span class="emoji">${r.emoji}</span>${r.name}`;
-    div.onclick=()=>{ rezept=key; resetSolutionState(); save(); buildRecipes(); buildBasics(); buildWorksheet(); };
+    div.onclick=()=>{ store.vorgang.rezept=key; vgTries=0; vgWritten=[false,false,false,false,false]; save(); vgThema(c); };
     grid.appendChild(div);
   });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 
-/* ============================================================
-   GRUNDLAGEN
-   ============================================================ */
-function buildBasics(){
-  $("starterChips").innerHTML = SATZANFAENGE.map(a=>`<span class="chip">${a}</span>`).join("");
-  $("exStich").textContent = "📝 " + REZEPTE[rezept].stich;
-  // Beispiel zurücksetzen (wird erst auf Knopfdruck gezeigt)
-  exampleIdx = 0;
-  $("exampleSentence").style.display="none";
-  $("nextExampleBtn").style.display="none";
-}
-function renderExample(){
-  const bs = REZEPTE[rezept].beispiele;
-  $("exampleSentence").textContent = "✅ " + bs[exampleIdx % bs.length];
-  $("exampleSentence").style.display="block";
-  // "weiteres Beispiel" nur anbieten, wenn es mehrere gibt
-  $("nextExampleBtn").style.display = bs.length>1 ? "block" : "none";
-}
-function nextExample(){
-  const bs = REZEPTE[rezept].beispiele;
-  exampleIdx = (exampleIdx+1) % bs.length;
-  renderExample();
+// --- Bereich „Üben" (Grundlagen + Beispiel variieren) ---
+function vgBasics(c){
+  const r=REZEPTE[store.vorgang.rezept];
+  c.innerHTML = `
+    <div class="card"><h2>📖 Grundlagen</h2>
+      <p class="muted">Thema: <b>${r.name}</b>. Lies kurz mit, danach schreibst du auf Papier.</p></div>
+    <div class="card"><h3>1) Verschiedene Satzanfänge</h3>
+      <p>Beginne nicht jeden Satz gleich:</p>
+      <div class="chip-row">${SATZANFAENGE.map(a=>`<span class="chip">${a}</span>`).join("")}</div></div>
+    <div class="card"><h3>2) Denke an diese Fragen</h3>
+      <div class="example-box">🟦 <b>Was</b> nehme ich?<br>🟩 <b>Wohin</b> kommt es?<br>🟨 <b>Was</b> mache ich damit?<br>🟧 <b>Womit</b> mache ich es?</div></div>
+    <div class="card"><h3>3) So wird aus Stichworten ein Satz</h3>
+      <p>Stichworte:</p><div class="example-box">📝 ${r.stich}</div>
+      <button class="btn-secondary btn-small" id="showEx">Beispielsatz zeigen</button>
+      <div class="hint" id="exSent" style="display:none;"></div>
+      <button class="btn-secondary btn-small" id="nextEx" style="display:none;">Zeig mir ein weiteres Beispiel</button></div>
+    <div class="card"><div class="hint">💡 Merke: <b>Ein Schritt = ein ganzer Satz.</b> Schreibe in der <b>Ich-Form</b> und setze am Ende einen <b>Punkt</b>.</div>
+      <button class="btn-primary" id="toBlatt">Weiter: Arbeitsblatt</button></div>`;
+  let idx=0;
+  const bs=r.beispiele;
+  const showAt=()=>{ const es=c.querySelector("#exSent"); es.textContent="✅ "+bs[idx%bs.length]; es.style.display="block";
+    c.querySelector("#nextEx").style.display = bs.length>1?"block":"none"; };
+  c.querySelector("#showEx").onclick=showAt;
+  c.querySelector("#nextEx").onclick=()=>{ idx=(idx+1)%bs.length; showAt(); };
+  c.querySelector("#toBlatt").onclick=()=>goSection("blatt");
 }
 
-/* ============================================================
-   ARBEITSBLATT
-   ============================================================ */
-function buildWorksheet(){
-  const r=REZEPTE[rezept];
+// --- Bereich „Blatt" (druckbares Arbeitsblatt) ---
+function vgSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe die Vorgangsbeschreibung <b>mit der Hand</b>.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button>
+      <p class="muted mt">Tipp: Im Druckfenster kannst du auch „Als PDF speichern“ wählen.</p></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig geschrieben? → Meine Blume</button></div>`;
+  const inner = vgWorksheetHTML(REZEPTE[store.vorgang.rezept]);
+  c.querySelector("#worksheet").innerHTML = inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function vgWorksheetHTML(r){
   const stepLines = r.schritte.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${s.lead}: Schreibe den ${i+1}. Schritt in einem ganzen Satz auf die Zeilen.</div>
       <div class="cue">Diese Stichworte helfen dir: ${s.cue}</div>
-      <div class="writeline"></div>
-      <div class="writeline"></div>
-      <div class="writeline"></div>
+      <div class="writeline"></div><div class="writeline"></div><div class="writeline"></div>
     </div>`).join("");
-
-  const checkItems = [
-    "Überschrift gefunden",
-    "alle Zutaten/Hilfsmittel genannt",
-    "jeden Schritt beschrieben",
-    "verschiedene Satzanfänge benutzt",
-    "in der Ich-Form geschrieben",
-    "Punkte am Satzende gesetzt"
-  ].map(t=>`<div class="cline"><span class="cbox"></span>${t}</div>`).join("");
-
-  const html = `
-    <div class="ws-head">
-      <span class="pen">✏️</span>
-      <h2>Vorgangsbeschreibung: ${r.name}</h2>
-    </div>
+  const checkItems = ["Überschrift gefunden","alle Zutaten/Hilfsmittel genannt","jeden Schritt beschrieben",
+    "verschiedene Satzanfänge benutzt","in der Ich-Form geschrieben","Punkte am Satzende gesetzt"]
+    .map(t=>`<div class="cline"><span class="cbox"></span>${t}</div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">✏️</span><h2>Vorgangsbeschreibung: ${r.name}</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
-
-    <div class="ws-task">
-      <b>Deine Aufgabe:</b> Schreibe eine Vorgangsbeschreibung zum Thema „${r.name}“.
-      Schreibe zu jedem Schritt einen ganzen Satz in der Ich-Form. Benutze verschiedene
-      Satzanfänge und setze am Ende jedes Satzes einen Punkt.
-    </div>
-
-    <div class="ws-box">
-      <b>Schreibe hier deine Überschrift:</b>
-      <div class="writeline"></div>
-    </div>
-
-    <div class="ws-box">
-      <b>Schreibe hier, was du brauchst (Zutaten &amp; Hilfsmittel):</b>
-      <div class="writeline"></div>
-      <div class="writeline"></div>
-    </div>
-
-    <div class="starters">
-      <b>Satzanfänge zur Auswahl:</b> ${SATZANFAENGE.join(" · ")}<br>
-      <b>Denke an:</b> Was? · Wohin? · Was mache ich? · Womit?
-    </div>
-
+    <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe eine Vorgangsbeschreibung zum Thema „${r.name}“.
+      Schreibe zu jedem Schritt einen ganzen Satz in der Ich-Form. Benutze verschiedene Satzanfänge
+      und setze am Ende jedes Satzes einen Punkt.</div>
+    <div class="ws-box"><b>Schreibe hier deine Überschrift:</b><div class="writeline"></div></div>
+    <div class="ws-box"><b>Schreibe hier, was du brauchst (Zutaten &amp; Hilfsmittel):</b>
+      <div class="writeline"></div><div class="writeline"></div></div>
+    <div class="starters"><b>Satzanfänge zur Auswahl:</b> ${SATZANFAENGE.join(" · ")}<br>
+      <b>Denke an:</b> Was? · Wohin? · Was mache ich? · Womit?</div>
     ${stepLines}
-
-    <div class="ws-check">
-      <b>Meine Checkliste:</b>
-      ${checkItems}
-    </div>`;
-
-  $("worksheet").innerHTML = html;
+    <div class="ws-check"><b>Meine Checkliste:</b>${checkItems}</div>`;
 }
 
-function printWorksheet(){
-  // Arbeitsblatt in den Druckbereich kopieren und drucken
-  $("printArea").innerHTML = '<div id="worksheet">'+$("worksheet").innerHTML+'</div>';
-  window.print();
-}
-
-/* ============================================================
-   LÖSUNG – erst nach 3 Versuchen + 3 geschriebenen Schritten
-   ============================================================ */
-function resetSolutionState(){
-  tries = 0;
-  written = [false,false,false,false,false];
-  const sc=$("solutionCard"); if(sc) sc.style.display="none";
-}
-function buildSolution(){
-  // Versuche-Zähler
-  $("tryCount").textContent = tries;
-  // Häkchen "welche Schritte geschrieben"
-  const ul=$("writtenList"); ul.innerHTML="";
+// --- Bereich „Lösung" (mit Hürde) ---
+function vgSolution(c){
+  const r=REZEPTE[store.vorgang.rezept];
+  c.innerHTML = `
+    <div class="card"><h2>🔑 Lösung</h2>
+      <p>Die Lösung zeigt dir, wie ein guter Text aussehen kann. Aber <b>erst selbst versuchen!</b> 💪</p></div>
+    <div class="card" id="gateCard">
+      <h3>Erst selbst probieren</h3>
+      <p class="muted"><b>1)</b> Hast du es selbst versucht? Tippe nach jedem Versuch:</p>
+      <button class="btn-secondary btn-small" id="tryBtn">Ich habe es versucht</button>
+      <div class="gate-count">Versuche: <b><span id="tryCount">${vgTries}</span> / 3</b></div>
+      <p class="muted mt"><b>2)</b> Welche Schritte hast du schon auf dein Blatt geschrieben?</p>
+      <ul class="checklist" id="writtenList"></ul>
+      <div class="hint" id="gateStatus"></div>
+      <button class="btn-primary btn-locked" id="showSolutionBtn" disabled>🔒 Lösung anzeigen</button></div>
+    <div class="card" id="solutionCard" style="display:none;">
+      <h3>So kann ein guter Text aussehen</h3>
+      <div id="solutionText" class="final-solution"></div>
+      <button class="btn-green mt" id="printSolutionBtn" style="width:100%;">Lösung drucken</button>
+      <button class="btn-quiet" id="resetSolutionBtn" style="width:100%;">Neu versuchen</button></div>`;
+  const ul=c.querySelector("#writtenList");
   for(let i=0;i<5;i++){
     const li=document.createElement("li");
-    li.innerHTML=`<input type="checkbox" ${written[i]?"checked":""}> <span>Schritt ${i+1} geschrieben</span>`;
-    li.querySelector("input").onchange=(e)=>{ written[i]=e.target.checked; updateGate(); };
-    li.onclick=(e)=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; written[i]=b.checked; updateGate(); } };
+    li.innerHTML=`<input type="checkbox" ${vgWritten[i]?"checked":""}> <span>Schritt ${i+1} geschrieben</span>`;
+    li.querySelector("input").onchange=e=>{ vgWritten[i]=e.target.checked; vgGate(c); };
+    li.onclick=e=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; vgWritten[i]=b.checked; vgGate(c); } };
     ul.appendChild(li);
   }
-  $("solutionCard").style.display="none";
-  updateGate();
+  c.querySelector("#tryBtn").onclick=()=>{ if(vgTries<3)vgTries++; c.querySelector("#tryCount").textContent=vgTries; vgGate(c); };
+  c.querySelector("#showSolutionBtn").onclick=()=>{
+    if(c.querySelector("#showSolutionBtn").disabled) return;
+    c.querySelector("#solutionText").innerHTML=vgSolutionInner(r);
+    c.querySelector("#solutionCard").style.display="block";
+    c.querySelector("#solutionCard").scrollIntoView({behavior:"smooth"});
+  };
+  c.querySelector("#printSolutionBtn").onclick=()=>printHTML(vgSolutionInner(r));
+  c.querySelector("#resetSolutionBtn").onclick=()=>{ vgTries=0; vgWritten=[false,false,false,false,false]; vgSolution(c); };
+  vgGate(c);
 }
-function updateGate(){
-  const writtenCount = written.filter(Boolean).length;
-  const okTries = tries>=3, okWritten = writtenCount>=3;
-  const ok = okTries && okWritten;
-  const btn=$("showSolutionBtn");
-  btn.disabled = !ok;
-  btn.classList.toggle("btn-locked", !ok);
+function vgGate(c){
+  const writtenCount=vgWritten.filter(Boolean).length;
+  const ok = vgTries>=3 && writtenCount>=3;
+  const btn=c.querySelector("#showSolutionBtn");
+  btn.disabled=!ok; btn.classList.toggle("btn-locked",!ok);
   btn.textContent = ok ? "Lösung anzeigen" : "🔒 Lösung anzeigen";
-  const status=$("gateStatus");
-  if(ok){
-    status.textContent = "Super, du hast fleißig geübt! Jetzt darfst du die Lösung ansehen. 🌟";
-  }else{
+  const status=c.querySelector("#gateStatus");
+  if(ok){ status.textContent="Super, du hast fleißig geübt! Jetzt darfst du die Lösung ansehen. 🌟"; }
+  else{
     const teile=[];
-    if(!okTries) teile.push("noch "+(3-tries)+"× „Ich habe es versucht“");
-    if(!okWritten) teile.push("mindestens "+Math.max(0,3-writtenCount)+" Schritt(e) mehr abhaken");
-    status.textContent = "Fast! Du brauchst noch: " + teile.join(" und ") + ".";
+    if(vgTries<3) teile.push("noch "+(3-vgTries)+"× „Ich habe es versucht“");
+    if(writtenCount<3) teile.push("mindestens "+Math.max(0,3-writtenCount)+" Schritt(e) mehr abhaken");
+    status.textContent="Fast! Du brauchst noch: "+teile.join(" und ")+".";
   }
 }
-function tryOnce(){
-  if(tries<3) tries++;
-  $("tryCount").textContent = tries;
-  updateGate();
-}
-function solutionInner(){
-  const r=REZEPTE[rezept];
-  return `
-    <div class="ws-head"><span class="pen">✏️</span><h2>${r.titel}</h2></div>
+function vgSolutionInner(r){
+  return `<div class="ws-head"><span class="pen">✏️</span><h2>${r.titel}</h2></div>
     <p><b>Das brauche ich:</b> ${r.zutaten}</p>
     <ol class="sol-list">${r.loesung.map(s=>`<li>${s}</li>`).join("")}</ol>`;
 }
-function showSolution(){
-  if($("showSolutionBtn").disabled) return;
-  $("solutionText").innerHTML = solutionInner();
-  $("solutionCard").style.display="block";
-  $("solutionCard").scrollIntoView({behavior:"smooth"});
-}
-function printSolution(){
-  $("printArea").innerHTML = '<div id="worksheet">'+solutionInner()+'</div>';
-  window.print();
-}
+
+// --- Bereich „Blume" ---
+function vgFlower(c){ renderFlower(c, MODULES.vorgang.self, store.vorgang.self); }
 
 /* ============================================================
-   MEINE BLUME – Selbst-Einschätzung
+   MODUL 2: SUBJEKTE (Grammatik, interaktiv)
    ============================================================ */
-function buildFlower(){
-  buildCritGroup("groupInhalt", KRIT_INHALT, "inhalt");
-  buildCritGroup("groupSprache", KRIT_SPRACHE, "sprache");
-  buildFormGroup();
-  updateBloom();
+const SUBJ_SAETZE = [
+  {woerter:["Der","kleine","Junge","spielt","mit","dem","Ball."], subj:[0,1,2], frage:"Wer oder was spielt mit dem Ball?"},
+  {woerter:["Ein","Mädchen","streichelt","die","süße","Katze."], subj:[0,1], frage:"Wer oder was streichelt die süße Katze?"},
+  {woerter:["Der","Postbote","kommt","mit","dem","Fahrrad."], subj:[0,1], frage:"Wer oder was kommt mit dem Fahrrad?"},
+  {woerter:["Der","Mann","öffnet","die","Tür."], subj:[0,1], frage:"Wer oder was öffnet die Tür?"},
+  {woerter:["Der","Ball","springt","hoch."], subj:[0,1], frage:"Wer oder was springt hoch?"},
+  {woerter:["Schildkröten","sind","Reptilien."], subj:[0], frage:"Wer oder was sind Reptilien?"},
+  {woerter:["Ihr","Panzer","schützt","sie","vor","Gefahren."], subj:[0,1], frage:"Wer oder was schützt sie vor Gefahren?"},
+  {woerter:["Sie","fressen","Früchte","und","Gemüse."], subj:[0], frage:"Wer oder was frisst Früchte und Gemüse?"}
+];
+
+const KRIT_SUBJEKT = [
+  "Habe ich die Frage „Wer oder was?“ benutzt?",
+  "Habe ich das Subjekt richtig gefunden?",
+  "Habe ich das ganze Subjekt (alle Wörter) markiert?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_SUBJEKT_FORM = [
+  "Ich habe das Subjekt ordentlich blau unterstrichen.",
+  "Ich habe die Sätze genau gelesen.",
+  "Ich habe meine Antworten überprüft."
+];
+
+let subjIdx = 0;
+
+// --- Bereich „Lernen" ---
+function sjLernen(c){
+  c.innerHTML = `
+    <div class="card"><h2>📖 Was ist das Subjekt?</h2>
+      <p>Das <b>Subjekt</b> ist die Person oder Sache, <b>über die</b> im Satz etwas gesagt wird.
+      Oft steht es am Satzanfang.</p></div>
+    <div class="card"><h3>Die Zauberfrage 🪄</h3>
+      <div class="hint">Frage: <b>„Wer oder was?“</b> + das Tun-Wort.</div>
+      <p class="muted">Die Antwort ist das Subjekt.</p></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="sentence-box"><span class="word sel">Der</span> <span class="word sel">kleine</span> <span class="word sel">Junge</span> spielt mit dem Ball.</div>
+      <p><b>Wer</b> spielt mit dem Ball? → <b>Der kleine Junge</b> (das ist das Subjekt, blau).</p></div>
+    <div class="card"><div class="hint">💡 Tipp: Bei <b>Personen</b> fragst du „<b>Wer?</b>“, bei <b>Dingen/Tieren</b> „<b>Was?</b>“.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
-function buildCritGroup(containerId, fragen, gruppe){
-  const box=$(containerId); box.innerHTML="";
-  fragen.forEach((frage,i)=>{
-    const c=document.createElement("div"); c.className="crit";
-    c.innerHTML = `<div class="frage">${frage}</div>`;
-    const row=document.createElement("div"); row.className="pot-row";
-    const pots=[];
-    for(let stufe=1; stufe<=4; stufe++){
-      const b=document.createElement("button");
-      b.className="pot"+(sel[gruppe][i]===stufe?" selected":"");
-      b.innerHTML = potSVG(stufe) + `<span class="plabel">${POT_LABELS[stufe-1]}</span>`;
-      b.onclick=()=>{
-        sel[gruppe][i]=stufe; save();
-        // nur diese Zeile aktualisieren (kein kompletter Neuaufbau)
-        pots.forEach((p,idx)=>p.classList.toggle("selected", idx+1===stufe));
-        updateBloom();
-      };
-      pots.push(b); row.appendChild(b);
-    }
-    c.appendChild(row);
-    box.appendChild(c);
+
+// --- Bereich „Üben" (Wörter antippen) ---
+function sjUeben(c){
+  if(subjIdx>=SUBJ_SAETZE.length) subjIdx=0;
+  const s=SUBJ_SAETZE[subjIdx];
+  const selected=new Set();
+  c.innerHTML = `
+    <div class="card">
+      <h2>✏️ Subjekt finden</h2>
+      <p class="muted">Satz ${subjIdx+1} von ${SUBJ_SAETZE.length}</p>
+      <div class="hint">Frage: <b>${s.frage}</b></div>
+      <p>Tippe das <b>Subjekt</b> an (ein oder mehrere Wörter):</p>
+      <div class="sentence-box" id="sbox"></div>
+      <div id="sfb"></div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-secondary btn-small" id="checkBtn" style="flex:1;">Prüfen</button>
+        <button class="btn-primary btn-small" id="nextBtn" style="flex:1;">Nächster Satz</button>
+      </div>
+    </div>`;
+  const box=c.querySelector("#sbox");
+  s.woerter.forEach((w,i)=>{
+    const sp=document.createElement("span");
+    sp.className="word"; sp.textContent=w;
+    sp.onclick=()=>{ if(selected.has(i)){ selected.delete(i); sp.classList.remove("sel"); }
+      else { selected.add(i); sp.classList.add("sel"); } c.querySelector("#sfb").innerHTML=""; };
+    box.appendChild(sp); box.appendChild(document.createTextNode(" "));
   });
-}
-function buildFormGroup(){
-  const ul=$("groupForm"); ul.innerHTML="";
-  KRIT_FORM.forEach((t,i)=>{
-    const li=document.createElement("li");
-    li.innerHTML=`<input type="checkbox" ${formCheck[i]?"checked":""}> <span>${t}</span>`;
-    li.querySelector("input").onchange=(e)=>{ formCheck[i]=e.target.checked; save(); };
-    li.onclick=(e)=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; formCheck[i]=b.checked; save(); } };
-    ul.appendChild(li);
-  });
-}
-function updateBloom(){
-  // Durchschnitt aus allen gewählten Töpfen (Inhalt + Sprache)
-  const all=[...sel.inhalt, ...sel.sprache].filter(v=>v>0);
-  const icon=$("bloomIcon"), txt=$("bloomText");
-  if(!all.length){
-    icon.innerHTML = potSVG(1);
-    txt.textContent = "Tippe oben die Töpfe an, dann wächst deine Blume.";
-    return;
-  }
-  const avg = all.reduce((a,b)=>a+b,0)/all.length;
-  const stufe = Math.max(1, Math.min(4, Math.round(avg)));
-  icon.innerHTML = potSVG(stufe);
-  const texte = {
-    1:"🌱 Dein Pflänzchen fängt an zu wachsen. Toll, dass du geübt hast – jeder Schritt hilft!",
-    2:"🌿 Deine Pflanze wächst schön. Weiter so!",
-    3:"🌷 Deine Blume wird richtig stark! Super gemacht.",
-    4:"🌸 Wow, deine Blume ist voll aufgeblüht! Klasse Arbeit."
+  c.querySelector("#checkBtn").onclick=()=>{
+    const chosen=[...selected].sort((a,b)=>a-b);
+    const correct = chosen.length===s.subj.length && chosen.every((v,k)=>v===s.subj[k]);
+    const d=document.createElement("div");
+    d.className="feedback "+(correct?"ok":"tip");
+    d.textContent = correct ? "Richtig! Das ist das Subjekt. 🌟"
+                            : "Fast! Frag dich noch einmal „"+s.frage+"“ und tippe nur das Subjekt an.";
+    const fb=c.querySelector("#sfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  txt.textContent = texte[stufe];
-}
-function resetFlower(){
-  sel = { inhalt:[0,0,0,0], sprache:[0,0,0,0] };
-  formCheck = [false,false,false,false];
-  save(); buildFlower();
+  c.querySelector("#nextBtn").onclick=()=>{ subjIdx=(subjIdx+1)%SUBJ_SAETZE.length; sjUeben(c); window.scrollTo(0,0); };
 }
 
+// --- Bereich „Blatt" ---
+function sjSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und übe das <b>Subjekt unterstreichen</b> mit der Hand.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner = sjWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML = inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function sjWorksheetHTML(){
+  const lines=SUBJ_SAETZE.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Unterstreiche das Subjekt blau. Schreibe die Frage „Wer oder was …?“ auf die Linie.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">🔍</span><h2>Subjekte – Wer oder was?</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Subjekt</b> blau.
+      Finde es mit der Frage „<b>Wer oder was?</b>“ + Tun-Wort und schreibe die Frage auf die Linie.</div>
+    ${lines}`;
+}
+
+// --- Bereich „Blume" ---
+function sjFlower(c){ renderFlower(c, MODULES.subjekt.self, store.subjekt.self); }
+
 /* ============================================================
-   NAVIGATION
+   MODUL-REGISTRIERUNG
+   Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
-function goNav(nav){
-  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active", b.dataset.nav===nav));
-  const map = {start:"screen-start", basics:"screen-basics", sheet:"screen-sheet", solution:"screen-solution", flower:"screen-flower"};
+const MODULES = {
+  vorgang:{
+    id:"vorgang", name:"Vorgangs­beschreibung", emoji:"📝",
+    sections:[
+      {id:"thema",   icon:"📋", label:"Thema",  render:vgThema},
+      {id:"ueben",   icon:"📖", label:"Üben",   render:vgBasics},
+      {id:"blatt",   icon:"🖨️", label:"Blatt",  render:vgSheet},
+      {id:"loesung", icon:"🔑", label:"Lösung", render:vgSolution},
+      {id:"blume",   icon:"🌱", label:"Blume",  render:vgFlower}
+    ],
+    self:{ groups:[{title:"Inhalt", fragen:KRIT_INHALT},{title:"Sprache", fragen:KRIT_SPRACHE}], form:KRIT_FORM }
+  },
+  subjekt:{
+    id:"subjekt", name:"Subjekte", emoji:"🔍",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:sjLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:sjUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:sjSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:sjFlower}
+    ],
+    self:{ groups:[{title:"Subjekt finden", fragen:KRIT_SUBJEKT}], form:KRIT_SUBJEKT_FORM }
+  }
+};
+
+/* ============================================================
+   ZUSTAND & SPEICHERN
+   ============================================================ */
+let store = {
+  name:"",
+  lastModule:"vorgang",
+  vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
+  subjekt:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+};
+const KEY = "lernapp_v1";
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem(KEY)||"null");
+    if(!d) return;
+    if(typeof d.name==="string") store.name=d.name;
+    if(d.lastModule && MODULES[d.lastModule]) store.lastModule=d.lastModule;
+    if(d.vorgang){
+      if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
+      if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
+    }
+    if(d.subjekt && d.subjekt.self) mergeSelf(store.subjekt.self, d.subjekt.self);
+  }catch(e){}
+}
+// Übernimmt gespeicherte Werte, ohne die Größe der Zielarrays zu sprengen
+function mergeSelf(target, src){
+  if(src && Array.isArray(src.groups)){
+    src.groups.forEach((g,i)=>{ if(target.groups[i] && Array.isArray(g)){
+      g.forEach((v,j)=>{ if(j<target.groups[i].length) target.groups[i][j]=v; }); } });
+  }
+  if(src && Array.isArray(src.form)) src.form.forEach((v,i)=>{ if(i<target.form.length) target.form[i]=v; });
+}
+function updateGreeting(){ $("greeting").textContent = store.name ? ("Hallo, "+store.name+"!") : "Hallo!"; }
+
+/* ============================================================
+   GRUNDGERÜST: Startseite, Navigation, Screen-Wechsel
+   ============================================================ */
+let activeModuleId = null;
+let activeSectionId = null;
+
+function buildModuleChooser(){
+  const grid=$("moduleChooser"); grid.innerHTML="";
+  Object.keys(MODULES).forEach(id=>{
+    const m=MODULES[id];
+    const div=document.createElement("div");
+    div.className="choice";
+    div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}`;
+    div.onclick=()=>openModule(id);
+    grid.appendChild(div);
+  });
+}
+function openModule(id){
+  activeModuleId=id; store.lastModule=id; save();
+  subjIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  goSection(MODULES[id].sections[0].id);
+}
+function goHome(){
+  activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  if(nav==="sheet") buildWorksheet();
-  if(nav==="basics") buildBasics();
-  if(nav==="solution") buildSolution();
-  if(nav==="flower") buildFlower();
-  $(map[nav]).classList.add("active");
+  $("screen-home").classList.add("active");
+  renderNav();
   window.scrollTo(0,0);
 }
+function goSection(secId){
+  const m=MODULES[activeModuleId];
+  const sec=m.sections.find(s=>s.id===secId) || m.sections[0];
+  activeSectionId=sec.id;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  sec.render($("moduleContent"));
+  renderNav();
+  window.scrollTo(0,0);
+}
+function renderNav(){
+  const nav=$("bottomNav"); nav.innerHTML="";
+  nav.appendChild(navItem("🏠","Start",goHome, activeSectionId===null));
+  if(activeModuleId){
+    MODULES[activeModuleId].sections.forEach(sec=>{
+      nav.appendChild(navItem(sec.icon, sec.label, ()=>goSection(sec.id), activeSectionId===sec.id));
+    });
+  }
+}
+function navItem(icon,label,onclick,active){
+  const b=document.createElement("button");
+  b.className="nav-item"+(active?" active":"");
+  b.innerHTML=`<span class="ni">${icon}</span>${label}`;
+  b.onclick=onclick;
+  return b;
+}
 
 /* ============================================================
-   EVENTS
+   START
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
   load();
-  buildRecipes();
-  buildBasics();
-  buildWorksheet();
-  buildFlower();
-
-  // Freiwilliger Name (nur lokal)
+  buildModuleChooser();
   const ni=$("nameInput");
-  ni.value=userName;
+  ni.value=store.name;
   updateGreeting();
-  ni.oninput=()=>{ userName=ni.value.trim(); save(); updateGreeting(); };
-
-  $("toBasicsBtn").onclick=()=>goNav("basics");
-  $("toSheetBtn").onclick=()=>goNav("sheet");
-  $("toFlowerBtn").onclick=()=>goNav("flower");
-  $("showExampleBtn").onclick=renderExample;
-  $("nextExampleBtn").onclick=nextExample;
-  $("printBtn").onclick=printWorksheet;
-
-  // Lösung
-  $("tryBtn").onclick=tryOnce;
-  $("showSolutionBtn").onclick=showSolution;
-  $("printSolutionBtn").onclick=printSolution;
-  $("resetSolutionBtn").onclick=()=>{ resetSolutionState(); buildSolution(); };
-  $("resetFlowerBtn").onclick=()=>{ if(confirm("Einschätzung zurücksetzen?")) resetFlower(); };
-
-  document.querySelectorAll(".nav-item").forEach(b=>{ b.onclick=()=>goNav(b.dataset.nav); });
+  ni.oninput=()=>{ store.name=ni.value.trim(); save(); updateGreeting(); };
+  // letztes Lernfeld für die Navigation vormerken, aber auf der Startseite bleiben
+  activeModuleId = (store.lastModule && MODULES[store.lastModule]) ? store.lastModule : null;
+  goHome();
 });
 
 /* Service Worker (PWA) – nur über http/https */
