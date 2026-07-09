@@ -150,6 +150,7 @@ button:active{transform:scale(0.97);}
 #worksheet .ws-head .pen{font-size:30px;}
 #worksheet h2{font-size:19px; margin:0;}
 #worksheet .ws-name{margin:14px 0; font-size:17px;}
+#worksheet .ws-task{background:#f2f6fc; border:1.5px solid #000; border-radius:8px; padding:10px 12px; margin:12px 0; font-size:15px; line-height:1.45;}
 #worksheet .ws-box{border:1.5px solid #000; border-radius:8px; padding:10px; margin:12px 0;}
 #worksheet .ws-step{margin:14px 0;}
 #worksheet .ws-step .lead{font-weight:700; margin-bottom:2px;}
@@ -503,10 +504,10 @@ function buildBasics(){
    ============================================================ */
 function buildWorksheet(){
   const r=REZEPTE[rezept];
-  const stepLines = r.schritte.map(s=>`
+  const stepLines = r.schritte.map((s,i)=>`
     <div class="ws-step">
-      <div class="lead">${s.lead}</div>
-      <div class="cue">Stichworte: ${s.cue}</div>
+      <div class="lead">${s.lead}: Schreibe den ${i+1}. Schritt in einem ganzen Satz auf die Zeilen.</div>
+      <div class="cue">Diese Stichworte helfen dir: ${s.cue}</div>
       <div class="writeline"></div>
       <div class="writeline"></div>
     </div>`).join("");
@@ -527,13 +528,19 @@ function buildWorksheet(){
     </div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
 
+    <div class="ws-task">
+      <b>Deine Aufgabe:</b> Schreibe eine Vorgangsbeschreibung zum Thema „${r.name}“.
+      Schreibe zu jedem Schritt einen ganzen Satz in der Ich-Form. Benutze verschiedene
+      Satzanfänge und setze am Ende jedes Satzes einen Punkt.
+    </div>
+
     <div class="ws-box">
-      <b>Überschrift:</b>
+      <b>Schreibe hier deine Überschrift:</b>
       <div class="writeline"></div>
     </div>
 
     <div class="ws-box">
-      <b>Das brauche ich (Zutaten &amp; Hilfsmittel):</b>
+      <b>Schreibe hier, was du brauchst (Zutaten &amp; Hilfsmittel):</b>
       <div class="writeline"></div>
       <div class="writeline"></div>
     </div>
