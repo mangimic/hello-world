@@ -152,11 +152,11 @@ button:active{transform:scale(0.97);}
 #worksheet .ws-name{margin:14px 0; font-size:17px;}
 #worksheet .ws-task{background:#f2f6fc; border:1.5px solid #000; border-radius:8px; padding:10px 12px; margin:12px 0; font-size:15px; line-height:1.45;}
 #worksheet .ws-box{border:1.5px solid #000; border-radius:8px; padding:10px; margin:12px 0;}
-#worksheet .ws-step{margin:14px 0;}
+#worksheet .ws-step{margin:20px 0;}
 #worksheet .ws-step .lead{font-weight:700; margin-bottom:2px;}
-#worksheet .ws-step .cue{color:#555; font-size:14px; margin-bottom:8px;}
-/* handgeschriebene Zeilen */
-#worksheet .writeline{border-bottom:1.6px solid #333; height:30px; margin:0 0 8px;}
+#worksheet .ws-step .cue{color:#555; font-size:14px; margin-bottom:12px;}
+/* handgeschriebene Zeilen – viel Platz für große Handschrift */
+#worksheet .writeline{border-bottom:1.6px solid #333; height:46px; margin:0 0 12px;}
 #worksheet .starters{font-size:14px; color:#333; border:1.2px dashed #666; border-radius:8px; padding:8px 10px; margin:12px 0;}
 #worksheet .ws-check{margin-top:12px;}
 #worksheet .ws-check .cline{display:flex; align-items:center; gap:8px; margin:6px 0; font-size:15px;}
@@ -172,7 +172,7 @@ button:active{transform:scale(0.97);}
   .bottom-nav, .screen{display:none !important;}
   #printArea{display:block !important;}
   #worksheet{border:none; border-radius:0; padding:0; font-size:12pt;}
-  #worksheet .writeline{height:34px;}
+  #worksheet .writeline{height:12mm;}
 }
 #printArea{display:none;}
 </style>
@@ -508,6 +508,7 @@ function buildWorksheet(){
     <div class="ws-step">
       <div class="lead">${s.lead}: Schreibe den ${i+1}. Schritt in einem ganzen Satz auf die Zeilen.</div>
       <div class="cue">Diese Stichworte helfen dir: ${s.cue}</div>
+      <div class="writeline"></div>
       <div class="writeline"></div>
       <div class="writeline"></div>
     </div>`).join("");
