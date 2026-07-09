@@ -97,6 +97,7 @@ button:active{transform:scale(0.97);}
 .word{display:inline-block; padding:2px 6px; margin:2px 0; border-radius:8px; cursor:pointer;
   border-bottom:3px solid transparent;}
 .word.sel{color:var(--blue-ink); font-weight:700; border-bottom-color:var(--blue-ink); background:#eaf1fc;}
+.word.selp{color:#b23b3b; font-weight:700; border-bottom-color:#b23b3b; background:#fbeceb;}
 @media (hover:hover){ .word:hover{background:#eef2f8;} }
 
 /* Lösung */
@@ -806,6 +807,154 @@ function sjWorksheetHTML(){
 function sjFlower(c){ renderFlower(c, MODULES.subjekt.self, store.subjekt.self); }
 
 /* ============================================================
+   MODUL 3: PRÄDIKAT (Grammatik, interaktiv)
+   ============================================================ */
+const PRAED_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["Der","kleine","Junge","spielt","mit","dem","Ball."], praed:[3], praedText:"spielt"},
+    {woerter:["Ein","Mädchen","streichelt","die","süße","Katze."], praed:[2], praedText:"streichelt"},
+    {woerter:["Der","Postbote","kommt","mit","dem","Fahrrad."], praed:[2], praedText:"kommt"},
+    {woerter:["Der","Mann","öffnet","die","Tür."], praed:[2], praedText:"öffnet"},
+    {woerter:["Der","Ball","springt","hoch."], praed:[2], praedText:"springt"},
+    {woerter:["Schildkröten","sind","Reptilien."], praed:[1], praedText:"sind"},
+    {woerter:["Ihr","Panzer","schützt","sie","vor","Gefahren."], praed:[2], praedText:"schützt"},
+    {woerter:["Sie","fressen","Früchte","und","Gemüse."], praed:[1], praedText:"fressen"},
+    {woerter:["Am","Morgen","singt","der","Vogel","laut."], praed:[2], praedText:"singt"},
+    {woerter:["Heute","backt","die","Oma","einen","Kuchen."], praed:[1], praedText:"backt"},
+    {woerter:["Im","Garten","spielen","die","Kinder."], praed:[2], praedText:"spielen"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["Der","Angler","wirft","die","Schnur","aus."], praed:[2,5], praedText:"wirft … aus"},
+    {woerter:["Ein","großer","Hecht","schwimmt","im","See."], praed:[3], praedText:"schwimmt"},
+    {woerter:["Die","Pose","taucht","plötzlich","unter."], praed:[2,4], praedText:"taucht … unter"},
+    {woerter:["Der","Junge","fängt","einen","Zander."], praed:[2], praedText:"fängt"},
+    {woerter:["Der","Wurm","zappelt","am","Haken."], praed:[2], praedText:"zappelt"},
+    {woerter:["Die","Rotfeder","frisst","kleine","Insekten."], praed:[2], praedText:"frisst"},
+    {woerter:["Am","Ufer","sitzt","der","Angler","ruhig."], praed:[2], praedText:"sitzt"},
+    {woerter:["Die","Angelrute","biegt","sich","stark."], praed:[2], praedText:"biegt"},
+    {woerter:["Im","Wasser","glänzen","die","Fische."], praed:[2], praedText:"glänzen"},
+    {woerter:["Der","Kescher","hebt","den","Fisch","heraus."], praed:[2,5], praedText:"hebt … heraus"},
+    {woerter:["Zwei","Angler","teilen","sich","ein","Boot."], praed:[2], praedText:"teilen"}
+  ]}
+};
+function praedSaetze(){ return PRAED_THEMEN[store.praedikat.thema].saetze; }
+
+const KRIT_PRAED = [
+  "Habe ich das Tun-Wort (Prädikat) gefunden?",
+  "Habe ich gefragt „Was tut …?“ oder „Was passiert?“?",
+  "Habe ich bei zweiteiligen Prädikaten beide Teile markiert?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_PRAED_FORM = [
+  "Ich habe das Prädikat ordentlich markiert.",
+  "Ich habe die Sätze genau gelesen.",
+  "Ich habe meine Antworten überprüft."
+];
+
+let praedIdx = 0;
+
+// --- Bereich „Lernen" ---
+function pjLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="praedThemes"></div></div>
+    <div class="card"><h2>📖 Was ist das Prädikat?</h2>
+      <p>Das <b>Prädikat</b> ist die <b>Satzaussage</b>. Es sagt, <b>was passiert</b> oder
+      <b>was jemand tut</b>. Das Prädikat ist das <b>Tun-Wort</b> (Verb).</p></div>
+    <div class="card"><h3>Die Frage 🪄</h3>
+      <div class="hint">Frage: <b>„Was tut das Subjekt?“</b> oder <b>„Was passiert?“</b></div></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="sentence-box">Der kleine Junge <span class="word selp">spielt</span> mit dem Ball.</div>
+      <p><b>Was tut</b> der Junge? → <b>spielt</b> (das ist das Prädikat, rot).</p></div>
+    <div class="card"><h3>Gut zu wissen</h3>
+      <p>Manchmal hat das Prädikat <b>zwei Teile</b>:</p>
+      <div class="sentence-box">Der Angler <span class="word selp">wirft</span> die Schnur <span class="word selp">aus</span>.</div>
+      <p>→ <b>wirft … aus</b> gehört zusammen.</p></div>
+    <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  const grid=c.querySelector("#praedThemes");
+  Object.keys(PRAED_THEMEN).forEach(key=>{
+    const t=PRAED_THEMEN[key];
+    const div=document.createElement("div");
+    div.className="choice"+(key===store.praedikat.thema?" selected":"");
+    div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
+    div.onclick=()=>{ store.praedikat.thema=key; praedIdx=0; save(); pjLernen(c); };
+    grid.appendChild(div);
+  });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+
+// --- Bereich „Üben" (Prädikat antippen) ---
+function pjUeben(c){
+  const S=praedSaetze();
+  if(praedIdx>=S.length) praedIdx=0;
+  const s=S[praedIdx];
+  const selected=new Set();
+  const zweiteilig = s.praed.length>1;
+  c.innerHTML = `
+    <div class="card">
+      <h2>✏️ Prädikat finden</h2>
+      <p class="muted">Satz ${praedIdx+1} von ${S.length}</p>
+      <div class="hint">Tippe das <b>Prädikat</b> an – das <b>Tun-Wort</b> (was passiert / was jemand tut).${zweiteilig?"<br>⚠️ Dieses Prädikat hat <b>zwei Teile</b> – tippe beide an!":""}</div>
+      <div class="sentence-box" id="pbox"></div>
+      <div id="pfb"></div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-secondary btn-small" id="checkBtn" style="flex:1;">Prüfen</button>
+        <button class="btn-primary btn-small" id="nextBtn" style="flex:1;">Nächster Satz</button>
+      </div>
+    </div>`;
+  const box=c.querySelector("#pbox");
+  s.woerter.forEach((w,i)=>{
+    const sp=document.createElement("span");
+    sp.className="word"; sp.textContent=w;
+    sp.onclick=()=>{ if(selected.has(i)){ selected.delete(i); sp.classList.remove("selp"); }
+      else { selected.add(i); sp.classList.add("selp"); } c.querySelector("#pfb").innerHTML=""; };
+    box.appendChild(sp); box.appendChild(document.createTextNode(" "));
+  });
+  c.querySelector("#checkBtn").onclick=()=>{
+    const chosen=[...selected].sort((a,b)=>a-b);
+    const correct = chosen.length===s.praed.length && chosen.every((v,k)=>v===s.praed[k]);
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    d.textContent = correct ? "Richtig! Das ist das Prädikat (Tun-Wort). 🌟"
+                            : "Fast! Das Prädikat sagt, was passiert. Frag dich: Was tut das Subjekt?";
+    const fb=c.querySelector("#pfb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#nextBtn").onclick=()=>{ praedIdx=(praedIdx+1)%S.length; pjUeben(c); window.scrollTo(0,0); };
+}
+
+// --- Bereich „Blatt" ---
+function pjSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und übe das <b>Prädikat unterstreichen</b> mit der Hand.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=praedWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function praedWorksheetHTML(){
+  const thema=PRAED_THEMEN[store.praedikat.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Unterstreiche das Prädikat (Tun-Wort). Manche haben zwei Teile.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">⚡</span><h2>Prädikat (${thema.name}) – das Tun-Wort</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Prädikat</b> (das Tun-Wort).
+      Finde es mit der Frage „<b>Was tut …?</b>“ oder „<b>Was passiert?</b>“. Achtung: manche Prädikate haben zwei Teile!</div>
+    ${lines}`;
+}
+
+// --- Bereich „Blume" ---
+function pjFlower(c){ renderFlower(c, MODULES.praedikat.self, store.praedikat.self); }
+
+/* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
@@ -831,6 +980,16 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:sjFlower}
     ],
     self:{ groups:[{title:"Subjekt finden", fragen:KRIT_SUBJEKT}], form:KRIT_SUBJEKT_FORM }
+  },
+  praedikat:{
+    id:"praedikat", name:"Prädikat", emoji:"⚡",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:pjLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:pjUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:pjSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:pjFlower}
+    ],
+    self:{ groups:[{title:"Prädikat finden", fragen:KRIT_PRAED}], form:KRIT_PRAED_FORM }
   }
 };
 
@@ -841,7 +1000,8 @@ let store = {
   name:"",
   lastModule:"vorgang",
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
-  subjekt:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  subjekt:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -858,6 +1018,10 @@ function load(){
     if(d.subjekt){
       if(SUBJ_THEMEN[d.subjekt.thema]) store.subjekt.thema=d.subjekt.thema;
       if(d.subjekt.self) mergeSelf(store.subjekt.self, d.subjekt.self);
+    }
+    if(d.praedikat){
+      if(PRAED_THEMEN[d.praedikat.thema]) store.praedikat.thema=d.praedikat.thema;
+      if(d.praedikat.self) mergeSelf(store.praedikat.self, d.praedikat.self);
     }
   }catch(e){}
 }
@@ -890,7 +1054,7 @@ function buildModuleChooser(){
 }
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
-  subjIdx=0; frageIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  subjIdx=0; frageIdx=0; praedIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
