@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Platzhalter-Icon: kann später durch ein echtes PNG-Icon ersetzt werden -->
+  <rect width="512" height="512" rx="96" fill="#4a7fd6"/>
+  <!-- Bleistift -->
+  <g transform="rotate(45 256 256)">
+    <rect x="226" y="120" width="60" height="230" rx="10" fill="#f5c451"/>
+    <rect x="226" y="120" width="60" height="34" rx="10" fill="#f0a35e"/>
+    <polygon points="226,350 286,350 256,410" fill="#ffe9b0"/>
+    <polygon points="241,385 271,385 256,410" fill="#2c3a4b"/>
+  </g>
+  <!-- Stern -->
+  <path fill="#fff" d="M150 300 l14 30 33 5 -24 23 6 33 -29 -16 -29 16 6 -33 -24 -23 33 -5 z"/>
+</svg>
