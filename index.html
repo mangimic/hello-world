@@ -2,47 +2,75 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<!-- Mobile-freundlich: skaliert korrekt auf iPad und Laptop -->
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<!-- Mobile-First: korrekte Skalierung, Notch-Bereiche (iPhone) berücksichtigen -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- PWA / Installierbar auf dem Home-Bildschirm -->
+<meta name="theme-color" content="#4a7fd6">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Felix übt">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+
 <title>Felix – Vorgangsbeschreibungen üben</title>
 <style>
 /* =========================================================
-   GRUNDLAYOUT & FARBEN
-   Ruhige, motivierende Farben. Große Elemente, wenig Text.
+   MOBILE-FIRST GRUNDLAYOUT
+   Basis-Styles gelten für kleine Smartphones. Größere
+   Geräte werden per Media Query erweitert.
+   Farben ruhig & motivierend. Große Touch-Flächen.
    ========================================================= */
 :root{
-  --bg:#eef4fb;          /* sanfter Hintergrund */
-  --card:#ffffff;        /* Kartenfläche */
-  --primary:#4a7fd6;     /* ruhiges Blau */
+  --bg:#eef4fb;
+  --card:#ffffff;
+  --primary:#4a7fd6;
   --primary-dark:#3a67b0;
-  --green:#5bb98c;       /* Erfolg */
+  --green:#5bb98c;
   --green-dark:#489a72;
-  --yellow:#f5c451;      /* Sterne */
-  --orange:#f0a35e;      /* Pausen */
-  --text:#2c3a4b;        /* dunkler Text */
-  --muted:#6b7a8d;       /* gedämpfter Text */
-  --soft:#dce7f4;        /* helle Umrandung */
+  --yellow:#f5c451;
+  --orange:#f0a35e;
+  --text:#2c3a4b;
+  --muted:#6b7a8d;
+  --soft:#dce7f4;
   --radius:18px;
   --shadow:0 6px 18px rgba(60,90,140,0.12);
+  --nav-h:66px;            /* Höhe der unteren Navigation */
+  --tap:48px;             /* Mindest-Touchgröße */
+  /* sichere Ränder für iPhone (Notch/Home-Indikator) */
+  --safe-bottom:env(safe-area-inset-bottom, 0px);
+  --safe-top:env(safe-area-inset-top, 0px);
 }
 
 *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
 
-body{
+html,body{
   margin:0;
+  /* Verhindert horizontales Scrollen auf allen Geräten */
+  overflow-x:hidden;
+  max-width:100%;
+}
+
+body{
   font-family:"Segoe UI", "Helvetica Neue", Arial, sans-serif;
   background:var(--bg);
   color:var(--text);
   line-height:1.5;
   font-size:18px;
-  padding-bottom:40px;
+  /* Platz unten für die fixierte Navigation + iPhone-Rand */
+  padding-bottom:calc(var(--nav-h) + var(--safe-bottom) + 12px);
+  -webkit-text-size-adjust:100%;
 }
 
 /* Zentrierter Inhaltsbereich */
 .app{
+  width:100%;
   max-width:760px;
   margin:0 auto;
-  padding:16px;
+  padding:12px;
+  padding-top:calc(12px + var(--safe-top));
 }
 
 /* Karten */
@@ -50,18 +78,19 @@ body{
   background:var(--card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  padding:22px;
-  margin-bottom:18px;
+  padding:18px;
+  margin-bottom:14px;
 }
 
-h1{font-size:26px; margin:0 0 8px;}
-h2{font-size:22px; margin:0 0 14px;}
-h3{font-size:19px; margin:0 0 10px;}
+h1{font-size:24px; margin:0 0 8px;}
+h2{font-size:21px; margin:0 0 12px;}
+h3{font-size:18px; margin:0 0 8px;}
 p{margin:0 0 12px;}
 .muted{color:var(--muted); font-size:16px;}
 
 /* =========================================================
-   BUTTONS – groß und klar
+   BUTTONS – mindestens 48x48px, klar, ohne Hover-Zwang
+   Hover ist nur eine Zugabe; alles funktioniert per Touch.
    ========================================================= */
 button{
   font-family:inherit;
@@ -69,227 +98,178 @@ button{
   cursor:pointer;
   border:none;
   border-radius:14px;
-  padding:14px 20px;
+  padding:14px 18px;
+  min-height:var(--tap);
   transition:transform .08s ease, background .15s ease;
+  touch-action:manipulation; /* schnelleres Tippen, kein Doppeltipp-Zoom */
 }
 button:active{transform:scale(0.97);}
 
 .btn-primary{
   background:var(--primary);
   color:#fff;
-  font-weight:600;
+  font-weight:700;
   width:100%;
   padding:18px;
   font-size:20px;
+  min-height:58px;
 }
-.btn-primary:hover{background:var(--primary-dark);}
-
 .btn-secondary{
   background:var(--soft);
   color:var(--text);
   font-weight:600;
+  min-height:var(--tap);
 }
-.btn-secondary:hover{background:#cdddf0;}
-
-.btn-green{background:var(--green); color:#fff; font-weight:600;}
-.btn-green:hover{background:var(--green-dark);}
-
-.btn-small{font-size:15px; padding:8px 14px;}
-
-/* dezenter Link-Button (z.B. Pause überspringen) */
+.btn-green{background:var(--green); color:#fff; font-weight:700;}
+.btn-small{font-size:16px; padding:10px 16px; min-height:var(--tap);}
 .btn-quiet{
   background:transparent;
   color:var(--muted);
   font-size:14px;
   text-decoration:underline;
-  padding:6px;
+  padding:10px;
+  min-height:auto;
+}
+/* Hover nur auf Geräten mit echtem Zeiger (Maus) */
+@media (hover:hover){
+  .btn-primary:hover{background:var(--primary-dark);}
+  .btn-secondary:hover{background:#cdddf0;}
+  .btn-green:hover{background:var(--green-dark);}
 }
 
 /* =========================================================
-   AUSWAHL-KARTEN (Trainings & Optionen)
+   AUSWAHL-KARTEN (Trainings)
    ========================================================= */
 .choice-grid{
   display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(150px,1fr));
+  grid-template-columns:1fr 1fr;   /* mobil: 2 Spalten */
   gap:12px;
-  margin:16px 0;
+  margin:14px 0;
 }
 .choice{
   background:var(--soft);
   border:3px solid transparent;
   border-radius:16px;
-  padding:20px 14px;
+  padding:18px 12px;
   text-align:center;
-  font-size:18px;
-  font-weight:600;
+  font-size:17px;
+  font-weight:700;
   color:var(--text);
+  min-height:96px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
 }
 .choice .emoji{display:block; font-size:34px; margin-bottom:6px;}
-.choice.selected{
-  border-color:var(--primary);
-  background:#e4eefb;
-}
+.choice.selected{ border-color:var(--primary); background:#e4eefb; }
 
 /* =========================================================
-   TIMER-LEISTE
+   TRAININGS-KOPF: Level · Sterne · Timer (eine Zeile)
    ========================================================= */
-.timerbar{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:12px;
+.train-top{
   background:var(--card);
   border-radius:var(--radius);
   box-shadow:var(--shadow);
-  padding:12px 18px;
-  margin-bottom:18px;
+  padding:12px 14px;
+  margin-bottom:14px;
   position:sticky;
-  top:8px;
-  z-index:50;
+  top:calc(6px + var(--safe-top));
+  z-index:40;
 }
-.timer-clock{
-  font-size:24px;
-  font-weight:700;
-  font-variant-numeric:tabular-nums;
+.train-top .row{
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
 }
-.timer-phase{font-size:14px; color:var(--muted);}
-.timer-progress{
-  flex:1;
-  height:10px;
-  background:var(--soft);
-  border-radius:6px;
-  overflow:hidden;
-  margin:0 8px;
-}
-.timer-progress > div{
-  height:100%;
-  background:var(--green);
-  width:100%;
-  transition:width 1s linear;
-}
-.timer-progress.pause > div{background:var(--orange);}
-
-/* =========================================================
-   STERNE & FORTSCHRITT
-   ========================================================= */
-.score-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  flex-wrap:wrap;
-  gap:10px;
-}
-.stars{font-size:22px; color:var(--yellow); font-weight:700;}
 .level-badge{
-  background:#fff4d6;
-  color:#a67c19;
-  padding:6px 14px;
-  border-radius:20px;
-  font-weight:700;
-  font-size:15px;
+  background:#fff4d6; color:#a67c19;
+  padding:6px 12px; border-radius:20px; font-weight:700; font-size:14px;
+  white-space:nowrap;
 }
-.progress-outer{
-  height:16px;
-  background:var(--soft);
-  border-radius:10px;
-  overflow:hidden;
-  margin-top:10px;
+.stars{font-size:20px; color:#c99a1e; font-weight:800; white-space:nowrap;}
+.timer-clock{ font-size:22px; font-weight:800; font-variant-numeric:tabular-nums; }
+.timer-phase{font-size:12px; color:var(--muted); text-align:right;}
+.timer-progress{
+  height:8px; background:var(--soft); border-radius:6px; overflow:hidden; margin-top:8px;
 }
+.timer-progress > div{ height:100%; background:var(--green); width:100%; transition:width 1s linear; }
+
+/* Fortschrittsbalken (Level) */
+.progress-outer{ height:14px; background:var(--soft); border-radius:10px; overflow:hidden; margin-top:8px; }
 .progress-inner{
-  height:100%;
-  background:linear-gradient(90deg,var(--green),var(--yellow));
-  width:0%;
-  transition:width .4s ease;
+  height:100%; background:linear-gradient(90deg,var(--green),var(--yellow));
+  width:0%; transition:width .4s ease;
 }
 
 /* =========================================================
-   ÜBUNG 1: Satzanfänge sortieren
+   ÜBUNG 1: Satzanfänge zuordnen
    ========================================================= */
 .step-line{
-  display:flex;
-  align-items:center;
-  gap:12px;
-  background:var(--soft);
-  border-radius:14px;
-  padding:12px;
-  margin-bottom:10px;
+  display:flex; align-items:center; gap:10px;
+  background:var(--soft); border-radius:14px; padding:12px; margin-bottom:10px;
   flex-wrap:wrap;
 }
 .step-num{
-  background:var(--primary);
-  color:#fff;
-  width:34px;height:34px;
-  border-radius:50%;
-  display:flex;align-items:center;justify-content:center;
-  font-weight:700;
-  flex:0 0 auto;
+  background:var(--primary); color:#fff;
+  width:36px;height:36px; border-radius:50%;
+  display:flex;align-items:center;justify-content:center; font-weight:800; flex:0 0 auto;
 }
-.step-text{flex:1; min-width:140px; font-size:16px;}
+.step-text{flex:1; min-width:120px; font-size:17px;}
 .step-choice{
-  min-width:150px;
-  padding:10px;
-  border-radius:12px;
-  border:2px solid var(--soft);
-  font-size:16px;
-  font-family:inherit;
-  background:#fff;
+  width:100%;
+  padding:12px; border-radius:12px; border:2px solid var(--soft);
+  font-size:18px; font-family:inherit; background:#fff; color:var(--text);
+  min-height:var(--tap);
 }
+select.step-choice{ appearance:none; -webkit-appearance:none; background-image:none; }
 
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
 .chip{
-  background:#e4eefb;
-  border:2px solid var(--primary);
-  color:var(--primary-dark);
-  border-radius:20px;
-  padding:8px 14px;
-  font-weight:600;
-  font-size:15px;
+  background:#e4eefb; border:2px solid var(--primary); color:var(--primary-dark);
+  border-radius:20px; padding:8px 14px; font-weight:700; font-size:15px;
 }
 .chip.used{opacity:.35; text-decoration:line-through;}
 
 /* =========================================================
-   EINGABEFELDER
+   EINGABEFELDER – groß & gut lesbar
    ========================================================= */
 textarea{
   width:100%;
-  min-height:80px;
+  min-height:96px;
   font-family:inherit;
-  font-size:18px;
+  font-size:19px;            /* > 18px für Eingaben */
+  line-height:1.5;
   padding:14px;
   border-radius:14px;
   border:2px solid var(--soft);
-  resize:vertical;
-  background:#fff;
-  color:var(--text);
+  resize:none;               /* Höhe wächst automatisch per JS */
+  background:#fff; color:var(--text);
+  overflow:hidden;
 }
 textarea:focus{outline:none; border-color:var(--primary);}
 textarea:disabled{background:#f0f2f5; color:var(--muted);}
 
-.hint{
-  background:#fff8e6;
-  border-left:4px solid var(--yellow);
-  padding:10px 14px;
-  border-radius:8px;
-  font-size:15px;
-  margin:10px 0;
+input[type=text]{
+  width:100%; font-family:inherit; font-size:19px; padding:14px;
+  border-radius:12px; border:2px solid var(--soft); background:#fff; color:var(--text);
+  min-height:var(--tap);
 }
 
-/* Feedback-Kästchen */
-.feedback{
-  margin-top:10px;
-  padding:12px 14px;
-  border-radius:12px;
-  font-size:16px;
-  font-weight:600;
+.hint{
+  background:#fff8e6; border-left:4px solid var(--yellow);
+  padding:12px 14px; border-radius:8px;
+  font-size:20px;            /* wichtige Hinweise >= 20px */
+  margin:12px 0;
 }
+
+.feedback{ margin-top:10px; padding:12px 14px; border-radius:12px; font-size:17px; font-weight:700; }
 .feedback.ok{background:#e6f6ee; color:var(--green-dark);}
 .feedback.tip{background:#fff8e6; color:#a67c19;}
 
-/* Check-Ergebnisse pro Satz */
-.checks{list-style:none; padding:0; margin:8px 0 0; font-size:15px;}
-.checks li{margin:4px 0;}
-.checks .yes::before{content:"✅ "; }
-.checks .no::before{content:"➕ "; }
+.checks{list-style:none; padding:0; margin:10px 0 0; font-size:16px;}
+.checks li{margin:6px 0;}
+.checks .yes::before{content:"✅ ";}
+.checks .no::before{content:"➕ ";}
 
 /* =========================================================
    CHECKLISTE
@@ -297,81 +277,121 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
 .checklist{list-style:none; padding:0; margin:0;}
 .checklist li{
   display:flex; align-items:center; gap:12px;
-  padding:12px;
-  background:var(--soft);
-  border-radius:12px;
-  margin-bottom:8px;
-  cursor:pointer;
-  font-size:17px;
+  padding:14px; background:var(--soft); border-radius:12px; margin-bottom:8px;
+  font-size:17px; min-height:var(--tap); cursor:pointer;
 }
-.checklist input{width:24px;height:24px; flex:0 0 auto;}
+.checklist input{width:26px;height:26px; flex:0 0 auto;}
 
 /* =========================================================
-   PAUSEN-OVERLAY
+   TRAININGS-LAYOUT: oben fest, Mitte wächst, Aktion unten
+   Flex-Spalte -> die große Taste liegt immer unter der
+   Aufgabe und überdeckt nie den Inhalt.
+   ========================================================= */
+#screen-train.active{
+  display:flex;
+  flex-direction:column;
+  /* füllt mindestens den sichtbaren Bereich über der Navigation */
+  min-height:calc(100dvh - var(--nav-h) - var(--safe-bottom) - var(--safe-top) - 24px);
+}
+#exerciseArea{ flex:1 1 auto; }
+.action-bar{ margin-top:6px; }
+.action-bar .btn-primary{ box-shadow:0 8px 20px rgba(60,90,140,0.22); }
+
+/* =========================================================
+   UNTERE NAVIGATION (mobil, immer sichtbar)
+   ========================================================= */
+.bottom-nav{
+  position:fixed; left:0; right:0; bottom:0; z-index:60;
+  display:flex;
+  background:var(--card);
+  box-shadow:0 -4px 16px rgba(60,90,140,0.12);
+  padding-bottom:var(--safe-bottom);
+}
+.nav-item{
+  flex:1;
+  background:transparent; border:none;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:2px;
+  height:var(--nav-h);
+  min-height:var(--tap);
+  color:var(--muted); font-size:12px; font-weight:600;
+  border-radius:0;
+}
+.nav-item .ni{font-size:24px; line-height:1;}
+.nav-item.active{ color:var(--primary); }
+.nav-item.active .ni{ transform:translateY(-1px); }
+
+/* =========================================================
+   PAUSEN- & KONZENTRATIONS-OVERLAY
    ========================================================= */
 .overlay{
-  position:fixed; inset:0;
-  background:rgba(44,58,75,0.55);
-  display:none;
-  align-items:center; justify-content:center;
-  z-index:100;
-  padding:20px;
+  position:fixed; inset:0; background:rgba(44,58,75,0.55);
+  display:none; align-items:center; justify-content:center;
+  z-index:100; padding:18px;
 }
 .overlay.show{display:flex;}
 .pause-card{
-  background:var(--card);
-  border-radius:24px;
-  padding:32px 26px;
-  text-align:center;
-  max-width:420px;
-  width:100%;
-  box-shadow:var(--shadow);
+  background:var(--card); border-radius:24px; padding:28px 22px; text-align:center;
+  max-width:420px; width:100%; box-shadow:var(--shadow);
 }
-.pause-emoji{font-size:56px; margin-bottom:10px;}
-.pause-clock{
-  font-size:40px; font-weight:700; color:var(--orange);
-  font-variant-numeric:tabular-nums; margin:10px 0;
+.pause-emoji{font-size:52px; margin-bottom:8px;}
+.pause-clock{ font-size:38px; font-weight:800; color:var(--orange);
+  font-variant-numeric:tabular-nums; margin:10px 0; }
+
+/* Konzentrations-Smileys */
+.mood-row{display:flex; gap:12px; justify-content:center; margin:16px 0;}
+.mood{
+  flex:1; max-width:110px;
+  background:var(--soft); border:3px solid transparent; border-radius:18px;
+  padding:14px 6px; font-size:40px; min-height:var(--tap);
 }
+.mood .lbl{display:block; font-size:14px; font-weight:700; color:var(--text); margin-top:4px;}
+.mood.selected{border-color:var(--primary); background:#e4eefb;}
 
 /* =========================================================
-   ELTERNBEREICH
+   FORTSCHRITT / PROFIL & ELTERN
    ========================================================= */
-.parent-panel{display:none;}
-.parent-panel.show{display:block;}
-.parent-panel ul{padding-left:22px;}
-.parent-panel li{margin:6px 0;}
 .tag{
-  display:inline-block;
-  background:#e4eefb;
-  color:var(--primary-dark);
-  border-radius:14px;
-  padding:4px 12px;
-  margin:3px;
-  font-size:14px;
-  font-weight:600;
+  display:inline-block; background:#e4eefb; color:var(--primary-dark);
+  border-radius:14px; padding:6px 12px; margin:3px; font-size:14px; font-weight:700;
 }
+.stat-grid{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:10px 0; }
+.stat{
+  background:var(--soft); border-radius:14px; padding:14px; text-align:center;
+}
+.stat .big{font-size:26px; font-weight:800; color:var(--primary-dark);}
+.stat .lbl{font-size:13px; color:var(--muted); font-weight:600;}
 
-/* Abschlusstext */
+.history-item{
+  background:var(--soft); border-radius:12px; padding:12px; margin-bottom:8px; font-size:15px;
+}
+.history-item b{color:var(--text);}
+
 .final-text{
-  background:var(--soft);
-  border-radius:14px;
-  padding:16px;
-  white-space:pre-wrap;
-  font-size:17px;
-  line-height:1.6;
+  background:var(--soft); border-radius:14px; padding:16px;
+  white-space:pre-wrap; font-size:18px; line-height:1.6;
 }
 
 /* Screen-Umschaltung */
 .screen{display:none;}
 .screen.active{display:block;}
-
-/* kleine Hilfsklassen */
 .center{text-align:center;}
-.mt{margin-top:14px;}
-.row-between{display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;}
-.pill{
-  background:var(--soft); border-radius:20px; padding:6px 14px;
-  font-size:14px; font-weight:600;
+.mt{margin-top:12px;}
+
+/* =========================================================
+   GRÖSSERE GERÄTE (Tablet quer / Laptop)
+   ========================================================= */
+@media (min-width:600px){
+  .choice-grid{ grid-template-columns:repeat(3,1fr); }  /* mehr Spalten */
+  .step-choice{ width:auto; min-width:200px; flex:0 0 auto; }
+  body{font-size:19px;}
+}
+@media (min-width:900px){
+  .choice-grid{ grid-template-columns:repeat(5,1fr); }
+}
+/* Sehr niedrige Displays im Querformat: Kopf nicht kleben lassen */
+@media (max-height:480px){
+  .train-top{position:static;}
 }
 </style>
 </head>
@@ -383,52 +403,22 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
        ========================================================== -->
   <section id="screen-start" class="screen active">
     <div class="card center">
-      <div style="font-size:52px;">✏️😊</div>
-      <h1>Hallo Felix!</h1>
+      <div style="font-size:48px;">✏️😊</div>
+      <h1>Hallo <span id="helloName">Felix</span>!</h1>
       <p>Heute trainierst du <b>Vorgangsbeschreibungen</b>.<br>
-      Das heißt: Schritt für Schritt genau beschreiben.</p>
+      Schritt für Schritt genau beschreiben.</p>
     </div>
 
     <div class="card">
       <h2>Wähle dein Training</h2>
-      <div class="choice-grid" id="trainingChoices">
-        <!-- Trainings werden per JavaScript eingefügt -->
-      </div>
+      <div class="choice-grid" id="trainingChoices"></div>
 
-      <!-- Eingabefeld für eigene Übung (versteckt bis ausgewählt) -->
       <div id="ownTopicWrap" style="display:none;">
         <label class="muted" for="ownTopic">Wie heißt deine eigene Übung?</label>
-        <input id="ownTopic" class="step-choice" style="width:100%; margin-top:6px;"
-               placeholder="z. B. Sandburg bauen" />
+        <input id="ownTopic" type="text" style="margin-top:6px;" placeholder="z. B. Sandburg bauen">
       </div>
 
       <button class="btn-primary mt" id="startBtn" disabled>Training starten</button>
-    </div>
-
-    <div class="card center">
-      <button class="btn-secondary btn-small" id="openParentBtn">Für Mama/Papa</button>
-      <button class="btn-quiet" id="resetProgressBtn">Fortschritt löschen</button>
-    </div>
-
-    <!-- ELTERNBEREICH -->
-    <div class="card parent-panel" id="parentPanel">
-      <h2>Für Mama/Papa 👋</h2>
-      <p class="muted">Kein Notendruck – hier steht, was Felix gerade übt und entwickelt.</p>
-
-      <h3>Was hier geübt wird</h3>
-      <ul>
-        <li>Ein Schritt = ein vollständiger Satz</li>
-        <li>Fragen beantworten: Was? Wohin? Womit? Was mache ich?</li>
-        <li>Abwechslungsreiche Satzanfänge</li>
-        <li>Selbstkontrolle mit einer Checkliste</li>
-      </ul>
-
-      <div id="parentLive">
-        <!-- Live-Auswertung nach einer Übung -->
-        <p class="muted">Noch keine Übung abgeschlossen. Nach dem Training erscheint hier eine kleine Auswertung.</p>
-      </div>
-
-      <button class="btn-secondary btn-small mt" id="closeParentBtn">Schließen</button>
     </div>
   </section>
 
@@ -436,33 +426,26 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
        TRAININGSSCREEN
        ========================================================== -->
   <section id="screen-train" class="screen">
-
-    <!-- Timerleiste -->
-    <div class="timerbar">
-      <div>
-        <div class="timer-clock" id="timerClock">08:00</div>
-        <div class="timer-phase" id="timerPhase">Fokusphase 1</div>
+    <!-- Kopf: Level · Sterne · Timer -->
+    <div class="train-top">
+      <div class="row">
+        <span class="level-badge" id="levelDisplay">Level 1 · Satz-Starter</span>
+        <span class="stars" id="starDisplay">⭐ 0</span>
+        <span>
+          <span class="timer-clock" id="timerClock">08:00</span>
+          <span class="timer-phase" id="timerPhase">Fokus 1</span>
+        </span>
       </div>
-      <div class="timer-progress" id="timerProgress"><div id="timerFill"></div></div>
-      <button class="btn-secondary btn-small" id="pauseNowBtn">Pause</button>
-    </div>
-
-    <!-- Punkte & Level -->
-    <div class="card">
-      <div class="score-row">
-        <div class="stars" id="starDisplay">⭐ 0</div>
-        <div class="level-badge" id="levelDisplay">Level 1 · Satz-Starter</div>
-      </div>
+      <div class="timer-progress"><div id="timerFill"></div></div>
       <div class="progress-outer"><div class="progress-inner" id="levelProgress"></div></div>
-      <div class="muted center" id="levelHint" style="margin-top:6px;"></div>
     </div>
 
-    <!-- Übungsinhalt wird hier eingefügt -->
+    <!-- Mitte: aktuelle Aufgabe -->
     <div id="exerciseArea"></div>
 
-    <div class="card">
+    <!-- Unten: große Aktionstaste -->
+    <div class="action-bar">
       <button class="btn-primary" id="nextExerciseBtn">Weiter</button>
-      <button class="btn-quiet" id="backToStartBtn" style="width:100%;">Training abbrechen</button>
     </div>
   </section>
 
@@ -471,9 +454,9 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
        ========================================================== -->
   <section id="screen-done" class="screen">
     <div class="card center">
-      <div style="font-size:52px;">🏆</div>
-      <h1>Super gemacht, Felix!</h1>
-      <div class="stars" id="finalStars" style="font-size:26px;">⭐ 0</div>
+      <div style="font-size:48px;">🏆</div>
+      <h1>Super gemacht!</h1>
+      <div class="stars" id="finalStars" style="font-size:24px;">⭐ 0</div>
       <div class="level-badge" id="finalLevel" style="margin-top:8px;">Level 1 · Satz-Starter</div>
     </div>
 
@@ -499,7 +482,70 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
     </div>
   </section>
 
+  <!-- ==========================================================
+       FORTSCHRITT / PROFIL
+       ========================================================== -->
+  <section id="screen-progress" class="screen">
+    <div class="card">
+      <h2>📈 Dein Fortschritt</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="big" id="pStars">0</div><div class="lbl">Sterne</div></div>
+        <div class="stat"><div class="big" id="pPoints">0</div><div class="lbl">Punkte gesamt</div></div>
+        <div class="stat"><div class="big" id="pLevel">1</div><div class="lbl">Level</div></div>
+        <div class="stat"><div class="big" id="pRuns">0</div><div class="lbl">Übungen</div></div>
+      </div>
+      <div class="level-badge" id="pLevelName" style="display:inline-block;">Satz-Starter</div>
+      <div class="progress-outer"><div class="progress-inner" id="pLevelProgress"></div></div>
+      <div class="muted center" id="pLevelHint" style="margin-top:6px;"></div>
+    </div>
+
+    <div class="card">
+      <h3>Verlauf</h3>
+      <div id="historyList"><p class="muted">Noch keine Übung abgeschlossen.</p></div>
+    </div>
+
+    <div class="card">
+      <h3>Daten sichern & übertragen</h3>
+      <p class="muted">Speichere den Fortschritt als Datei oder lade ihn auf einem anderen Gerät.</p>
+      <button class="btn-secondary btn-small" id="exportBtn" style="width:100%; margin-bottom:8px;">💾 Fortschritt sichern</button>
+      <button class="btn-secondary btn-small" id="importBtn" style="width:100%;">📂 Fortschritt laden</button>
+      <input type="file" id="importFile" accept="application/json,.json" style="display:none;">
+      <div class="feedback ok" id="ioMsg" style="display:none;"></div>
+      <button class="btn-quiet mt" id="resetProgressBtn" style="width:100%;">Fortschritt löschen</button>
+    </div>
+  </section>
+
+  <!-- ==========================================================
+       ELTERNBEREICH
+       ========================================================== -->
+  <section id="screen-parent" class="screen">
+    <div class="card">
+      <h2>👨‍👩‍👦 Für Mama/Papa</h2>
+      <p class="muted">Kein Notendruck – hier steht, was Felix gerade übt und entwickelt.</p>
+      <h3>Was hier geübt wird</h3>
+      <ul>
+        <li>Ein Schritt = ein vollständiger Satz</li>
+        <li>Fragen beantworten: Was? Wohin? Womit? Was mache ich?</li>
+        <li>Abwechslungsreiche Satzanfänge</li>
+        <li>Selbstkontrolle mit einer Checkliste</li>
+      </ul>
+    </div>
+    <div class="card" id="parentLive">
+      <p class="muted">Nach der ersten Übung erscheint hier eine kleine Auswertung.</p>
+    </div>
+  </section>
+
 </div>
+
+<!-- ==========================================================
+     UNTERE NAVIGATION
+     ========================================================== -->
+<nav class="bottom-nav">
+  <button class="nav-item active" data-nav="start"><span class="ni">🏠</span>Start</button>
+  <button class="nav-item" data-nav="training"><span class="ni">⭐</span>Training</button>
+  <button class="nav-item" data-nav="progress"><span class="ni">📈</span>Fortschritt</button>
+  <button class="nav-item" data-nav="parent"><span class="ni">👨‍👩‍👦</span>Eltern</button>
+</nav>
 
 <!-- ==========================================================
      PAUSEN-OVERLAY
@@ -516,106 +562,82 @@ textarea:disabled{background:#f0f2f5; color:var(--muted);}
   </div>
 </div>
 
+<!-- ==========================================================
+     KONZENTRATIONS-OVERLAY (vorher / nachher)
+     ========================================================== -->
+<div class="overlay" id="moodOverlay">
+  <div class="pause-card">
+    <div class="pause-emoji">🧠</div>
+    <h2 id="moodTitle">Wie gut kannst du dich gerade konzentrieren?</h2>
+    <div class="mood-row" id="moodRow">
+      <button class="mood" data-mood="1">😴<span class="lbl">müde</span></button>
+      <button class="mood" data-mood="2">🙂<span class="lbl">geht so</span></button>
+      <button class="mood" data-mood="3">😃<span class="lbl">top</span></button>
+    </div>
+    <button class="btn-primary" id="moodOkBtn" disabled>Weiter</button>
+  </div>
+</div>
+
 <script>
 "use strict";
 /* ============================================================
-   FELIX LERN-APP – Vorgangsbeschreibungen
-   Reines HTML/CSS/JS, kein Backend, keine Frameworks.
-   Fortschritt optional im localStorage.
+   FELIX LERN-APP – Vorgangsbeschreibungen (Mobile-First, PWA)
+   Reines HTML/CSS/JS. Kein Backend. Offline nutzbar.
+   Daten liegen im localStorage. Export/Import als JSON.
    ============================================================ */
 
-/* ---------- Konstanten & Daten ---------- */
-
-// Satzanfänge, die Felix verwenden soll
+/* ---------- Inhalte ---------- */
 const SATZANFAENGE = ["Zuerst", "Anschließend", "Danach", "Nun", "Als Nächstes", "Zum Schluss"];
 
-// Tun-Wörter (Verben) – für die einfache Prüfung "Ist ein Tun-Wort dabei?"
 const TUNWOERTER = ["geben","gebe","gib","verrühr","verrühre","mischen","misch","vermisch",
   "hinzufüg","füge","hinzu","rühr","legen","lege","leg","bestreu","backen","back",
   "nehmen","nehme","nimm","schneiden","schneide","falten","falte","putzen","putze",
   "wischen","wische","stell","setz","öffne","schließ","gieß","kippe","streich","streiche",
-  "genieß","essen","esse","toaste","drück","drücke","warten","warte","holen","hole"];
+  "genieß","essen","esse","toaste","drück","drücke","warten","warte","holen","hole","werf","wirf"];
 
-// Trainings-Definitionen. Jede hat Schritte für Übung 1 & 3.
 const TRAININGS = {
-  waffel:{
-    name:"Waffelrezept", emoji:"🧇", ueberschrift:"Mein Waffelrezept",
-    // Kurzschritte für Übung 1 (Satzanfänge zuordnen)
-    kurzschritte:[
-      "Zutaten in die Schüssel geben",
-      "Mehl, Vanillezucker und Backpulver dazugeben",
-      "Milch hinzufügen und verrühren",
-      "Teig ins Waffeleisen geben und backen",
-      "Waffel auf einen Teller legen und bestreuen"
-    ],
-    // Stichpunkt für Übung 2
+  waffel:{ name:"Waffelrezept", emoji:"🧇", ueberschrift:"Mein Waffelrezept",
+    kurzschritte:["Zutaten in die Schüssel geben","Mehl, Vanillezucker und Backpulver dazugeben",
+      "Milch hinzufügen und verrühren","Teig ins Waffeleisen geben und backen","Waffel auf einen Teller legen und bestreuen"],
     stichpunkt:"Eier, Zucker, Butter – Schüssel – Mixer",
-    // Ausführliche Schritte für Übung 3
     schritte:[
       "5 Eier + 250 g Zucker + 250 g weiche Butter in eine Schüssel geben und verrühren.",
       "500 g Mehl + 1 Päckchen Vanillezucker + 1 Päckchen Backpulver dazugeben und vermischen.",
       "500 ml Milch hinzufügen und alles zu einem glatten Teig verrühren.",
       "Den Teig mit einem Löffel in das Waffeleisen geben und backen.",
-      "Die fertige Waffel auf einen Teller legen, mit Puderzucker bestreuen und genießen."
-    ]
-  },
-  toast:{
-    name:"Toast machen", emoji:"🍞", ueberschrift:"So mache ich einen Toast",
-    kurzschritte:[
-      "Zwei Scheiben Brot nehmen",
-      "Brot in den Toaster stecken",
-      "Toaster einschalten und warten",
-      "Toast herausnehmen",
-      "Toast mit Butter bestreichen"
-    ],
+      "Die fertige Waffel auf einen Teller legen, mit Puderzucker bestreuen und genießen."]},
+  toast:{ name:"Toast machen", emoji:"🍞", ueberschrift:"So mache ich einen Toast",
+    kurzschritte:["Zwei Scheiben Brot nehmen","Brot in den Toaster stecken","Toaster einschalten und warten",
+      "Toast herausnehmen","Toast mit Butter bestreichen"],
     stichpunkt:"Brot – Toaster – warten",
     schritte:[
       "Zwei Scheiben Toastbrot aus der Packung nehmen.",
       "Die Scheiben in den Toaster stecken.",
       "Den Toaster einschalten und warten, bis das Brot goldbraun ist.",
       "Den fertigen Toast vorsichtig herausnehmen.",
-      "Den Toast mit Butter bestreichen und essen."
-    ]
-  },
-  flieger:{
-    name:"Papierflieger basteln", emoji:"✈️", ueberschrift:"So bastle ich einen Papierflieger",
-    kurzschritte:[
-      "Ein Blatt Papier nehmen",
-      "Blatt in der Mitte falten",
-      "Die Ecken zur Mitte falten",
-      "Die Flügel nach unten falten",
-      "Den Flieger werfen"
-    ],
+      "Den Toast mit Butter bestreichen und essen."]},
+  flieger:{ name:"Papierflieger basteln", emoji:"✈️", ueberschrift:"So bastle ich einen Papierflieger",
+    kurzschritte:["Ein Blatt Papier nehmen","Blatt in der Mitte falten","Die Ecken zur Mitte falten",
+      "Die Flügel nach unten falten","Den Flieger werfen"],
     stichpunkt:"Papier – Mitte – falten",
     schritte:[
       "Ein rechteckiges Blatt Papier auf den Tisch legen.",
       "Das Blatt in der Mitte längs falten und wieder öffnen.",
       "Die beiden oberen Ecken zur Mittellinie falten.",
       "Das Papier zusammenklappen und die Flügel nach unten falten.",
-      "Den fertigen Papierflieger nehmen und werfen."
-    ]
-  },
-  fahrrad:{
-    name:"Fahrrad putzen", emoji:"🚲", ueberschrift:"So putze ich mein Fahrrad",
-    kurzschritte:[
-      "Eimer mit Wasser holen",
-      "Lappen ins Wasser tauchen",
-      "Rahmen sauber wischen",
-      "Räder und Kette putzen",
-      "Fahrrad trocken reiben"
-    ],
+      "Den fertigen Papierflieger nehmen und werfen."]},
+  fahrrad:{ name:"Fahrrad putzen", emoji:"🚲", ueberschrift:"So putze ich mein Fahrrad",
+    kurzschritte:["Eimer mit Wasser holen","Lappen ins Wasser tauchen","Rahmen sauber wischen",
+      "Räder und Kette putzen","Fahrrad trocken reiben"],
     stichpunkt:"Eimer – Wasser – Lappen",
     schritte:[
       "Einen Eimer mit warmem Wasser und etwas Seife holen.",
       "Einen Lappen in das Wasser tauchen und auswringen.",
       "Den Rahmen des Fahrrads mit dem Lappen sauber wischen.",
       "Die Räder und die Kette vorsichtig putzen.",
-      "Das Fahrrad mit einem trockenen Tuch trocken reiben."
-    ]
-  }
+      "Das Fahrrad mit einem trockenen Tuch trocken reiben."]}
 };
 
-// Pausenaufgaben (kleine Bewegungs-/Entspannungsimpulse)
 const PAUSEN_AUFGABEN = [
   {e:"🙆", t:"Steh auf und streck dich."},
   {e:"💧", t:"Trink einen Schluck Wasser."},
@@ -623,180 +645,195 @@ const PAUSEN_AUFGABEN = [
   {e:"🪟", t:"Schau 20 Sekunden aus dem Fenster."}
 ];
 
-// Level-Definitionen (Punktschwellen)
 const LEVELS = [
-  {name:"Satz-Starter",     min:0},
-  {name:"Schritt-Profi",    min:8},
-  {name:"Rezept-Meister",   min:16},
+  {name:"Satz-Starter", min:0},
+  {name:"Schritt-Profi", min:8},
+  {name:"Rezept-Meister", min:16},
   {name:"Schreib-Champion", min:26}
 ];
 
-// Timer-Einstellungen (in Sekunden)
-const FOKUS_SEK = 8*60;    // 8 Minuten Fokus
-const PAUSE_SEK = 2*60;    // 2 Minuten Pause
-const LANGE_PAUSE_SEK = 5*60; // 5 Minuten nach 3 Fokusphasen
+// Timer (Sekunden)
+const FOKUS_SEK = 8*60, PAUSE_SEK = 2*60, LANGE_PAUSE_SEK = 5*60;
 
-/* ---------- Anwendungszustand ---------- */
-const state = {
-  training:null,      // Schlüssel aus TRAININGS oder "eigen"
-  ownTitle:"",        // Titel bei eigener Übung
-  exercise:0,         // aktuelle Übung (0..3)
-  stars:0,            // gesammelte Sterne/Punkte
-  usedStarters:[],    // welche Satzanfänge Felix genutzt hat (für Elternbereich)
-  sentences:[],       // geschriebene Sätze (Übung 3) für Abschlusstext
-  ex2sentence:"",     // Satz aus Übung 2
-  ex1result:null,     // Ergebnis Übung 1
-  checklist:[false,false,false,false,false,false],
-  // Timer
-  focusCount:1,       // wievielte Fokusphase
-  timeLeft:FOKUS_SEK,
-  onPause:false,
-  timerId:null
+/* ---------- Profil (dauerhaft in localStorage) ---------- */
+const PROFILE_KEY = "felix_profile";
+let profile = {
+  name:"Felix",
+  level:1,
+  stars:0,     // aktueller Sternestand
+  points:0,    // insgesamt je gesammelte Punkte (wächst nur)
+  history:[]   // Liste von Übungen
 };
 
-/* ---------- Hilfsfunktionen ---------- */
+/* ---------- Laufzeit-Zustand einer Übung ---------- */
+const run = {
+  training:null, ownTitle:"",
+  phaseIndex:0,         // Position in PHASES
+  runStars:0,           // in dieser Sitzung gesammelt
+  usedStarters:[],
+  sentences:[],
+  ex2sentence:"",
+  ex1result:null,
+  checklist:[false,false,false,false,false,false],
+  focusCount:1, timeLeft:FOKUS_SEK, onPause:false, timerId:null,
+  startMs:0, konzVorher:null, konzNachher:null
+};
 
-// kürzt Screen-Umschaltung ab
+// Reihenfolge der Aufgaben (eine pro Bildschirm)
+const PHASES = ["ex1","ex2","ex3-0","ex3-1","ex3-2","ex3-3","ex3-4","check"];
+
+/* ============================================================
+   HILFSFUNKTIONEN
+   ============================================================ */
+function $(id){ return document.getElementById(id); }
+
 function showScreen(id){
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
-  document.getElementById(id).classList.add("active");
+  $(id).classList.add("active");
   window.scrollTo(0,0);
 }
-
-// Zeit hübsch als MM:SS
 function fmt(sec){
   const m=String(Math.floor(sec/60)).padStart(2,"0");
   const s=String(sec%60).padStart(2,"0");
   return m+":"+s;
 }
-
-// aktuelles Trainingsobjekt (oder generisches für "eigen")
 function currentTraining(){
-  if(state.training==="eigen"){
-    return {
-      name:state.ownTitle||"Meine Übung", emoji:"⭐",
-      ueberschrift:state.ownTitle||"Meine Übung",
+  if(run.training==="eigen"){
+    return { name:run.ownTitle||"Meine Übung", emoji:"⭐",
+      ueberschrift:run.ownTitle||"Meine Übung",
       kurzschritte:["Erster Schritt","Zweiter Schritt","Dritter Schritt","Vierter Schritt","Letzter Schritt"],
       stichpunkt:"Denke an deinen ersten Schritt",
-      schritte:[
-        "Schreibe hier deinen 1. Schritt.",
-        "Schreibe hier deinen 2. Schritt.",
-        "Schreibe hier deinen 3. Schritt.",
-        "Schreibe hier deinen 4. Schritt.",
-        "Schreibe hier deinen 5. Schritt."
-      ]
-    };
+      schritte:["Schreibe hier deinen 1. Schritt.","Schreibe hier deinen 2. Schritt.",
+        "Schreibe hier deinen 3. Schritt.","Schreibe hier deinen 4. Schritt.","Schreibe hier deinen 5. Schritt."] };
   }
-  return TRAININGS[state.training];
+  return TRAININGS[run.training];
 }
 
+// Textarea-Höhe automatisch an Inhalt anpassen
+function autoGrow(el){ el.style.height="auto"; el.style.height=(el.scrollHeight+2)+"px"; }
+
 /* ============================================================
-   SATZ-PRÜFUNGEN (unterstützend, nicht streng korrigierend)
+   SATZ-PRÜFUNGEN (unterstützend)
    ============================================================ */
 function pruefeSatz(text){
   const t=(text||"").trim();
   const woerter = t.length? t.split(/\s+/):[];
   const lower = t.toLowerCase();
-
-  // Satzanfang: beginnt mit einem der bekannten Anfänge?
   const hatAnfang = SATZANFAENGE.some(a=>lower.startsWith(a.toLowerCase()));
-  // Tun-Wort enthalten?
   const hatVerb = TUNWOERTER.some(v=>lower.includes(v));
-  // Punkt am Ende?
   const hatPunkt = /[.!?]\s*$/.test(t);
-  // Lang genug? (mindestens 8 Wörter laut Vorgabe)
   const langGenug = woerter.length>=8;
-  // Ich-Form?
   const ichForm = /\bich\b/i.test(t);
-
-  return {
-    text:t, wortzahl:woerter.length,
-    hatAnfang, hatVerb, hatPunkt, langGenug, ichForm,
-    // "vollständiger Satz": Verb + Punkt vorhanden
-    vollstaendig: hatVerb && hatPunkt && woerter.length>=4
-  };
+  return { text:t, wortzahl:woerter.length, hatAnfang, hatVerb, hatPunkt, langGenug, ichForm,
+    vollstaendig: hatVerb && hatPunkt && woerter.length>=4 };
 }
-
-// Punkte für einen Satz berechnen (Gamification)
 function punkteFuerSatz(p, anfangIstNeu){
   let pts=0;
-  if(p.vollstaendig) pts+=1;      // vollständiger Satz
-  if(anfangIstNeu && p.hatAnfang) pts+=1; // anderer Satzanfang
-  if(p.hatPunkt) pts+=1;          // Punkt am Ende
-  if(p.langGenug) pts+=1;         // mindestens 8 Wörter
+  if(p.vollstaendig) pts+=1;
+  if(anfangIstNeu && p.hatAnfang) pts+=1;
+  if(p.hatPunkt) pts+=1;
+  if(p.langGenug) pts+=1;
   return pts;
 }
 
 /* ============================================================
-   STERNE / LEVEL / FORTSCHRITT
+   STERNE / LEVEL
    ============================================================ */
 function addStars(n){
   if(n<=0) return;
-  state.stars+=n;
-  saveProgress();
+  profile.stars+=n;
+  profile.points+=n;
+  run.runStars+=n;
+  saveProfile();
   updateScoreUI();
 }
-
 function currentLevel(){
   let lvl=LEVELS[0], idx=0;
-  LEVELS.forEach((l,i)=>{ if(state.stars>=l.min){ lvl=l; idx=i; } });
+  LEVELS.forEach((l,i)=>{ if(profile.stars>=l.min){ lvl=l; idx=i; } });
   return {lvl, idx};
 }
-
 function updateScoreUI(){
   const {lvl, idx}=currentLevel();
-  document.getElementById("starDisplay").textContent="⭐ "+state.stars;
-  document.getElementById("levelDisplay").textContent="Level "+(idx+1)+" · "+lvl.name;
-  // Fortschritt bis zum nächsten Level
-  const next = LEVELS[idx+1];
-  const bar = document.getElementById("levelProgress");
-  const hint = document.getElementById("levelHint");
+  profile.level=idx+1;
+  $("starDisplay").textContent="⭐ "+profile.stars;
+  $("levelDisplay").textContent="Level "+(idx+1)+" · "+lvl.name;
+  const next=LEVELS[idx+1];
+  const bar=$("levelProgress");
   if(next){
-    const spanStart=lvl.min, spanEnd=next.min;
-    const pct=Math.min(100, Math.round((state.stars-spanStart)/(spanEnd-spanStart)*100));
+    const pct=Math.min(100, Math.round((profile.stars-lvl.min)/(next.min-lvl.min)*100));
     bar.style.width=pct+"%";
-    hint.textContent="Noch "+(next.min-state.stars)+" Sterne bis Level "+(idx+2)+" · "+next.name;
-  }else{
-    bar.style.width="100%";
-    hint.textContent="Höchstes Level erreicht – toll gemacht!";
-  }
+  }else{ bar.style.width="100%"; }
 }
 
 /* ============================================================
-   FORTSCHRITT SPEICHERN (localStorage, optional)
+   SPEICHERN / LADEN (localStorage)
    ============================================================ */
-function saveProgress(){
-  try{
-    localStorage.setItem("felix_progress", JSON.stringify({
-      stars:state.stars,
-      usedStarters:state.usedStarters
-    }));
-  }catch(e){/* localStorage nicht verfügbar – ignorieren */}
+function saveProfile(){
+  try{ localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); }catch(e){}
 }
-function loadProgress(){
+function loadProfile(){
   try{
-    const raw=localStorage.getItem("felix_progress");
+    const raw=localStorage.getItem(PROFILE_KEY);
     if(raw){
       const d=JSON.parse(raw);
-      if(typeof d.stars==="number") state.stars=d.stars;
-      if(Array.isArray(d.usedStarters)) state.usedStarters=d.usedStarters;
+      profile=Object.assign(profile, d);
+      if(!Array.isArray(profile.history)) profile.history=[];
     }
-  }catch(e){/* ignorieren */}
+  }catch(e){}
 }
 function clearProgress(){
-  try{ localStorage.removeItem("felix_progress"); }catch(e){}
-  state.stars=0; state.usedStarters=[];
+  try{ localStorage.removeItem(PROFILE_KEY); }catch(e){}
+  profile={name:"Felix", level:1, stars:0, points:0, history:[]};
+  saveProfile();
   updateScoreUI();
-  alert("Fortschritt gelöscht. Frisch geht's weiter! 🌟");
+  renderProgress();
+  showIoMsg("Fortschritt gelöscht. Frisch geht's weiter! 🌟");
+}
+
+/* ---------- Export / Import ---------- */
+function exportProgress(){
+  const data=JSON.stringify(profile, null, 2);
+  const blob=new Blob([data], {type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download="felix-fortschritt.json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showIoMsg("Datei gespeichert: felix-fortschritt.json ✅");
+}
+function importProgress(file){
+  const reader=new FileReader();
+  reader.onload=()=>{
+    try{
+      const d=JSON.parse(reader.result);
+      // Grobe Prüfung, dann übernehmen
+      profile={
+        name: typeof d.name==="string"? d.name : "Felix",
+        level: d.level||1,
+        stars: d.stars||0,
+        points: d.points||d.stars||0,
+        history: Array.isArray(d.history)? d.history : []
+      };
+      saveProfile(); updateScoreUI(); renderProgress();
+      $("helloName").textContent=profile.name;
+      showIoMsg("Fortschritt geladen! ✅");
+    }catch(e){
+      showIoMsg("Diese Datei konnte nicht gelesen werden. ⚠️");
+    }
+  };
+  reader.readAsText(file);
+}
+function showIoMsg(txt){
+  const m=$("ioMsg"); m.textContent=txt; m.style.display="block";
+  setTimeout(()=>{ m.style.display="none"; }, 3500);
 }
 
 /* ============================================================
-   STARTSCREEN AUFBAUEN
+   STARTSCREEN
    ============================================================ */
 function buildStart(){
-  const grid=document.getElementById("trainingChoices");
-  grid.innerHTML="";
-  // vier feste Trainings + eigene Übung
+  const grid=$("trainingChoices"); grid.innerHTML="";
   const list=[
     {key:"waffel", emoji:"🧇", name:"Waffelrezept"},
     {key:"toast", emoji:"🍞", name:"Toast machen"},
@@ -812,341 +849,251 @@ function buildStart(){
     grid.appendChild(div);
   });
 }
-
 function selectTraining(key, el){
-  state.training=key;
+  run.training=key;
   document.querySelectorAll(".choice").forEach(c=>c.classList.remove("selected"));
   el.classList.add("selected");
-  // eigenes Themenfeld ein-/ausblenden
-  document.getElementById("ownTopicWrap").style.display = (key==="eigen")?"block":"none";
-  document.getElementById("startBtn").disabled=false;
+  $("ownTopicWrap").style.display=(key==="eigen")?"block":"none";
+  $("startBtn").disabled=false;
 }
 
 /* ============================================================
-   TIMER-LOGIK (Timeboxing)
+   NAVIGATION (unten)
    ============================================================ */
-function startTimer(){
-  stopTimer();
-  state.timerId=setInterval(tick,1000);
-  updateTimerUI();
+function setNavActive(nav){
+  document.querySelectorAll(".nav-item").forEach(b=>{
+    b.classList.toggle("active", b.dataset.nav===nav);
+  });
 }
-function stopTimer(){
-  if(state.timerId){ clearInterval(state.timerId); state.timerId=null; }
+function goNav(nav){
+  if(nav==="start"){ setNavActive("start"); showScreen("screen-start"); }
+  else if(nav==="training"){
+    setNavActive("training");
+    // Läuft eine Übung? -> Trainingsscreen, sonst zur Auswahl
+    if(run.timerId){ showScreen("screen-train"); }
+    else { showScreen("screen-start"); }
+  }
+  else if(nav==="progress"){ setNavActive("progress"); renderProgress(); showScreen("screen-progress"); }
+  else if(nav==="parent"){ setNavActive("parent"); renderParent(); showScreen("screen-parent"); }
 }
+
+/* ============================================================
+   TIMER
+   ============================================================ */
+function startTimer(){ stopTimer(); run.timerId=setInterval(tick,1000); updateTimerUI(); }
+function stopTimer(){ if(run.timerId){ clearInterval(run.timerId); run.timerId=null; } }
 function tick(){
-  if(state.onPause){
-    // Pausen-Countdown
-    state.timeLeft--;
-    document.getElementById("pauseClock").textContent=fmt(Math.max(0,state.timeLeft));
-    if(state.timeLeft<=0){ endPause(); }
+  if(run.onPause){
+    run.timeLeft--;
+    $("pauseClock").textContent=fmt(Math.max(0,run.timeLeft));
+    if(run.timeLeft<=0){ endPause(); }
   }else{
-    // Fokus-Countdown
-    state.timeLeft--;
+    run.timeLeft--;
     updateTimerUI();
-    if(state.timeLeft<=0){ startPause(); }
+    if(run.timeLeft<=0){ startPause(); }
   }
 }
 function updateTimerUI(){
-  document.getElementById("timerClock").textContent=fmt(Math.max(0,state.timeLeft));
-  document.getElementById("timerPhase").textContent="Fokusphase "+state.focusCount;
-  const pct=Math.max(0,state.timeLeft)/FOKUS_SEK*100;
-  document.getElementById("timerFill").style.width=pct+"%";
-  document.getElementById("timerProgress").classList.remove("pause");
+  $("timerClock").textContent=fmt(Math.max(0,run.timeLeft));
+  $("timerPhase").textContent="Fokus "+run.focusCount;
+  $("timerFill").style.width=(Math.max(0,run.timeLeft)/FOKUS_SEK*100)+"%";
 }
-
-// Pause starten (nach Fokusende oder per Button)
 function startPause(){
-  state.onPause=true;
-  // längere Pause nach 3 Fokusphasen
-  const lang = (state.focusCount % 3===0);
-  state.timeLeft = lang? LANGE_PAUSE_SEK : PAUSE_SEK;
-
-  // zufällige Pausenaufgabe (Index aus timeLeft abgeleitet -> kein Math.random nötig)
-  const task=PAUSEN_AUFGABEN[state.focusCount % PAUSEN_AUFGABEN.length];
-  document.getElementById("pauseEmoji").textContent=task.e;
-  document.getElementById("pauseTask").textContent=task.t;
-  document.getElementById("pauseClock").textContent=fmt(state.timeLeft);
-
-  // Eingaben sperren
+  run.onPause=true;
+  const lang=(run.focusCount % 3===0);
+  run.timeLeft=lang? LANGE_PAUSE_SEK : PAUSE_SEK;
+  const task=PAUSEN_AUFGABEN[run.focusCount % PAUSEN_AUFGABEN.length];
+  $("pauseEmoji").textContent=task.e;
+  $("pauseTask").textContent=task.t;
+  $("pauseClock").textContent=fmt(run.timeLeft);
   setInputsDisabled(true);
-  document.getElementById("pauseOverlay").classList.add("show");
+  $("pauseOverlay").classList.add("show");
 }
-
-// Pause beenden -> nächste Fokusphase
 function endPause(){
-  state.onPause=false;
-  state.focusCount++;
-  state.timeLeft=FOKUS_SEK;
-  document.getElementById("pauseOverlay").classList.remove("show");
-  setInputsDisabled(false);
-  updateTimerUI();
+  run.onPause=false; run.focusCount++; run.timeLeft=FOKUS_SEK;
+  $("pauseOverlay").classList.remove("show");
+  setInputsDisabled(false); updateTimerUI();
 }
-
-// Eingabefelder während Pause sperren
 function setInputsDisabled(dis){
-  document.querySelectorAll("#exerciseArea textarea, #exerciseArea select, #exerciseArea button")
+  document.querySelectorAll("#exerciseArea textarea, #exerciseArea select, #exerciseArea button, #nextExerciseBtn")
     .forEach(el=>{ el.disabled=dis; });
 }
 
 /* ============================================================
-   ÜBUNGEN AUFBAUEN
+   TRAINING START (mit Konzentration vorher)
    ============================================================ */
 function startTraining(){
-  // eigenen Titel übernehmen
-  if(state.training==="eigen"){
-    state.ownTitle=document.getElementById("ownTopic").value.trim();
-  }
-  // Zustand für neue Runde zurücksetzen (Sterne bleiben erhalten)
-  state.exercise=0;
-  state.usedStarters=[];
-  state.sentences=[];
-  state.ex2sentence="";
-  state.checklist=[false,false,false,false,false,false];
-  state.focusCount=1;
-  state.timeLeft=FOKUS_SEK;
-  state.onPause=false;
-
+  if(run.training==="eigen"){ run.ownTitle=$("ownTopic").value.trim(); }
+  // Konzentration VORHER abfragen, dann Übung starten
+  askMood("Wie gut kannst du dich gerade konzentrieren?", (val)=>{
+    run.konzVorher=val;
+    beginRun();
+  });
+}
+function beginRun(){
+  run.phaseIndex=0; run.runStars=0; run.usedStarters=[]; run.sentences=[];
+  run.ex2sentence=""; run.checklist=[false,false,false,false,false,false];
+  run.focusCount=1; run.timeLeft=FOKUS_SEK; run.onPause=false;
+  run.startMs=Date.now(); run.konzNachher=null;
+  setNavActive("training");
   showScreen("screen-train");
   updateScoreUI();
   startTimer();
-  renderExercise();
+  renderPhase();
 }
 
-function renderExercise(){
-  const area=document.getElementById("exerciseArea");
-  area.innerHTML="";
-  const nextBtn=document.getElementById("nextExerciseBtn");
-  nextBtn.textContent="Weiter";
+/* ============================================================
+   PHASEN RENDERN (eine Aufgabe pro Bildschirm)
+   ============================================================ */
+function renderPhase(){
+  const area=$("exerciseArea"); area.innerHTML="";
+  const phase=PHASES[run.phaseIndex];
+  const btn=$("nextExerciseBtn"); btn.textContent="Weiter";
 
-  if(state.exercise===0){ renderEx1(area); }
-  else if(state.exercise===1){ renderEx2(area); }
-  else if(state.exercise===2){ renderEx3(area); }
-  else if(state.exercise===3){ renderChecklist(area); nextBtn.textContent="Fertig ansehen"; }
+  if(phase==="ex1"){ renderEx1(area); }
+  else if(phase==="ex2"){ renderEx2(area); }
+  else if(phase.startsWith("ex3-")){ renderEx3Step(area, parseInt(phase.split("-")[1],10)); }
+  else if(phase==="check"){ renderChecklist(area); btn.textContent="Fertig ansehen"; }
   window.scrollTo(0,0);
 }
 
-/* ---------- ÜBUNG 1: Satzanfänge sortieren ---------- */
+/* ---------- ÜBUNG 1 ---------- */
 function renderEx1(area){
   const tr=currentTraining();
-  const card=document.createElement("div");
-  card.className="card";
+  const card=document.createElement("div"); card.className="card";
   card.innerHTML=`
     <h2>Übung 1 · Satzanfänge sortieren</h2>
-    <p class="muted">Wähle für jeden Schritt einen passenden Satzanfang.
-    Jeden Anfang darfst du nur <b>einmal</b> benutzen.</p>
-    <div class="chip-row" id="chipRow"></div>
-  `;
-  // Schrittzeilen mit Dropdown
+    <p class="muted">Wähle für jeden Schritt einen Satzanfang.
+    Jeden Anfang nur <b>einmal</b> benutzen.</p>
+    <div class="chip-row" id="chipRow"></div>`;
   tr.kurzschritte.forEach((s,i)=>{
-    const line=document.createElement("div");
-    line.className="step-line";
-    line.innerHTML=`
-      <div class="step-num">${i+1}</div>
-      <div class="step-text">${s}</div>
-    `;
-    const sel=document.createElement("select");
-    sel.className="step-choice";
-    sel.dataset.idx=i;
+    const line=document.createElement("div"); line.className="step-line";
+    line.innerHTML=`<div class="step-num">${i+1}</div><div class="step-text">${s}</div>`;
+    const sel=document.createElement("select"); sel.className="step-choice"; sel.dataset.idx=i;
     sel.innerHTML='<option value="">– Anfang wählen –</option>'+
       SATZANFAENGE.map(a=>`<option value="${a}">${a} …</option>`).join("");
     sel.onchange=updateEx1Chips;
-    line.appendChild(sel);
-    card.appendChild(line);
+    line.appendChild(sel); card.appendChild(line);
   });
-  const fb=document.createElement("div");
-  fb.id="ex1Feedback";
-  card.appendChild(fb);
+  const fb=document.createElement("div"); fb.id="ex1Feedback"; card.appendChild(fb);
   area.appendChild(card);
   updateEx1Chips();
 }
-
-// Chips zeigen, welche Anfänge schon vergeben sind, + Feedback
 function updateEx1Chips(){
   const sels=[...document.querySelectorAll("#exerciseArea select")];
   const chosen=sels.map(s=>s.value).filter(Boolean);
-  // Chip-Anzeige
-  const row=document.getElementById("chipRow");
-  row.innerHTML="";
+  const row=$("chipRow"); row.innerHTML="";
   SATZANFAENGE.forEach(a=>{
     const chip=document.createElement("span");
     chip.className="chip"+(chosen.includes(a)?" used":"");
-    chip.textContent=a;
-    row.appendChild(chip);
+    chip.textContent=a; row.appendChild(chip);
   });
-  // Doppelte finden
-  const doppelt = chosen.length!==new Set(chosen).size;
-  const fb=document.getElementById("ex1Feedback");
-  if(chosen.length<sels.length){
-    fb.className=""; fb.innerHTML="";
-  }else if(doppelt){
-    fb.className="feedback tip";
-    fb.textContent="Schau nochmal: Du hast denselben Anfang zweimal benutzt.";
-  }else{
-    fb.className="feedback ok";
-    fb.textContent="Super, du hast Abwechslung eingebaut! ⭐";
-  }
+  const doppelt=chosen.length!==new Set(chosen).size;
+  const fb=$("ex1Feedback");
+  if(chosen.length<sels.length){ fb.className=""; fb.innerHTML=""; }
+  else if(doppelt){ fb.className="feedback tip"; fb.textContent="Schau nochmal: Du hast denselben Anfang zweimal benutzt."; }
+  else{ fb.className="feedback ok"; fb.textContent="Super, du hast Abwechslung eingebaut! ⭐"; }
 }
-
-// Übung 1 auswerten -> Punkte, wenn alle unterschiedlich
 function evalEx1(){
   const sels=[...document.querySelectorAll("#exerciseArea select")];
   const chosen=sels.map(s=>s.value).filter(Boolean);
-  const allChosen = chosen.length===sels.length;
-  const alleUnterschiedlich = allChosen && (new Set(chosen).size===chosen.length);
-  state.ex1result={chosen, alleUnterschiedlich};
-  // Satzanfänge für Elternbereich merken
-  chosen.forEach(a=>{ if(!state.usedStarters.includes(a)) state.usedStarters.push(a); });
+  const alleUnterschiedlich = chosen.length===sels.length && (new Set(chosen).size===chosen.length);
+  run.ex1result={chosen, alleUnterschiedlich};
+  chosen.forEach(a=>{ if(!run.usedStarters.includes(a)) run.usedStarters.push(a); });
   if(alleUnterschiedlich){ addStars(2); }
-  return true; // Übung 1 immer "weiter" erlauben
 }
 
-/* ---------- ÜBUNG 2: Stichpunkte -> ganzer Satz ---------- */
+/* ---------- ÜBUNG 2 ---------- */
 function renderEx2(area){
   const tr=currentTraining();
-  const card=document.createElement("div");
-  card.className="card";
+  const card=document.createElement("div"); card.className="card";
   card.innerHTML=`
-    <h2>Übung 2 · Aus Stichpunkten einen Satz machen</h2>
-    <p>Mach aus diesen Stichpunkten <b>einen vollständigen Satz</b>:</p>
+    <h2>Übung 2 · Ein Satz aus Stichpunkten</h2>
+    <p>Mach daraus <b>einen vollständigen Satz</b>:</p>
     <div class="step-line"><div class="step-text" style="font-size:18px;">📝 ${tr.stichpunkt}</div></div>
-    <div class="hint">💡 Denke an: <b>Was?</b> · <b>Wohin?</b> · <b>Womit?</b><br>
-    Und beginne mit einem Satzanfang wie „Zuerst …“.</div>
+    <div class="hint">💡 Denke an: <b>Was?</b> · <b>Wohin?</b> · <b>Womit?</b></div>
     <textarea id="ex2Input" placeholder="Zuerst gebe ich …"></textarea>
-    <button class="btn-secondary btn-small mt" id="ex2Check">Satz prüfen</button>
-    <div id="ex2Feedback"></div>
-  `;
+    <button class="btn-secondary btn-small mt" id="ex2Check">Meine Antwort prüfen</button>
+    <div id="ex2Feedback"></div>`;
   area.appendChild(card);
-  document.getElementById("ex2Check").onclick=()=>liveCheckEx2();
-  document.getElementById("ex2Input").addEventListener("input",()=>{
-    // beim Tippen altes Feedback ausblenden
-    document.getElementById("ex2Feedback").innerHTML="";
-  });
+  const ta=$("ex2Input");
+  if(run.ex2sentence) ta.value=run.ex2sentence;
+  ta.addEventListener("input",()=>{ autoGrow(ta); $("ex2Feedback").innerHTML=""; });
+  autoGrow(ta);
+  $("ex2Check").onclick=liveCheckEx2;
 }
-
 function liveCheckEx2(){
-  const val=document.getElementById("ex2Input").value;
-  const p=pruefeSatz(val);
-  const fb=document.getElementById("ex2Feedback");
-  // Unterstützende Checkfragen statt strenger Korrektur
-  fb.innerHTML=`
-    <ul class="checks">
+  const p=pruefeSatz($("ex2Input").value);
+  const fb=$("ex2Feedback");
+  fb.innerHTML=`<ul class="checks">
       <li class="${p.hatAnfang?'yes':'no'}">Ist ein Satzanfang dabei?</li>
       <li class="${p.hatVerb?'yes':'no'}">Ist ein Tun-Wort dabei?</li>
       <li class="${p.hatPunkt?'yes':'no'}">Steht ein Punkt am Ende?</li>
       <li class="${p.langGenug?'yes':'no'}">Ist der Satz lang genug? (${p.wortzahl} Wörter)</li>
-    </ul>
-  `;
-  const alleGut = p.hatAnfang&&p.hatVerb&&p.hatPunkt&&p.langGenug;
+    </ul>`;
+  const alleGut=p.hatAnfang&&p.hatVerb&&p.hatPunkt&&p.langGenug;
   const msg=document.createElement("div");
-  if(alleGut){
-    msg.className="feedback ok";
-    msg.textContent="Stark! Dein Satz ist vollständig. ⭐";
-  }else{
-    msg.className="feedback tip";
-    msg.textContent="Noch ein Detail, dann wird dein Satz stärker.";
-  }
+  msg.className="feedback "+(alleGut?"ok":"tip");
+  msg.textContent=alleGut?"Stark! Dein Satz ist vollständig. ⭐":"Noch ein Detail, dann wird dein Satz stärker.";
   fb.appendChild(msg);
-  return p;
 }
-
 function evalEx2(){
-  const val=document.getElementById("ex2Input").value;
-  const p=pruefeSatz(val);
-  state.ex2sentence=p.text;
-  // Satzanfang merken
+  const p=pruefeSatz($("ex2Input").value);
+  run.ex2sentence=p.text;
   SATZANFAENGE.forEach(a=>{
-    if(p.text.toLowerCase().startsWith(a.toLowerCase()) && !state.usedStarters.includes(a))
-      state.usedStarters.push(a);
+    if(p.text.toLowerCase().startsWith(a.toLowerCase()) && !run.usedStarters.includes(a)) run.usedStarters.push(a);
   });
-  // Punkte vergeben
   addStars(punkteFuerSatz(p, true));
-  return true;
 }
 
-/* ---------- ÜBUNG 3: Rezept Schritt für Schritt ---------- */
-function renderEx3(area){
+/* ---------- ÜBUNG 3 – ein Schritt pro Bildschirm ---------- */
+function renderEx3Step(area, i){
   const tr=currentTraining();
-  const intro=document.createElement("div");
-  intro.className="card";
+  const intro=document.createElement("div"); intro.className="card";
   intro.innerHTML=`
-    <h2>Übung 3 · Schritt für Schritt schreiben</h2>
-    <p class="muted">Schreibe zu jedem Schritt <b>einen eigenen Satz</b> in der Ich-Form.
-    Nutze verschiedene Satzanfänge!</p>
+    <h2>Übung 3 · Schritt ${i+1} von 5</h2>
+    <div class="step-line" style="background:#eaf3ff;">
+      <div class="step-num">${i+1}</div><div class="step-text">${tr.schritte[i]}</div>
+    </div>
+    <p class="muted">Schreibe <b>einen eigenen Satz</b> in der Ich-Form.</p>
     <div class="chip-row">${SATZANFAENGE.map(a=>`<span class="chip">${a}</span>`).join("")}</div>
-  `;
+    <textarea id="ex3_${i}" placeholder="Schreibe hier deinen Satz …"></textarea>
+    <button class="btn-secondary btn-small mt" id="ex3Check">Meine Antwort prüfen</button>
+    <div id="ex3fb"></div>`;
   area.appendChild(intro);
-
-  tr.schritte.forEach((s,i)=>{
-    const card=document.createElement("div");
-    card.className="card";
-    card.innerHTML=`
-      <div class="step-line" style="background:#eaf3ff;">
-        <div class="step-num">${i+1}</div>
-        <div class="step-text">${s}</div>
-      </div>
-      <textarea id="ex3_${i}" placeholder="Schreibe hier deinen Satz …"></textarea>
-      <button class="btn-secondary btn-small mt" data-idx="${i}">Satz prüfen</button>
-      <div id="ex3fb_${i}"></div>
-    `;
-    area.appendChild(card);
-    // Prüf-Button
-    card.querySelector("button").onclick=(e)=>liveCheckEx3(e.target.dataset.idx);
-    card.querySelector("textarea").addEventListener("input",()=>{
-      document.getElementById("ex3fb_"+i).innerHTML="";
-    });
-  });
+  const ta=$("ex3_"+i);
+  if(run.sentences[i]) ta.value=run.sentences[i];
+  ta.addEventListener("input",()=>{ autoGrow(ta); $("ex3fb").innerHTML=""; });
+  autoGrow(ta);
+  $("ex3Check").onclick=()=>liveCheckEx3(i);
 }
-
 function liveCheckEx3(i){
-  const val=document.getElementById("ex3_"+i).value;
-  const p=pruefeSatz(val);
-  const fb=document.getElementById("ex3fb_"+i);
-  fb.innerHTML=`
-    <ul class="checks">
+  const p=pruefeSatz($("ex3_"+i).value);
+  const fb=$("ex3fb");
+  fb.innerHTML=`<ul class="checks">
       <li class="${p.hatAnfang?'yes':'no'}">Satzanfang</li>
       <li class="${p.hatVerb?'yes':'no'}">Tun-Wort</li>
       <li class="${p.hatPunkt?'yes':'no'}">Punkt am Ende</li>
       <li class="${p.ichForm?'yes':'no'}">Ich-Form</li>
       <li class="${p.langGenug?'yes':'no'}">Lang genug (${p.wortzahl} Wörter)</li>
-    </ul>
-  `;
+    </ul>`;
+  const gut=p.hatAnfang&&p.hatVerb&&p.hatPunkt&&p.langGenug;
   const msg=document.createElement("div");
-  if(p.hatAnfang&&p.hatVerb&&p.hatPunkt&&p.langGenug){
-    msg.className="feedback ok";
-    msg.textContent="Gut gemacht! Du hast den Ablauf klarer gemacht. ⭐";
-  }else{
-    msg.className="feedback tip";
-    msg.textContent="Noch ein Detail, dann wird dein Satz stärker.";
-  }
+  msg.className="feedback "+(gut?"ok":"tip");
+  msg.textContent=gut?"Gut gemacht! Du hast den Ablauf klarer gemacht. ⭐":"Noch ein Detail, dann wird dein Satz stärker.";
   fb.appendChild(msg);
 }
-
-function evalEx3(){
-  const tr=currentTraining();
-  state.sentences=[];
-  const startersInRun=[];
-  tr.schritte.forEach((s,i)=>{
-    const el=document.getElementById("ex3_"+i);
-    const val=el?el.value:"";
-    const p=pruefeSatz(val);
-    state.sentences.push(p.text);
-    // Welcher Satzanfang wurde genutzt?
-    let anfang=null;
-    SATZANFAENGE.forEach(a=>{
-      if(p.text.toLowerCase().startsWith(a.toLowerCase())) anfang=a;
-    });
-    const neu = anfang && !startersInRun.includes(anfang);
-    if(anfang){
-      startersInRun.push(anfang);
-      if(!state.usedStarters.includes(anfang)) state.usedStarters.push(anfang);
-    }
-    // Punkte pro Satz
-    addStars(punkteFuerSatz(p, neu));
-  });
-  return true;
+function evalEx3Step(i){
+  const p=pruefeSatz($("ex3_"+i).value);
+  run.sentences[i]=p.text;
+  let anfang=null;
+  SATZANFAENGE.forEach(a=>{ if(p.text.toLowerCase().startsWith(a.toLowerCase())) anfang=a; });
+  const neu = anfang && !run.usedStarters.includes(anfang);
+  if(anfang && !run.usedStarters.includes(anfang)) run.usedStarters.push(anfang);
+  addStars(punkteFuerSatz(p, neu));
 }
 
-/* ---------- ÜBUNG 4: Checkliste ---------- */
+/* ---------- CHECKLISTE ---------- */
 const CHECK_FRAGEN=[
   "Habe ich eine Überschrift?",
   "Habe ich alle Zutaten/Hilfsmittel genannt?",
@@ -1155,136 +1102,145 @@ const CHECK_FRAGEN=[
   "Habe ich in der Ich-Form geschrieben?",
   "Habe ich Punkte gesetzt?"
 ];
-
 function renderChecklist(area){
-  const card=document.createElement("div");
-  card.className="card";
+  const card=document.createElement("div"); card.className="card";
   card.innerHTML=`<h2>Kontrolle · Meine Checkliste</h2>
     <p class="muted">Lies deinen Text noch einmal und hake ab, was du geschafft hast.</p>`;
-  const ul=document.createElement("ul");
-  ul.className="checklist";
+  const ul=document.createElement("ul"); ul.className="checklist";
   CHECK_FRAGEN.forEach((q,i)=>{
     const li=document.createElement("li");
-    li.innerHTML=`<input type="checkbox" ${state.checklist[i]?"checked":""}> <span>${q}</span>`;
-    li.querySelector("input").onchange=(e)=>{ state.checklist[i]=e.target.checked; };
-    // Klick auf die ganze Zeile schaltet die Box um
-    li.onclick=(e)=>{
-      if(e.target.tagName!=="INPUT"){
-        const box=li.querySelector("input"); box.checked=!box.checked;
-        state.checklist[i]=box.checked;
-      }
-    };
+    li.innerHTML=`<input type="checkbox" ${run.checklist[i]?"checked":""}> <span>${q}</span>`;
+    li.querySelector("input").onchange=(e)=>{ run.checklist[i]=e.target.checked; };
+    li.onclick=(e)=>{ if(e.target.tagName!=="INPUT"){ const b=li.querySelector("input"); b.checked=!b.checked; run.checklist[i]=b.checked; } };
     ul.appendChild(li);
   });
-  card.appendChild(ul);
-  area.appendChild(card);
+  card.appendChild(ul); area.appendChild(card);
 }
-
-function evalChecklist(){
-  const alle=state.checklist.every(Boolean);
-  if(alle){ addStars(3); } // Checkliste vollständig: +3
-  return true;
-}
+function evalChecklist(){ if(run.checklist.every(Boolean)){ addStars(3); } }
 
 /* ============================================================
-   WEITER-BUTTON: Übung auswerten & nächste zeigen
+   WEITER-BUTTON
    ============================================================ */
-function nextExercise(){
-  // aktuelle Übung auswerten
-  if(state.exercise===0){ evalEx1(); }
-  else if(state.exercise===1){ evalEx2(); }
-  else if(state.exercise===2){ evalEx3(); }
-  else if(state.exercise===3){ evalChecklist(); finish(); return; }
-
-  state.exercise++;
-  renderExercise();
+function nextPhase(){
+  const phase=PHASES[run.phaseIndex];
+  if(phase==="ex1"){ evalEx1(); }
+  else if(phase==="ex2"){ evalEx2(); }
+  else if(phase.startsWith("ex3-")){ evalEx3Step(parseInt(phase.split("-")[1],10)); }
+  else if(phase==="check"){ evalChecklist(); finish(); return; }
+  run.phaseIndex++;
+  renderPhase();
 }
 
 /* ============================================================
-   ABSCHLUSS
+   ABSCHLUSS (mit Konzentration nachher + Historie)
    ============================================================ */
 function finish(){
   stopTimer();
+  // Konzentration NACHHER abfragen
+  askMood("Wie gut konntest du dich konzentrieren?", (val)=>{
+    run.konzNachher=val;
+    saveHistory();
+    showDone();
+  });
+}
+function saveHistory(){
   const tr=currentTraining();
-
-  // kompletten Text zusammensetzen
+  const dauerMin=Math.max(1, Math.round((Date.now()-run.startMs)/60000));
+  const d=new Date();
+  const datum=String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();
+  profile.history.unshift({
+    datum, uebung:tr.name, dauerMin,
+    konzVorher:run.konzVorher, konzNachher:run.konzNachher,
+    ergebnis:run.runStars
+  });
+  if(profile.history.length>50) profile.history.length=50;
+  saveProfile();
+}
+function showDone(){
+  const tr=currentTraining();
   let text=tr.ueberschrift+"\n\n";
-  const saetze=state.sentences.filter(s=>s && s.length);
-  if(saetze.length){
-    text+=saetze.join("\n");
-  }else if(state.ex2sentence){
-    text+=state.ex2sentence;
-  }else{
-    text+="(Noch keine Sätze geschrieben.)";
-  }
-  document.getElementById("finalText").textContent=text;
-  state.finalText=text;
+  const saetze=run.sentences.filter(s=>s && s.length);
+  if(saetze.length) text+=saetze.join("\n");
+  else if(run.ex2sentence) text+=run.ex2sentence;
+  else text+="(Noch keine Sätze geschrieben.)";
+  $("finalText").textContent=text;
+  run.finalText=text;
 
-  // Sterne & Level
-  document.getElementById("finalStars").textContent="⭐ "+state.stars;
+  $("finalStars").textContent="⭐ "+profile.stars;
   const {lvl,idx}=currentLevel();
-  document.getElementById("finalLevel").textContent="Level "+(idx+1)+" · "+lvl.name;
+  $("finalLevel").textContent="Level "+(idx+1)+" · "+lvl.name;
 
-  // Checkliste anzeigen
-  const ul=document.getElementById("finalChecklist");
-  ul.innerHTML="";
+  const ul=$("finalChecklist"); ul.innerHTML="";
   CHECK_FRAGEN.forEach((q,i)=>{
     const li=document.createElement("li");
-    li.innerHTML=(state.checklist[i]?"✅ ":"⬜ ")+q;
-    li.style.cursor="default";
+    li.innerHTML=(run.checklist[i]?"✅ ":"⬜ ")+q; li.style.cursor="default";
     ul.appendChild(li);
   });
 
-  // positives Feedback
-  const fb=document.getElementById("finalFeedback");
-  const anzahlAnfaenge=state.usedStarters.length;
+  const fb=$("finalFeedback");
   let msg="Du hast fleißig geübt und deinen Ablauf klarer beschrieben. ";
-  if(anzahlAnfaenge>=4) msg+="Toll, wie abwechslungsreich deine Satzanfänge sind! ";
-  else msg+="Beim nächsten Mal kannst du noch mehr verschiedene Satzanfänge ausprobieren. ";
+  msg+= run.usedStarters.length>=4 ? "Toll, wie abwechslungsreich deine Satzanfänge sind! "
+       : "Beim nächsten Mal kannst du noch mehr verschiedene Satzanfänge ausprobieren. ";
   msg+="Weiter so! 🌟";
   fb.innerHTML=`<div class="feedback ok">${msg}</div>`;
-
-  // Elternbereich-Daten aktualisieren
-  updateParentPanel();
 
   showScreen("screen-done");
 }
 
 /* ============================================================
-   ELTERNBEREICH
+   FORTSCHRITT-SCREEN
    ============================================================ */
-function updateParentPanel(){
-  const box=document.getElementById("parentLive");
-  const tr=currentTraining();
+function renderProgress(){
+  const {lvl,idx}=currentLevel();
+  $("pStars").textContent=profile.stars;
+  $("pPoints").textContent=profile.points;
+  $("pLevel").textContent=idx+1;
+  $("pRuns").textContent=profile.history.length;
+  $("pLevelName").textContent=lvl.name;
+  const next=LEVELS[idx+1];
+  if(next){
+    const pct=Math.min(100, Math.round((profile.stars-lvl.min)/(next.min-lvl.min)*100));
+    $("pLevelProgress").style.width=pct+"%";
+    $("pLevelHint").textContent="Noch "+(next.min-profile.stars)+" Sterne bis "+next.name;
+  }else{ $("pLevelProgress").style.width="100%"; $("pLevelHint").textContent="Höchstes Level erreicht – toll!"; }
 
-  // Welche Satzanfänge genutzt / welche fehlen
-  const genutzt=state.usedStarters;
+  const list=$("historyList");
+  if(!profile.history.length){ list.innerHTML='<p class="muted">Noch keine Übung abgeschlossen.</p>'; return; }
+  const mood=v=>({1:"😴",2:"🙂",3:"😃"}[v]||"–");
+  list.innerHTML=profile.history.map(h=>`
+    <div class="history-item">
+      <b>${h.datum} · ${h.uebung}</b><br>
+      ⭐ ${h.ergebnis} Sterne · ⏱️ ${h.dauerMin} Min ·
+      Konzentration ${mood(h.konzVorher)} → ${mood(h.konzNachher)}
+    </div>`).join("");
+}
+
+/* ============================================================
+   ELTERN-SCREEN
+   ============================================================ */
+function renderParent(){
+  const box=$("parentLive");
+  if(!run.sentences.length && !profile.history.length){
+    box.innerHTML='<p class="muted">Nach der ersten Übung erscheint hier eine kleine Auswertung.</p>';
+    return;
+  }
+  const genutzt=run.usedStarters;
   const fehlen=SATZANFAENGE.filter(a=>!genutzt.includes(a));
-
-  // grobe Auswertung der Sätze
   let vollstaendig=0, mitAnfang=0, langGenug=0;
-  state.sentences.forEach(s=>{
-    const p=pruefeSatz(s);
-    if(p.vollstaendig) vollstaendig++;
-    if(p.hatAnfang) mitAnfang++;
-    if(p.langGenug) langGenug++;
-  });
-  const gesamt=state.sentences.filter(s=>s).length;
+  const saetze=run.sentences.filter(s=>s);
+  saetze.forEach(s=>{ const p=pruefeSatz(s); if(p.vollstaendig)vollstaendig++; if(p.hatAnfang)mitAnfang++; if(p.langGenug)langGenug++; });
+  const gesamt=saetze.length||5;
 
   box.innerHTML=`
-    <h3>Letzte Übung: ${tr.name}</h3>
-    <p><b>Gesammelte Sterne:</b> ⭐ ${state.stars}</p>
-
+    <h3>Gesammelte Sterne: ⭐ ${profile.stars}</h3>
     <h3>Verwendete Satzanfänge</h3>
     <div>${genutzt.length? genutzt.map(a=>`<span class="tag">${a}</span>`).join("") : '<span class="muted">– noch keine –</span>'}</div>
-
     <h3>Was gut lief</h3>
     <ul>
-      <li>${vollstaendig} von ${gesamt||5} Sätzen waren vollständig (Tun-Wort + Punkt).</li>
+      <li>${vollstaendig} von ${gesamt} Sätzen waren vollständig (Tun-Wort + Punkt).</li>
       <li>${mitAnfang} Sätze hatten einen bewussten Satzanfang.</li>
       <li>${langGenug} Sätze waren ausführlich (mind. 8 Wörter).</li>
     </ul>
-
     <h3>Wo noch geübt werden kann</h3>
     <ul>
       ${fehlen.length? `<li>Diese Satzanfänge noch ausprobieren: ${fehlen.map(a=>`<span class="tag">${a}</span>`).join("")}</li>`:''}
@@ -1292,72 +1248,87 @@ function updateParentPanel(){
       ${vollstaendig<gesamt? '<li>Am Satzende an den Punkt denken.</li>':''}
       <li>Regelmäßig kurze Einheiten – das stärkt die Ausdauer.</li>
     </ul>
-    <p class="muted">Kein Notendruck – es zählt die Entwicklung. 💚</p>
-  `;
+    <p class="muted">Kein Notendruck – es zählt die Entwicklung. 💚</p>`;
 }
 
 /* ============================================================
-   EVENT-VERKNÜPFUNGEN
+   KONZENTRATIONS-ABFRAGE (Overlay)
+   ============================================================ */
+let moodCallback=null, moodValue=null;
+function askMood(title, cb){
+  moodCallback=cb; moodValue=null;
+  $("moodTitle").textContent=title;
+  document.querySelectorAll(".mood").forEach(m=>m.classList.remove("selected"));
+  $("moodOkBtn").disabled=true;
+  $("moodOverlay").classList.add("show");
+}
+function chooseMood(val, el){
+  moodValue=val;
+  document.querySelectorAll(".mood").forEach(m=>m.classList.remove("selected"));
+  el.classList.add("selected");
+  $("moodOkBtn").disabled=false;
+}
+function confirmMood(){
+  $("moodOverlay").classList.remove("show");
+  const cb=moodCallback; moodCallback=null;
+  if(cb) cb(moodValue);
+}
+
+/* ============================================================
+   ZWISCHENABLAGE
+   ============================================================ */
+function copyText(){
+  const txt=run.finalText||$("finalText").textContent;
+  const ok=()=>{ const m=$("copyMsg"); m.style.display="block"; setTimeout(()=>m.style.display="none",2000); };
+  const fallback=()=>{
+    const ta=document.createElement("textarea"); ta.value=txt; document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); ok(); }catch(e){} document.body.removeChild(ta);
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(ok).catch(fallback); }
+  else{ fallback(); }
+}
+
+/* ============================================================
+   EVENTS
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
-  loadProgress();
+  loadProfile();
+  $("helloName").textContent=profile.name||"Felix";
   buildStart();
   updateScoreUI();
 
-  // Start
-  document.getElementById("startBtn").onclick=startTraining;
+  $("startBtn").onclick=startTraining;
+  $("nextExerciseBtn").onclick=nextPhase;
+  $("againBtn").onclick=()=>{ goNav("start"); };
+  $("copyBtn").onclick=copyText;
 
-  // Trainingssteuerung
-  document.getElementById("nextExerciseBtn").onclick=nextExercise;
-  document.getElementById("backToStartBtn").onclick=()=>{
-    stopTimer(); showScreen("screen-start");
-  };
-  document.getElementById("pauseNowBtn").onclick=()=>{ if(!state.onPause) startPause(); };
+  // Pause
+  $("resumeBtn").onclick=endPause;
+  $("skipPauseBtn").onclick=endPause;
 
-  // Pausen-Overlay
-  document.getElementById("resumeBtn").onclick=endPause;
-  document.getElementById("skipPauseBtn").onclick=endPause;
+  // Konzentration
+  document.querySelectorAll(".mood").forEach(m=>{
+    m.onclick=()=>chooseMood(parseInt(m.dataset.mood,10), m);
+  });
+  $("moodOkBtn").onclick=confirmMood;
 
-  // Abschluss
-  document.getElementById("againBtn").onclick=()=>{ showScreen("screen-start"); };
-  document.getElementById("copyBtn").onclick=copyText;
+  // Untere Navigation
+  document.querySelectorAll(".nav-item").forEach(b=>{ b.onclick=()=>goNav(b.dataset.nav); });
 
-  // Elternbereich
-  document.getElementById("openParentBtn").onclick=()=>{
-    const p=document.getElementById("parentPanel");
-    p.classList.toggle("show");
-    if(p.classList.contains("show")) p.scrollIntoView({behavior:"smooth"});
-  };
-  document.getElementById("closeParentBtn").onclick=()=>{
-    document.getElementById("parentPanel").classList.remove("show");
-  };
-
-  // Fortschritt löschen
-  document.getElementById("resetProgressBtn").onclick=()=>{
-    if(confirm("Möchtest du den gespeicherten Fortschritt wirklich löschen?")) clearProgress();
-  };
+  // Fortschritt: Export / Import / Löschen
+  $("exportBtn").onclick=exportProgress;
+  $("importBtn").onclick=()=>$("importFile").click();
+  $("importFile").onchange=(e)=>{ if(e.target.files[0]) importProgress(e.target.files[0]); e.target.value=""; };
+  $("resetProgressBtn").onclick=()=>{ if(confirm("Möchtest du den gespeicherten Fortschritt wirklich löschen?")) clearProgress(); };
 });
 
-/* Text in die Zwischenablage kopieren */
-function copyText(){
-  const txt=state.finalText||document.getElementById("finalText").textContent;
-  const showOk=()=>{
-    const m=document.getElementById("copyMsg");
-    m.style.display="block";
-    setTimeout(()=>{ m.style.display="none"; },2000);
-  };
-  // moderne API, mit Fallback
-  if(navigator.clipboard && navigator.clipboard.writeText){
-    navigator.clipboard.writeText(txt).then(showOk).catch(fallbackCopy);
-  }else{
-    fallbackCopy();
-  }
-  function fallbackCopy(){
-    const ta=document.createElement("textarea");
-    ta.value=txt; document.body.appendChild(ta); ta.select();
-    try{ document.execCommand("copy"); showOk(); }catch(e){}
-    document.body.removeChild(ta);
-  }
+/* ============================================================
+   SERVICE WORKER (PWA) – nur über http/https, nicht file://
+   ============================================================ */
+if("serviceWorker" in navigator && (location.protocol==="https:" || location.protocol==="http:")){
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("service-worker.js").catch(()=>{ /* offline-Cache optional */ });
+  });
 }
 </script>
 </body>
