@@ -1,11 +1,11 @@
 /* ============================================================
-   Service Worker für die Felix-App (PWA)
+   Service Worker für die Lern-App (PWA)
    Ermöglicht das Laden der App ohne Internet (offline).
    Der Fortschritt selbst liegt im localStorage (nicht hier).
    ============================================================ */
 
 // Version des Caches – bei Änderungen hochzählen, damit Geräte neu laden.
-const CACHE_NAME = "felix-app-v2";
+const CACHE_NAME = "vb-app-v1";
 
 // Dateien, die für den Offline-Betrieb gespeichert werden.
 const ASSETS = [
