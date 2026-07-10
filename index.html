@@ -464,7 +464,7 @@ function fieldPool(key){
 }
 function fieldBadge(key){
   const lvl=fieldLevel(key), max=fieldMax(key), p=fieldProg(key);
-  return `<span class="lvl-badge">🎯 Stufe ${lvl}/${max}${fieldOverridden(key)?" 📌":""} · ${LEVEL_NAME[lvl]}${p.crown?" 👑":""}</span>`;
+  return `<span class="lvl-badge">🎯 Aktive Stufe ${lvl}/${max} · ${LEVEL_NAME[lvl]}${fieldOverridden(key)?" 📌":""}${p.crown?" 👑":""}</span>`;
 }
 
 // Auswertung + Einwertung (ohne Note), generisch. onRepeat startet die Runde neu.
@@ -1172,6 +1172,7 @@ function sjFrage(c){
     <div class="card">
       <h2>❓ Wer oder Was?</h2>
       <p class="muted">Satz ${frageIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("subj")}</div>
       <div class="sentence-box">${s.woerter.join(" ")}</div>
       <p>Das Subjekt ist <b>${s.subjektText}</b>.<br>Fragst du danach mit <b>Wer</b> oder mit <b>Was</b>?</p>
       <div style="display:flex; gap:10px;">
@@ -3471,6 +3472,7 @@ function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
    ============================================================ */
 let adminCatIdx=0;
 function openAdmin(){
+  stufenDraft=null; stufenSaved=false; // Stufen-Entwurf frisch vom gespeicherten Stand
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -3498,22 +3500,37 @@ function renderAdmin(c){
   if(adminTab==="woerter") renderAdminWoerter(c); else renderAdminStufen(c);
 }
 
-/* --- Tab „Stufen": feste Stufe global / je Klassenstufe / je Bereich --- */
-function stufenVal(scope){
-  const o=store.stufen;
+/* --- Tab „Stufen": feste Stufe global / je Klassenstufe / je Bereich.
+   Änderungen landen zuerst in einem Entwurf und werden erst mit
+   „Speichern" überall verlässlich aktiviert. --- */
+let stufenDraft=null, stufenSaved=false;
+function draftInit(){
+  if(!stufenDraft) stufenDraft=JSON.parse(JSON.stringify(store.stufen||{global:0,klasse:{},felder:{}}));
+}
+function draftVal(scope){
+  const o=stufenDraft;
   if(scope==="global") return o.global||0;
   if(scope.indexOf("klasse:")===0) return (o.klasse||{})[scope.slice(7)]||0;
   return (o.felder||{})[scope.slice(5)]||0;
 }
-function setStufe(scope, v){
-  const o=store.stufen;
+function draftSet(scope, v){
+  const o=stufenDraft;
   if(scope==="global") o.global=v;
   else if(scope.indexOf("klasse:")===0){ o.klasse=o.klasse||{}; if(v===0) delete o.klasse[scope.slice(7)]; else o.klasse[scope.slice(7)]=v; }
   else { o.felder=o.felder||{}; const k=scope.slice(5); if(v===0) delete o.felder[k]; else o.felder[k]=v; }
+}
+function draftDirty(){ return JSON.stringify(stufenDraft)!==JSON.stringify(store.stufen); }
+function stufenApply(){
+  store.stufen=JSON.parse(JSON.stringify(stufenDraft));
   save();
+  // Verlässlich überall aktivieren: laufende Runden und Zähler zurücksetzen,
+  // damit jede Übung sofort mit dem neuen Wort-Pool startet.
+  resetAllIdx();
+  scoreRuns={};
+  stufenSaved=true;
 }
 function segLine(label, scope, max){
-  const cur=stufenVal(scope);
+  const cur=draftVal(scope);
   const btns=[0,1,2,3].map(v=>{
     const dis = v>0 && max && v>max;
     return `<button class="seg${cur===v?" on":""}" data-scope="${scope}" data-v="${v}"${dis?" disabled":""}>${v===0?"Auto":v}</button>`;
@@ -3521,17 +3538,22 @@ function segLine(label, scope, max){
   return `<div class="seg-line"><span class="seg-label">${label}</span><div class="seg-row">${btns}</div></div>`;
 }
 function renderAdminStufen(c){
+  draftInit();
+  const dirty=draftDirty();
   const feldRows = Object.keys(MOD_FIELD).map(mid=>{
     const fk=MOD_FIELD[mid], m=MODULES[mid];
     return segLine(m.emoji+" "+m.name, "feld:"+fk, fieldMax(fk));
   }).join("");
   const gwsRows = GWS_KATEGORIEN.map(k=>
     segLine(k.emoji+" "+k.name, "feld:gws:"+k.id, fieldMax("gws:"+k.id))).join("");
+  const status = dirty
+    ? `<div class="lvl-note" style="text-align:left;">✏️ Änderungen noch nicht gespeichert.</div>`
+    : (stufenSaved ? `<div class="lvl-note up" style="text-align:left;">✅ <b>Gespeichert.</b> Die Stufen sind jetzt in allen Aufgaben aktiv.</div>` : ``);
   c.innerHTML = admHeader("stufen") + `
     <div class="card">
       <h3>🎯 Stufen steuern</h3>
       <p class="muted"><b>Auto</b> = Stufen werden durch Üben freigeschaltet.
-      <b>1–3</b> = Stufe gilt sofort und fest (📌). Der erspielte Fortschritt bleibt
+      <b>1–3</b> = Stufe gilt fest (📌). Der erspielte Fortschritt bleibt
       gespeichert und gilt wieder, sobald „Auto" gewählt ist.<br>
       Vorrang: <b>Bereich</b> vor <b>Klassenstufe</b> vor <b>Global</b>.</p>
       ${segLine("🌍 Global (alle Bereiche)","global",3)}
@@ -3539,12 +3561,26 @@ function renderAdminStufen(c){
       ${segLine("📘 Nur Klasse 4","klasse:4",3)}
     </div>
     <div class="card"><h3>Je Lernfeld</h3>${feldRows}</div>
-    <div class="card"><h3>Je Grundwortschatz-Gruppe</h3>${gwsRows}</div>`;
+    <div class="card"><h3>Je Grundwortschatz-Gruppe</h3>${gwsRows}</div>
+    <div class="card">
+      ${status}
+      <button class="btn-primary" id="stufenSave" style="width:100%;"${dirty?"":" disabled"}>💾 Speichern &amp; aktivieren</button>
+      <button class="btn-secondary btn-small mt" id="stufenDiscard" style="width:100%;"${dirty?"":" disabled"}>Änderungen verwerfen</button>
+    </div>`;
   admBindTabs(c);
   c.querySelectorAll(".seg[data-scope]").forEach(b=>b.onclick=()=>{
-    setStufe(b.dataset.scope, parseInt(b.dataset.v,10));
-    renderAdminStufen(c); window.scrollTo(0, window.scrollY);
+    draftSet(b.dataset.scope, parseInt(b.dataset.v,10));
+    stufenSaved=false;
+    const y=window.scrollY; renderAdminStufen(c); window.scrollTo(0,y);
   });
+  c.querySelector("#stufenSave").onclick=()=>{
+    stufenApply();
+    const y=window.scrollY; renderAdminStufen(c); window.scrollTo(0,y);
+  };
+  c.querySelector("#stufenDiscard").onclick=()=>{
+    stufenDraft=null; stufenSaved=false;
+    const y=window.scrollY; renderAdminStufen(c); window.scrollTo(0,y);
+  };
 }
 
 /* --- Tab „Wörter": Grundwortschatz-Listen bearbeiten --- */
