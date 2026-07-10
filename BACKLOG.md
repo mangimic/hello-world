@@ -21,7 +21,13 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 - 💬 **Online-Tipp-Übungen** (Sätze am Gerät schreiben) – erst wenn das Kind
   schneller am PC tippt
 
+## Umgesetzt
+- 🔊 **Vorlese-Funktion**: kleine „Vorlesen"-Knöpfe an Texten, Beispielen und
+  Fragen (Web Speech API, deutsche Stimme) – hilft beim Lesen und Verstehen
+- 🧭 **Kompass-4-Bereich**: Leseverstehen (mehrere Texte), Sprache &
+  Rechtschreibung nach Bereichen, Arbeitsblatt, Blumentopf-Selbstcheck
+
 ## Ideen für später
 - Weitere Rezepte/Abläufe als Arbeitsblatt
-- Vorlese-/Audio-Hilfe für die Grundlagen
+- Weitere Lesetexte für den Kompass-Bereich
 - Foto des fertigen Arbeitsblatts anhängen und mit der Blume verknüpfen

@@ -86,6 +86,9 @@ button:active{transform:scale(0.97);}
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
 .chip{background:#e4eefb; border:2px solid var(--primary); color:var(--primary-dark);
   border-radius:20px; padding:8px 14px; font-weight:700; font-size:15px;}
+button.chip{cursor:pointer; min-height:auto; font-family:inherit; line-height:1.2;}
+button.chip.on{background:var(--primary); color:#fff;}
+@media (hover:hover){ button.chip:hover{background:#d3e3f8;} button.chip.on:hover{background:var(--primary-dark);} }
 
 /* "So geht's" */
 .howto{display:flex; flex-direction:column; gap:10px; margin-top:8px;}
@@ -100,6 +103,8 @@ button:active{transform:scale(0.97);}
 .feedback.tip{background:#fff8e6; color:#a67c19;}
 /* Kompass: Lesetext & Quiz-Optionen */
 .lesetext{font-size:18px; line-height:1.65;}
+.speak-btn{background:#e4eefb; color:var(--primary-dark); border-radius:20px; padding:6px 12px; font-size:14px; font-weight:700; min-height:auto; margin:0 0 8px; display:inline-block;}
+@media (hover:hover){ .speak-btn:hover{background:#d3e3f8;} }
 .quiz-opt{display:block; width:100%; margin:6px 0; text-align:left; background:var(--soft); color:var(--text); font-weight:600; border-radius:12px; padding:12px 14px; font-size:17px;}
 .quiz-opt.ok{background:#e6f6ee;}
 .quiz-opt.no{background:#fbeceb;}
@@ -259,6 +264,47 @@ const THEMEN = [
   {id:"fussball", name:"Fußball", emoji:"⚽"}
 ];
 function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.name:"Alltag"; }
+
+/* ============================================================
+   VORLESE-FUNKTION (Web Speech API)
+   Liest Texte auf Deutsch vor. Kleine 🔊-Knöpfe werden nach dem
+   Rendern automatisch vor Lese-/Beispiel-/Satzboxen gesetzt.
+   ============================================================ */
+function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
+function stopSpeak(){ if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+function speak(text){
+  if(!speechOK() || !text) return;
+  try{
+    const s = window.speechSynthesis;
+    s.cancel();
+    const u = new SpeechSynthesisUtterance(String(text).replace(/\s+/g," ").trim());
+    u.lang = "de-DE"; u.rate = 0.9; u.pitch = 1;
+    const de = (s.getVoices()||[]).find(v=>/^de/i.test(v.lang));
+    if(de) u.voice = de;
+    s.speak(u);
+  }catch(e){}
+}
+// stellt sicher, dass Stimmen geladen sind (manche Browser laden sie asynchron)
+if(speechOK()){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
+
+// Fügt automatisch 🔊-Knöpfe vor vorlesbare Boxen ein.
+function addSpeakButtons(root){
+  if(!speechOK() || !root) return;
+  const sel = ".lesetext, .example-box, .sentence-box, .final-solution, .vorlesbar";
+  root.querySelectorAll(sel).forEach(function(box){
+    if(box.dataset.speakReady) return;
+    box.dataset.speakReady = "1";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "speak-btn";
+    btn.textContent = "🔊 Vorlesen";
+    btn.addEventListener("click", function(e){
+      e.preventDefault();
+      speak(box.dataset.speakText || box.textContent || "");
+    });
+    box.parentNode.insertBefore(btn, box);
+  });
+}
 
 /* ============================================================
    GEMEINSAME BAUSTEINE
@@ -467,6 +513,46 @@ const REZEPTE = {
       {lead:"Schritt 3", cue:"Wurm oder Made → an den Haken → befestigen"},
       {lead:"Schritt 4", cue:"Schnur → ins Wasser werfen → Pose beobachten → warten"},
       {lead:"Schritt 5", cue:"Biss abwarten → Fisch (Hecht, Zander oder Rotfeder) keschern → vorsichtig ansehen"}
+    ]},
+  tennis:{ name:"Tennis-Aufschlag", emoji:"🎾", titel:"So mache ich einen Aufschlag",
+    zutaten:"Tennisschläger, Tennisball, Tennisplatz, Turnschuhe, bequeme Kleidung",
+    stich:"Ball – hochwerfen – schlagen",
+    beispiele:[
+      "Zuerst stelle ich mich hinter die Grundlinie und nehme meinen Schläger und einen Ball.",
+      "Danach werfe ich den Ball mit der freien Hand gerade nach oben.",
+      "Zum Schluss schlage ich den Ball über das Netz in das Feld."],
+    loesung:[
+      "Zuerst stelle ich mich hinter die Grundlinie und nehme meinen Schläger und einen Ball.",
+      "Anschließend werfe ich den Ball mit der freien Hand gerade nach oben.",
+      "Danach hole ich mit dem Schläger hinter dem Kopf aus.",
+      "Nun treffe ich den Ball oben mit gestrecktem Arm.",
+      "Zum Schluss schlage ich den Ball über das Netz in das gegnerische Feld."],
+    schritte:[
+      {lead:"Schritt 1", cue:"hinter die Grundlinie stellen → Schläger + Ball nehmen"},
+      {lead:"Schritt 2", cue:"Ball → mit der freien Hand → gerade hochwerfen"},
+      {lead:"Schritt 3", cue:"Schläger → hinter den Kopf → ausholen"},
+      {lead:"Schritt 4", cue:"Ball oben → mit gestrecktem Arm → treffen"},
+      {lead:"Schritt 5", cue:"Ball → über das Netz → ins Feld schlagen"}
+    ]},
+  fussball:{ name:"Elfmeter schießen", emoji:"⚽", titel:"So schieße ich einen Elfmeter",
+    zutaten:"Fußball, Fußballschuhe, Tor, Elfmeterpunkt",
+    stich:"Ball – Punkt – schießen",
+    beispiele:[
+      "Zuerst lege ich den Ball genau auf den Elfmeterpunkt.",
+      "Danach gehe ich ein paar Schritte zurück und suche mir eine Ecke aus.",
+      "Zum Schluss schieße ich den Ball fest in die Ecke."],
+    loesung:[
+      "Zuerst lege ich den Ball genau auf den Elfmeterpunkt.",
+      "Anschließend gehe ich ein paar Schritte zurück.",
+      "Danach suche ich mir eine Ecke im Tor aus.",
+      "Nun laufe ich an und ziele mit dem Fuß.",
+      "Zum Schluss schieße ich den Ball fest in die Ecke."],
+    schritte:[
+      {lead:"Schritt 1", cue:"Ball → auf den Elfmeterpunkt → legen"},
+      {lead:"Schritt 2", cue:"ein paar Schritte → zurückgehen"},
+      {lead:"Schritt 3", cue:"eine Ecke im Tor → aussuchen"},
+      {lead:"Schritt 4", cue:"anlaufen → mit dem Fuß → zielen"},
+      {lead:"Schritt 5", cue:"Ball → fest → in die Ecke schießen"}
     ]}
 };
 
@@ -2093,57 +2179,143 @@ function doppelFlower(c){ renderFlower(c, MODULES.doppel.self, store.doppel.self
    Deckt die drei Testbereiche ab: Leseverstehen, Rechtschreibung,
    Sprache untersuchen. Sofortiges Feedback mit Begründung.
    ============================================================ */
-const KOMP_LESE = {
-  titel:"Der Hecht",
-  text:"Der Hecht ist ein Raubfisch. Er lebt in Seen und langsamen Flüssen. Sein Körper ist lang und schmal, damit er schnell schwimmen kann. Der Hecht hat ein großes Maul mit vielen spitzen Zähnen. Damit fängt er andere Fische. Meistens versteckt sich der Hecht zwischen Wasserpflanzen und wartet reglos. Kommt ein kleiner Fisch vorbei, schnappt der Hecht blitzschnell zu. Im Frühling legt das Hecht-Weibchen tausende Eier ins flache Wasser. Aus den Eiern schlüpfen winzige Junghechte. Ein ausgewachsener Hecht kann über einen Meter lang werden.",
-  fragen:[
-    {typ:"mc", frage:"Wo lebt der Hecht?", optionen:["In Seen und langsamen Flüssen","Im Meer","In der Wüste"], loesung:0,
-      erkl:"Im Text steht: „Er lebt in Seen und langsamen Flüssen.“", tipp:"Suche im Text die Stelle, wo steht, wo der Hecht lebt."},
-    {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht ist ein Raubfisch.“", optionen:["stimmt","stimmt nicht"], loesung:0,
-      erkl:"Der erste Satz sagt genau das.", tipp:"Lies noch einmal den Anfang des Textes."},
-    {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht hat keine Zähne.“", optionen:["stimmt","stimmt nicht"], loesung:1,
-      erkl:"Im Text steht: „viele spitze Zähne“ – er hat also welche.", tipp:"Suche im Text das Wort „Zähne“."},
-    {typ:"mc", frage:"Warum ist der Körper des Hechts lang und schmal?", optionen:["Damit er schnell schwimmen kann","Damit er Eier legen kann","Damit er bunt aussieht"], loesung:0,
-      erkl:"Der Text nennt genau diesen Grund.", tipp:"Suche den Satz mit „lang und schmal“."},
-    {typ:"mc", frage:"Was bedeutet „reglos“?", optionen:["ohne Bewegung","sehr laut","sehr schnell"], loesung:0,
-      erkl:"reg-los = ohne Regung, also ohne Bewegung.", tipp:"Die Endung „-los“ heißt „ohne“."},
-    {typ:"reveal", frage:"Wie fängt der Hecht seine Beute? Erkläre mit dem Text.",
-      loesung:"Er versteckt sich zwischen Wasserpflanzen, wartet reglos und schnappt blitzschnell zu, wenn ein kleiner Fisch vorbeikommt."}
-  ]
-};
-const KOMP_UEBEN = [
-  {typ:"mc", frage:"Welches Wort ist richtig? Verlängere: „Er flieg_.“", optionen:["Er fliegt","Er fliegd","Er fliekt"], loesung:0,
-    erkl:"Verlängern: „sie fliegen“ – man hört das g.", tipp:"Verlängere das Wort: sie flie…?"},
-  {typ:"mc", frage:"Von welchem Wort kommt „bräunlich“?", optionen:["braun","brauch","bräun"], loesung:0,
-    erkl:"„bräunlich“ ist von „braun“ abgeleitet.", tipp:"Welche Farbe steckt im Wort?"},
-  {typ:"mc", frage:"Ein Regal für Bücher ist ein …", optionen:["Bücherregal","Regalbuch","Buchregale"], loesung:0,
-    erkl:"Bei zusammengesetzten Nomen steht das Grundwort hinten: Regal.", tipp:"Welches Ding ist es? Ein Regal → das Wort steht hinten."},
-  {typ:"mc", frage:"Eine Höhle, in der Räuber wohnen, ist eine …", optionen:["Räuberhöhle","Höhlenräuber","Räubernhöhle"], loesung:0,
-    erkl:"Das Ding ist eine Höhle → „Höhle“ steht hinten.", tipp:"Grundwort (das Ding) steht hinten."},
-  {typ:"mc", frage:"Steigere: klug – klüger – …", optionen:["am klügsten","am klugsten","kluger"], loesung:0,
-    erkl:"Die höchste Stufe: „am … -sten“ (mit Umlaut).", tipp:"Die höchste Steigerung beginnt mit „am“."},
-  {typ:"mc", frage:"Steigere: groß – … – am größten", optionen:["größer","großer","gerößer"], loesung:0,
-    erkl:"Die 1. Vergleichsstufe: „größer“ (mit ö).", tipp:"Zwischen „groß“ und „am größten“ fehlt die -er-Form."},
-  {typ:"mc", frage:"Im Wort „Schwimmbad“ – welche Wortart ist „schwimmen“?", optionen:["Verb","Nomen","Adjektiv"], loesung:0,
-    erkl:"„schwimmen“ ist ein Tun-Wort → Verb.", tipp:"Frag: Was kann man tun?"},
-  {typ:"mc", frage:"Im Wort „Buntspecht“ – welche Wortart ist „bunt“?", optionen:["Adjektiv","Nomen","Verb"], loesung:0,
-    erkl:"„bunt“ beschreibt, wie etwas ist → Adjektiv (Wie-Wort).", tipp:"Frag: Wie ist der Specht?"},
-  {typ:"mc", frage:"„Paula malt ein Bild.“ In welcher Zeitform steht der Satz?", optionen:["Präsens","Präteritum","Perfekt"], loesung:0,
-    erkl:"„malt“ passiert jetzt → Präsens (Gegenwart).", tipp:"Passiert es jetzt, früher oder mit „habe/bin … ge…“?"},
-  {typ:"mc", frage:"„Ich habe ein Bild gemalt.“ In welcher Zeitform steht der Satz?", optionen:["Perfekt","Präsens","Präteritum"], loesung:0,
-    erkl:"„habe … gemalt“ → Perfekt.", tipp:"Achte auf „habe/bin … ge…“."},
-  {typ:"mc", frage:"Welches Wort hat den gleichen Wortstamm wie „fahren“?", optionen:["Mitfahrer","Fahne","Faden"], loesung:0,
-    erkl:"Der Wortstamm „fahr“ steckt in „Mitfahrer“.", tipp:"Suche den gemeinsamen Wortteil „fahr“."},
-  {typ:"mc", frage:"Wo stehen die Anführungszeichen richtig?", optionen:["Karl sagt: „Ich mag Lollis.“","Karl sagt „Ich: mag Lollis.“","Karl: sagt „Ich mag Lollis.“"], loesung:0,
-    erkl:"Erst der Begleitsatz mit Doppelpunkt, dann „…“ um die Rede.", tipp:"Der Doppelpunkt steht vor der wörtlichen Rede."},
-  {typ:"mc", frage:"Welches Wort muss großgeschrieben werden? „die kinder essen gerne.“", optionen:["Kinder","essen","gerne"], loesung:0,
-    erkl:"„Kinder“ ist ein Nomen (Namenwort) → groß.", tipp:"Welches Wort kann man mit der/die/das davor sagen?"},
-  {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["müssen","müsen","mussen"], loesung:0,
-    erkl:"Nach dem kurzen u folgt ss: müssen.", tipp:"Kurzer Selbstlaut → doppelter Mitlaut."},
-  {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["ausspucken","ausspuken","auspucken"], loesung:0,
-    erkl:"aus-spucken – mit ck.", tipp:"Sprich langsam: aus-spuk-ken."},
-  {typ:"mc", frage:"„Der kleine Hund spielt.“ Welches Wort ist das Subjekt?", optionen:["Der kleine Hund","spielt","kleine"], loesung:0,
-    erkl:"Wer spielt? – „Der kleine Hund“ (das Subjekt).", tipp:"Frage: Wer oder was spielt?"}
+/* ---- Leseverstehen: mehrere Texte zur Auswahl ---- */
+const KOMP_TEXTE = [
+  {
+    id:"hecht", titel:"Der Hecht", emoji:"🐟",
+    text:"Der Hecht ist ein Raubfisch. Er lebt in Seen und langsamen Flüssen. Sein Körper ist lang und schmal, damit er schnell schwimmen kann. Der Hecht hat ein großes Maul mit vielen spitzen Zähnen. Damit fängt er andere Fische. Meistens versteckt sich der Hecht zwischen Wasserpflanzen und wartet reglos. Kommt ein kleiner Fisch vorbei, schnappt der Hecht blitzschnell zu. Im Frühling legt das Hecht-Weibchen tausende Eier ins flache Wasser. Aus den Eiern schlüpfen winzige Junghechte. Ein ausgewachsener Hecht kann über einen Meter lang werden.",
+    fragen:[
+      {typ:"mc", frage:"Wo lebt der Hecht?", optionen:["In Seen und langsamen Flüssen","Im Meer","In der Wüste"], loesung:0,
+        erkl:"Im Text steht: „Er lebt in Seen und langsamen Flüssen.“", tipp:"Suche im Text die Stelle, wo steht, wo der Hecht lebt."},
+      {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht ist ein Raubfisch.“", optionen:["stimmt","stimmt nicht"], loesung:0,
+        erkl:"Der erste Satz sagt genau das.", tipp:"Lies noch einmal den Anfang des Textes."},
+      {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht hat keine Zähne.“", optionen:["stimmt","stimmt nicht"], loesung:1,
+        erkl:"Im Text steht: „viele spitze Zähne“ – er hat also welche.", tipp:"Suche im Text das Wort „Zähne“."},
+      {typ:"mc", frage:"Warum ist der Körper des Hechts lang und schmal?", optionen:["Damit er schnell schwimmen kann","Damit er Eier legen kann","Damit er bunt aussieht"], loesung:0,
+        erkl:"Der Text nennt genau diesen Grund.", tipp:"Suche den Satz mit „lang und schmal“."},
+      {typ:"mc", frage:"Was bedeutet „reglos“?", optionen:["ohne Bewegung","sehr laut","sehr schnell"], loesung:0,
+        erkl:"reg-los = ohne Regung, also ohne Bewegung.", tipp:"Die Endung „-los“ heißt „ohne“."},
+      {typ:"mc", frage:"Wann legt das Hecht-Weibchen die Eier?", optionen:["Im Frühling","Im Winter","Im Herbst"], loesung:0,
+        erkl:"Im Text: „Im Frühling legt das Hecht-Weibchen … Eier.“", tipp:"Suche die Jahreszeit im Text."},
+      {typ:"mc", frage:"Wie lang kann ein ausgewachsener Hecht werden?", optionen:["Über einen Meter","Etwa 10 Zentimeter","Über zehn Meter"], loesung:0,
+        erkl:"Der letzte Satz sagt: „über einen Meter lang“.", tipp:"Lies den letzten Satz."},
+      {typ:"reveal", frage:"Wie fängt der Hecht seine Beute? Erkläre mit dem Text.",
+        loesung:"Er versteckt sich zwischen Wasserpflanzen, wartet reglos und schnappt blitzschnell zu, wenn ein kleiner Fisch vorbeikommt."}
+    ]
+  },
+  {
+    id:"igel", titel:"Der Igel", emoji:"🦔",
+    text:"Der Igel ist ein kleines Säugetier. Auf seinem Rücken trägt er viele spitze Stacheln. Wenn ihm Gefahr droht, rollt er sich zu einer Kugel zusammen. So schützen die Stacheln seinen weichen Bauch. Der Igel schläft am Tag und wird erst in der Dämmerung munter. In der Nacht sucht er nach Käfern, Würmern und Schnecken. Im Herbst frisst er sich eine dicke Fettschicht an. Dann sucht er ein Versteck aus Laub und hält Winterschlaf. Erst im Frühling wacht der Igel wieder auf.",
+    fragen:[
+      {typ:"mc", frage:"Was trägt der Igel auf dem Rücken?", optionen:["Viele spitze Stacheln","Weiches Fell","Bunte Federn"], loesung:0,
+        erkl:"Im Text: „viele spitze Stacheln“.", tipp:"Suche den Satz über den Rücken."},
+      {typ:"mc", frage:"Was macht der Igel bei Gefahr?", optionen:["Er rollt sich zu einer Kugel zusammen","Er rennt ins Wasser","Er fliegt weg"], loesung:0,
+        erkl:"Der Text nennt genau das.", tipp:"Suche das Wort „Gefahr“."},
+      {typ:"mc", frage:"Wann ist der Igel munter?", optionen:["In der Dämmerung und nachts","Am Mittag","Nur morgens"], loesung:0,
+        erkl:"Er schläft am Tag und wird in der Dämmerung munter.", tipp:"Schläft er am Tag oder in der Nacht?"},
+      {typ:"mc", frage:"Was frisst der Igel?", optionen:["Käfer, Würmer und Schnecken","Gras und Blätter","Fische"], loesung:0,
+        erkl:"Im Text stehen genau diese drei.", tipp:"Suche die Aufzählung im Text."},
+      {typ:"mc", frage:"Stimmt die Aussage? „Der Igel hält Winterschlaf.“", optionen:["stimmt","stimmt nicht"], loesung:0,
+        erkl:"Im Herbst sucht er ein Versteck und hält Winterschlaf.", tipp:"Was macht der Igel im Herbst und Winter?"},
+      {typ:"mc", frage:"Warum frisst sich der Igel im Herbst eine Fettschicht an?", optionen:["Um den Winterschlaf zu überstehen","Weil er im Winter viel läuft","Damit er schneller wird"], loesung:0,
+        erkl:"Die Fettschicht hilft ihm, den langen Winterschlaf zu überstehen.", tipp:"Was passiert nach dem Herbst?"},
+      {typ:"reveal", frage:"Wie schützt sich der Igel vor Feinden? Erkläre mit dem Text.",
+        loesung:"Er rollt sich zu einer Kugel zusammen. Dann stehen die spitzen Stacheln nach außen und schützen seinen weichen Bauch."}
+    ]
+  }
+];
+
+/* ---- Sprache & Rechtschreibung: nach Bereichen geordnet ---- */
+const KOMP_BEREICHE = [
+  {
+    id:"recht", name:"Rechtschreibung", emoji:"🔤",
+    items:[
+      {typ:"mc", frage:"Welches Wort ist richtig? Verlängere: „Er flieg_.“", optionen:["Er fliegt","Er fliegd","Er fliekt"], loesung:0,
+        erkl:"Verlängern: „sie fliegen“ – man hört das g.", tipp:"Verlängere das Wort: sie flie…?"},
+      {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["müssen","müsen","mussen"], loesung:0,
+        erkl:"Nach dem kurzen u folgt ss: müssen.", tipp:"Kurzer Selbstlaut → doppelter Mitlaut."},
+      {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["ausspucken","ausspuken","auspucken"], loesung:0,
+        erkl:"aus-spucken – nach kurzem Selbstlaut steht ck.", tipp:"Sprich langsam: aus-spuk-ken."},
+      {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["Katze","Katse","Kazte"], loesung:0,
+        erkl:"Nach kurzem a steht tz: Katze.", tipp:"Kurzer Selbstlaut vor dem z-Laut → tz."},
+      {typ:"mc", frage:"Von welchem Wort kommt „Wälder“? Wie schreibt man es?", optionen:["Wald – deshalb mit ä","Welt – deshalb mit e","Well – deshalb mit e"], loesung:0,
+        erkl:"„Wälder“ kommt von „Wald“ → deshalb ä (nicht e).", tipp:"Welches Grundwort steckt darin? Wa…?"},
+      {typ:"mc", frage:"Wie schreibt man „Er verlässt das Haus“? Verlängere „verläss_“.", optionen:["verlässt","verläst","ferlässt"], loesung:0,
+        erkl:"Nach kurzem ä steht ss: verlässt (er verlässt – sie verlassen).", tipp:"Kurzer Selbstlaut → ss."},
+      {typ:"mc", frage:"Welches Wort schreibt man mit ä (von „fahren“ abgeleitet)?", optionen:["Er fährt","Er fehrt","Er faert"], loesung:0,
+        erkl:"„fährt“ kommt von „fahren“ → mit ä.", tipp:"Grundwort: fa-hren → deshalb ä."}
+    ]
+  },
+  {
+    id:"wortarten", name:"Wortarten", emoji:"🧩",
+    items:[
+      {typ:"mc", frage:"Welches Wort ist ein Nomen (Namenwort)?", optionen:["Blume","schnell","laufen"], loesung:0,
+        erkl:"„Blume“ ist ein Ding – man kann „die Blume“ sagen → Nomen.", tipp:"Passt der/die/das davor?"},
+      {typ:"mc", frage:"Im Wort „Schwimmbad“ – welche Wortart ist „schwimmen“?", optionen:["Verb","Nomen","Adjektiv"], loesung:0,
+        erkl:"„schwimmen“ ist ein Tun-Wort → Verb.", tipp:"Frag: Was kann man tun?"},
+      {typ:"mc", frage:"Im Wort „Buntspecht“ – welche Wortart ist „bunt“?", optionen:["Adjektiv","Nomen","Verb"], loesung:0,
+        erkl:"„bunt“ beschreibt, wie etwas ist → Adjektiv (Wie-Wort).", tipp:"Frag: Wie ist der Specht?"},
+      {typ:"mc", frage:"Welches Wort muss großgeschrieben werden? „die kinder essen gerne.“", optionen:["Kinder","essen","gerne"], loesung:0,
+        erkl:"„Kinder“ ist ein Nomen (Namenwort) → groß.", tipp:"Welches Wort kann man mit der/die/das davor sagen?"},
+      {typ:"mc", frage:"Welches Wort ist ein Adjektiv?", optionen:["freundlich","Freund","freuen"], loesung:0,
+        erkl:"„freundlich“ beschreibt, wie jemand ist → Adjektiv.", tipp:"Womit kann man sagen: Er ist …?"},
+      {typ:"mc", frage:"„Der Hund bellt laut.“ Welches Wort ist das Verb?", optionen:["bellt","Hund","laut"], loesung:0,
+        erkl:"„bellt“ ist das Tun-Wort → Verb.", tipp:"Was tut der Hund?"}
+    ]
+  },
+  {
+    id:"zeit", name:"Zeitformen", emoji:"⏰",
+    items:[
+      {typ:"mc", frage:"„Paula malt ein Bild.“ In welcher Zeitform steht der Satz?", optionen:["Präsens","Präteritum","Perfekt"], loesung:0,
+        erkl:"„malt“ passiert jetzt → Präsens (Gegenwart).", tipp:"Passiert es jetzt, früher oder mit „habe/bin … ge…“?"},
+      {typ:"mc", frage:"„Ich habe ein Bild gemalt.“ In welcher Zeitform steht der Satz?", optionen:["Perfekt","Präsens","Präteritum"], loesung:0,
+        erkl:"„habe … gemalt“ → Perfekt.", tipp:"Achte auf „habe/bin … ge…“."},
+      {typ:"mc", frage:"„Gestern spielte er Fußball.“ In welcher Zeitform steht der Satz?", optionen:["Präteritum","Präsens","Perfekt"], loesung:0,
+        erkl:"„spielte“ ist die einfache Vergangenheit → Präteritum.", tipp:"Das Signalwort „gestern“ hilft."},
+      {typ:"mc", frage:"Setze in die Vergangenheit (Präteritum): „Ich laufe.“ →", optionen:["Ich lief","Ich laufte","Ich gelaufen"], loesung:0,
+        erkl:"„laufen“ wird im Präteritum zu „lief“ (unregelmäßig).", tipp:"Wie hieß es gestern? Ich …?"},
+      {typ:"mc", frage:"Bilde das Perfekt: „Ich spiele.“ →", optionen:["Ich habe gespielt","Ich spielte","Ich werde spielen"], loesung:0,
+        erkl:"Perfekt = „habe“ + ge…t: „habe gespielt“.", tipp:"„habe“ + ge…?"},
+      {typ:"mc", frage:"„Morgen fahren wir ans Meer.“ Welche Zeit ist gemeint?", optionen:["Zukunft","Vergangenheit","–"], loesung:0,
+        erkl:"Das Signalwort „morgen“ zeigt die Zukunft.", tipp:"Achte auf das Wort „morgen“."}
+    ]
+  },
+  {
+    id:"satz", name:"Sätze & Satzglieder", emoji:"📝",
+    items:[
+      {typ:"mc", frage:"„Der kleine Hund spielt.“ Welches Wort ist das Subjekt?", optionen:["Der kleine Hund","spielt","kleine"], loesung:0,
+        erkl:"Wer spielt? – „Der kleine Hund“ (das Subjekt).", tipp:"Frage: Wer oder was spielt?"},
+      {typ:"mc", frage:"„Die Katze schläft auf dem Sofa.“ Welches Wort ist das Prädikat?", optionen:["schläft","Katze","Sofa"], loesung:0,
+        erkl:"Das Prädikat ist das Verb: „schläft“.", tipp:"Was tut die Katze?"},
+      {typ:"mc", frage:"Welches Satzzeichen fehlt? „Wo ist mein Ball_“", optionen:["?","!","."], loesung:0,
+        erkl:"Das ist eine Frage → Fragezeichen.", tipp:"Ist es eine Frage, ein Ausruf oder eine Aussage?"},
+      {typ:"mc", frage:"Welches Satzzeichen passt? „Pass auf_“", optionen:["!",".","?"], loesung:0,
+        erkl:"Das ist ein Aufforderungs-/Ausrufesatz → Ausrufezeichen.", tipp:"Ein Ausruf endet mit …?"},
+      {typ:"mc", frage:"„Am Morgen frühstückt Tom.“ Welcher Satzteil ist „Am Morgen“?", optionen:["eine Zeitangabe","das Subjekt","das Prädikat"], loesung:0,
+        erkl:"„Am Morgen“ sagt, wann etwas passiert → Zeitangabe.", tipp:"Frage: Wann frühstückt Tom?"},
+      {typ:"mc", frage:"„Der Hund läuft schnell.“ Frage nach dem Subjekt.", optionen:["Wer läuft schnell?","Was tut der Hund?","Wie läuft er?"], loesung:0,
+        erkl:"Nach dem Subjekt fragt man mit „Wer oder was?“.", tipp:"Mit welcher Frage findet man das Subjekt?"}
+    ]
+  },
+  {
+    id:"woerter", name:"Wörter & wörtliche Rede", emoji:"💬",
+    items:[
+      {typ:"mc", frage:"Ein Regal für Bücher ist ein …", optionen:["Bücherregal","Regalbuch","Buchregale"], loesung:0,
+        erkl:"Bei zusammengesetzten Nomen steht das Grundwort hinten: Regal.", tipp:"Welches Ding ist es? Ein Regal → das Wort steht hinten."},
+      {typ:"mc", frage:"Eine Höhle, in der Räuber wohnen, ist eine …", optionen:["Räuberhöhle","Höhlenräuber","Räubernhöhle"], loesung:0,
+        erkl:"Das Ding ist eine Höhle → „Höhle“ steht hinten.", tipp:"Grundwort (das Ding) steht hinten."},
+      {typ:"mc", frage:"Steigere: klug – klüger – …", optionen:["am klügsten","am klugsten","kluger"], loesung:0,
+        erkl:"Die höchste Stufe: „am … -sten“ (mit Umlaut).", tipp:"Die höchste Steigerung beginnt mit „am“."},
+      {typ:"mc", frage:"Steigere: groß – … – am größten", optionen:["größer","großer","gerößer"], loesung:0,
+        erkl:"Die 1. Vergleichsstufe: „größer“ (mit ö).", tipp:"Zwischen „groß“ und „am größten“ fehlt die -er-Form."},
+      {typ:"mc", frage:"Welches Wort hat den gleichen Wortstamm wie „fahren“?", optionen:["Mitfahrer","Fahne","Faden"], loesung:0,
+        erkl:"Der Wortstamm „fahr“ steckt in „Mitfahrer“.", tipp:"Suche den gemeinsamen Wortteil „fahr“."},
+      {typ:"mc", frage:"Wo stehen die Anführungszeichen richtig?", optionen:["Karl sagt: „Ich mag Lollis.“","Karl sagt „Ich: mag Lollis.“","Karl: sagt „Ich mag Lollis.“"], loesung:0,
+        erkl:"Erst der Begleitsatz mit Doppelpunkt, dann „…“ um die Rede.", tipp:"Der Doppelpunkt steht vor der wörtlichen Rede."},
+      {typ:"mc", frage:"Welches Wort ist das Gegenteil von „hell“?", optionen:["dunkel","laut","leicht"], loesung:0,
+        erkl:"Das Gegenteil (Gegenwort) von „hell“ ist „dunkel“.", tipp:"Denk an Tag und Nacht."}
+    ]
+  }
 ];
 const KRIT_KOMP = [
   "Habe ich den Text genau gelesen?",
@@ -2152,7 +2324,7 @@ const KRIT_KOMP = [
   "Habe ich meine Antworten am Ende überprüft?"
 ];
 const KRIT_KOMP_FORM = ["Ich habe mir Zeit gelassen.","Ich habe genau gelesen.","Ich habe meine Antworten überprüft."];
-let kompLeseIdx=0, kompUebIdx=0;
+let kompTextIdx=0, kompBereichIdx=0, kompLeseIdx=0, kompUebIdx=0;
 
 // Quiz-Engine mit sofortigem Feedback + Begründung
 function renderQuizPaged(host, items, getIdx, setIdx){
@@ -2161,10 +2333,16 @@ function renderQuizPaged(host, items, getIdx, setIdx){
   let answered=false, wrongTries=0;
   host.innerHTML = `
     <p class="muted">Aufgabe ${i+1} von ${items.length}</p>
+    <button type="button" class="speak-btn" id="qspeak">🔊 Vorlesen</button>
     <p style="font-size:19px;"><b>${it.frage}</b></p>
     <div id="opts"></div>
     <div id="qfb"></div>
     <button class="btn-primary btn-small mt" id="qnext" style="width:100%;">Weiter</button>`;
+  const spk=host.querySelector("#qspeak");
+  if(spk){
+    if(speechOK()){ spk.onclick=()=>speak(it.frage+". "+(it.optionen?it.optionen.join(". "):"")); }
+    else { spk.style.display="none"; }
+  }
   const fb=host.querySelector("#qfb");
   const opts=host.querySelector("#opts");
   if(it.typ==="reveal"){
@@ -2231,19 +2409,36 @@ function komInfo(c){
   c.querySelector("#toLesen").onclick=()=>goSection("lesen");
 }
 function komLesen(c){
-  const L=KOMP_LESE;
+  if(kompTextIdx>=KOMP_TEXTE.length) kompTextIdx=0;
+  const L=KOMP_TEXTE[kompTextIdx];
+  const chooser = KOMP_TEXTE.map((t,ti)=>
+    `<button class="chip${ti===kompTextIdx?" on":""}" data-ti="${ti}">${t.emoji} ${t.titel}</button>`).join("");
   c.innerHTML = `
-    <div class="card"><h2>📚 Leseverstehen</h2><p class="muted">Lies den Text. Beantworte dann die Fragen.</p></div>
-    <div class="card"><h3>${L.titel}</h3><div class="lesetext">${L.text}</div></div>
+    <div class="card"><h2>📚 Leseverstehen</h2><p class="muted">Wähle einen Text. Lies ihn genau und beantworte dann die Fragen.</p>
+      <div class="chip-row">${chooser}</div></div>
+    <div class="card"><h3>${L.emoji} ${L.titel}</h3><div class="lesetext">${L.text}</div></div>
     <div class="card" id="quizHost"></div>`;
+  c.querySelectorAll(".chip[data-ti]").forEach(b=>b.onclick=()=>{
+    kompTextIdx=+b.dataset.ti; kompLeseIdx=0; stopSpeak();
+    komLesen(c); addSpeakButtons(c);
+  });
   renderQuizPaged(c.querySelector("#quizHost"), L.fragen, ()=>kompLeseIdx, v=>kompLeseIdx=v);
 }
 function komUeben(c){
+  if(kompBereichIdx>=KOMP_BEREICHE.length) kompBereichIdx=0;
+  const B=KOMP_BEREICHE[kompBereichIdx];
+  const chooser = KOMP_BEREICHE.map((b,bi)=>
+    `<button class="chip${bi===kompBereichIdx?" on":""}" data-bi="${bi}">${b.emoji} ${b.name}</button>`).join("");
   c.innerHTML = `
     <div class="card"><h2>✏️ Sprache &amp; Rechtschreibung</h2>
-      <p class="muted">Kompass-Aufgaben. Du siehst sofort, ob es richtig war.</p></div>
-    <div class="card" id="quizHost"></div>`;
-  renderQuizPaged(c.querySelector("#quizHost"), KOMP_UEBEN, ()=>kompUebIdx, v=>kompUebIdx=v);
+      <p class="muted">Wähle einen Bereich. Du siehst sofort, ob es richtig war.</p>
+      <div class="chip-row">${chooser}</div></div>
+    <div class="card"><h3>${B.emoji} ${B.name}</h3><div id="quizHost"></div></div>`;
+  c.querySelectorAll(".chip[data-bi]").forEach(b=>b.onclick=()=>{
+    kompBereichIdx=+b.dataset.bi; kompUebIdx=0; stopSpeak();
+    komUeben(c); addSpeakButtons(c);
+  });
+  renderQuizPaged(c.querySelector("#quizHost"), B.items, ()=>kompUebIdx, v=>kompUebIdx=v);
 }
 function komSheet(c){
   c.innerHTML = `
@@ -2258,18 +2453,20 @@ function komSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function komWorksheetHTML(){
-  const L=KOMP_LESE;
+  const L=KOMP_TEXTE[kompTextIdx>=0&&kompTextIdx<KOMP_TEXTE.length?kompTextIdx:0];
   return `
     <div class="ws-head"><span class="pen">🧭</span><h2>Kompass 4 – Deutsch üben</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
     <div class="ws-task"><b>Lesetext:</b> ${L.titel}</div>
     <p style="font-size:12pt; line-height:1.5;">${L.text}</p>
-    <div class="ws-step"><div class="lead">1. Wo lebt der Hecht?</div><div class="writeline"></div></div>
-    <div class="ws-step"><div class="lead">2. Wie fängt der Hecht seine Beute? Erkläre.</div><div class="writeline"></div><div class="writeline"></div></div>
-    <div class="ws-step"><div class="lead">3. Bilde zusammengesetzte Nomen: Regal für Bücher = ____________ · Höhle für Räuber = ____________</div><div class="writeline"></div></div>
-    <div class="ws-step"><div class="lead">4. Steigere: klug – ____________ – ____________</div><div class="writeline"></div></div>
-    <div class="ws-step"><div class="lead">5. Setze die Zeichen der wörtlichen Rede: Karl sagt ____ Ich mag Lollis ____</div><div class="writeline"></div></div>
-    <div class="ws-step"><div class="lead">6. Trage die Zeitform ein: „Ich habe ein Bild gemalt.“ = ____________</div><div class="writeline"></div></div>`;
+    <div class="ws-step"><div class="lead">1. Worum geht es im Text? Schreibe einen Satz.</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">2. Beantworte eine Frage zum Text mit einem ganzen Satz.</div><div class="writeline"></div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">3. Rechtschreibung: Verlängere und schreibe richtig – der Berg → viele ____________ · der Hund → viele ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">4. Bilde zusammengesetzte Nomen: Regal für Bücher = ____________ · Höhle für Räuber = ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">5. Steigere: klug – ____________ – ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">6. Setze die Zeichen der wörtlichen Rede: Karl sagt ____ Ich mag Lollis ____</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">7. Trage die Zeitform ein: „Ich habe ein Bild gemalt.“ = ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">8. Setze in die Vergangenheit (Präteritum): „Ich laufe schnell.“ → ____________</div><div class="writeline"></div></div>`;
 }
 function komFlower(c){ renderFlower(c, MODULES.kompass.self, store.kompass.self); }
 
@@ -2472,7 +2669,7 @@ function buildLevelRow(){
 }
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
-  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=0;
+  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=0;
 }
 function buildThemeRow(){
   const row=$("themeRow"); row.innerHTML="";
@@ -2498,12 +2695,16 @@ function buildModuleChooser(){
   });
 }
 function openModule(id){
-  activeModuleId=id; store.lastModule=id; save();
+  activeModuleId=id; store.lastModule=id;
+  // Vorgangsbeschreibung folgt dem globalen Thema, wenn ein passender Ablauf existiert
+  if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
+  save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
+  stopSpeak();
   activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-home").classList.add("active");
@@ -2511,12 +2712,14 @@ function goHome(){
   window.scrollTo(0,0);
 }
 function goSection(secId){
+  stopSpeak();
   const m=MODULES[activeModuleId];
   const sec=m.sections.find(s=>s.id===secId) || m.sections[0];
   activeSectionId=sec.id;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
   sec.render($("moduleContent"));
+  addSpeakButtons($("moduleContent"));
   renderNav();
   window.scrollTo(0,0);
 }
