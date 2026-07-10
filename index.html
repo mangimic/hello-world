@@ -210,6 +210,17 @@ button.chip.on{background:var(--primary); color:#fff;}
   background:var(--soft); border-radius:999px; padding:2px 8px;}
 .lvl-row{margin:4px 0 2px;}
 
+/* Zurück-Button + Elternbereich */
+.back-btn{background:none; border:none; color:var(--primary-dark); font-size:16px; font-weight:800;
+  padding:6px 2px 2px; margin:0 0 4px; min-height:auto; cursor:pointer; text-align:left;}
+.linklike{background:none; border:none; color:var(--muted, #5b6b86); font-size:14px; font-weight:600;
+  min-height:auto; padding:6px 10px; cursor:pointer; text-decoration:underline;}
+.adm-row{display:flex; gap:6px; align-items:center; margin-bottom:6px;}
+.adm-row input{flex:1; min-width:0; font-size:15px; padding:8px 10px; border:1.5px solid #cfe2fb; border-radius:10px;}
+.adm-row .del{background:#fdecec; color:#b3402f; border-radius:10px; min-height:auto; padding:8px 10px; font-size:15px;}
+.adm-head{display:flex; justify-content:space-between; align-items:baseline; margin:10px 0 6px;}
+.adm-head h4{margin:0; font-size:15px;}
+
 /* Schnell-Klicker-Bremse: gesperrter Weiter-Knopf + Feedback-Puls */
 button.locked{opacity:.45; pointer-events:none;}
 .feedback{animation:fbpulse .5s ease;}
@@ -258,10 +269,14 @@ button.locked{opacity:.45; pointer-events:none;}
       </div>
       <div class="choice-grid" id="moduleChooser"></div>
     </div>
+    <p style="text-align:center; margin:4px 0 12px;">
+      <button class="linklike" id="adminLink">🔧 Elternbereich</button>
+    </p>
   </section>
 
   <!-- ========== INHALTSBEREICH (füllt das aktive Modul) ========== -->
   <section id="screen-content" class="screen">
+    <button class="back-btn" id="backBtn">← Zurück</button>
     <div id="moduleContent"></div>
   </section>
 
@@ -477,9 +492,11 @@ function renderRunResult(host, key, onRepeat){
         <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
         <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
       </div>
+      <button class="btn-secondary btn-small mt" id="runBack" style="width:100%;">← Zurück zur Startseite</button>
     </div>`;
   host.querySelector("#runAgain").onclick=()=>{ runReset(key); onRepeat(); window.scrollTo(0,0); };
   host.querySelector("#runBlume").onclick=()=>goSection("blume");
+  host.querySelector("#runBack").onclick=goHome;
   if(unlockedTo) setTimeout(()=>celebrateLevelUp(unlockedTo), 260);
   else if(newCrown) setTimeout(()=>celebrateCrown(), 260);
 }
@@ -2854,12 +2871,14 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
       ${wrong?`🔁 <b>Nochmal anschauen:</b> ${wrong}<br>`:``}
       ${open?`📝 <b>Offene Fragen zum Selbst-Prüfen:</b> ${open}`:``}
     </div>
-    <button class="btn-primary mt" id="qagain" style="width:100%;">🔁 Nochmal üben</button>`;
+    <button class="btn-primary mt" id="qagain" style="width:100%;">🔁 Nochmal üben</button>
+    <button class="btn-secondary btn-small mt" id="qback" style="width:100%;">← Zurück zur Startseite</button>`;
   host.querySelector("#qagain").onclick=()=>{
     setIdx(0);
     renderQuizPaged(host, items, getIdx, setIdx, {res:[]});
     window.scrollTo(0,0);
   };
+  host.querySelector("#qback").onclick=goHome;
 }
 function komInfo(c){
   c.innerHTML = `
@@ -3290,11 +3309,18 @@ const KRIT_GWS = [
 ];
 const KRIT_GWS_FORM = ["Ich habe mir die Wörter gemerkt.","Ich habe genau hingeschaut.","Ich habe meine Antworten überprüft."];
 let gwsCatIdx=0, gwsIdx=0;
+// Effektive Wortlisten: eigene Wörter aus dem Elternbereich (store.gwsWords)
+// haben Vorrang vor der eingebauten amtlichen Liste.
+function gwsLists(k){
+  const o = store.gwsWords && store.gwsWords[k.id];
+  if(o) return {leicht:o.leicht||[], schwer:o.schwer||[]};
+  return {leicht:k.leicht||[], schwer:k.schwer||[]};
+}
 // Stufen je Regel-Gruppe: Stufe 1 = leichte Wörter (Klasse 1/2), Stufe 2 = schwere (Klasse 3/4),
 // Stufe 3 = alle gemischt. Hat eine Gruppe nur einen Teil, wird hälftig gesteigert.
 GWS_KATEGORIEN.forEach(k=>{
   FIELD_POOLS["gws:"+k.id]=()=>{
-    const L=k.leicht||[], S=k.schwer||[];
+    const eff=gwsLists(k), L=eff.leicht, S=eff.schwer;
     if(L.length>=4 && S.length) return {easy:L, hard:S};
     const all=L.concat(S), half=Math.ceil(all.length/2);
     return {easy:all.slice(0,half), hard:all.slice(half)};
@@ -3302,9 +3328,9 @@ GWS_KATEGORIEN.forEach(k=>{
 });
 
 function gwsInfo(c){
-  const total = GWS_KATEGORIEN.reduce((a,k)=>a+(k.leicht||[]).length+(k.schwer||[]).length,0);
+  const total = GWS_KATEGORIEN.reduce((a,k)=>{ const e=gwsLists(k); return a+e.leicht.length+e.schwer.length; },0);
   const rows = GWS_KATEGORIEN.map(k=>{
-    const all=(k.leicht||[]).concat(k.schwer||[]);
+    const e=gwsLists(k); const all=e.leicht.concat(e.schwer);
     return `<div class="example-box" style="margin-bottom:8px;"><b>${k.emoji} ${k.name}</b><br>${k.regel}<br>
       <span class="muted">Beispiele: ${all.slice(0,4).map(w=>w.richtig).join(", ")}</span></div>`;
   }).join("");
@@ -3409,6 +3435,96 @@ function gwsWorksheetHTML(){
     ${blocks}`;
 }
 function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
+
+/* ============================================================
+   ELTERNBEREICH: Grundwortschatz-Wörter verwalten
+   Eigene Wörter je Regel-Gruppe eintragen/ändern/löschen.
+   Zeigt außerdem die Rotation (Pakete), damit klar ist,
+   dass alle Wörter drankommen.
+   ============================================================ */
+let adminCatIdx=0;
+function openAdmin(){
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  renderAdmin($("moduleContent"));
+  renderNav();
+  window.scrollTo(0,0);
+}
+function adminSaveLists(K, leicht, schwer){
+  if(leicht.length+schwer.length===0){ delete store.gwsWords[K.id]; }
+  else { store.gwsWords[K.id]={leicht:leicht, schwer:schwer}; }
+  save();
+}
+function renderAdmin(c){
+  if(adminCatIdx>=GWS_KATEGORIEN.length) adminCatIdx=0;
+  const K=GWS_KATEGORIEN[adminCatIdx];
+  const key="gws:"+K.id;
+  const eff=gwsLists(K);
+  const custom=!!store.gwsWords[K.id];
+  const p=fieldProg(key), lvl=fieldLevel(key), maxL=fieldMax(key);
+  const pool=fieldPool(key), nP=Math.max(1,Math.ceil(pool.length/10)), nextP=((p.runs||0)%nP)+1;
+  const chips=GWS_KATEGORIEN.map((k,ki)=>
+    `<button class="chip${ki===adminCatIdx?" on":""}" data-ai="${ki}">${k.emoji} ${k.name}</button>`).join("");
+  const rows=(list,poolName)=>list.map((w,i)=>`
+    <div class="adm-row" data-pool="${poolName}" data-i="${i}">
+      <input value="${w.richtig.replace(/"/g,"&quot;")}" data-f="richtig" aria-label="richtig">
+      <input value="${w.falsch.replace(/"/g,"&quot;")}" data-f="falsch" aria-label="falsch">
+      <button class="del" title="Wort löschen">🗑</button>
+    </div>`).join("");
+  c.innerHTML=`
+    <div class="card"><h2>🔧 Elternbereich</h2>
+      <p class="muted">Wörter des Grundwortschatz-Trainers ansehen und bei Bedarf austauschen.
+      Links steht die <b>richtige</b> Schreibung, rechts die <b>falsche</b> zum Vergleichen.</p>
+      <div class="chip-row">${chips}</div></div>
+    <div class="card">
+      <h3>${K.emoji} ${K.name} ${custom?'<span class="lvl-badge">eigene Liste</span>':'<span class="lvl-badge">amtliche Liste</span>'}</h3>
+      <div class="example-box">🔄 <b>Rotation:</b> Die Wörter der aktuellen Stufe werden in
+        <b>Pakete à 10</b> geteilt. Nach jeder Runde wechselt das Paket automatisch –
+        so kommen <b>alle Wörter</b> mal dran.<br>
+        Stand: Stufe ${lvl}/${maxL} · als Nächstes <b>Paket ${nextP} von ${nP}</b> (${pool.length} Wörter in dieser Stufe).</div>
+      <div class="adm-head"><h4>🟢 Leichte Wörter (Stufe 1)</h4><span class="muted">${eff.leicht.length} Wörter</span></div>
+      <div id="admLeicht">${rows(eff.leicht,"leicht")}</div>
+      <button class="btn-secondary btn-small" id="addLeicht">+ Wort (leicht)</button>
+      <div class="adm-head"><h4>🔵 Schwere Wörter (Stufe 2)</h4><span class="muted">${eff.schwer.length} Wörter</span></div>
+      <div id="admSchwer">${rows(eff.schwer,"schwer")}</div>
+      <button class="btn-secondary btn-small" id="addSchwer">+ Wort (schwer)</button>
+    </div>
+    <div class="card">
+      <button class="btn-secondary btn-small" id="admReset" style="width:100%;"${custom?"":" disabled"}>↩️ Auf amtliche Liste zurücksetzen</button>
+      <button class="btn-secondary btn-small mt" id="admProg" style="width:100%;">🔄 Übungs-Fortschritt dieser Gruppe zurücksetzen</button>
+    </div>`;
+  c.querySelectorAll(".chip[data-ai]").forEach(b=>b.onclick=()=>{ adminCatIdx=+b.dataset.ai; renderAdmin(c); });
+
+  // Aktuelle Listen aus dem Formular einsammeln und speichern
+  const collect=()=>{
+    const grab=poolName=>[...c.querySelectorAll(`.adm-row[data-pool="${poolName}"]`)].map(r=>({
+      richtig:r.querySelector('[data-f="richtig"]').value.trim(),
+      falsch:r.querySelector('[data-f="falsch"]').value.trim()
+    })).filter(w=>w.richtig && w.falsch && w.richtig!==w.falsch);
+    adminSaveLists(K, grab("leicht"), grab("schwer"));
+  };
+  c.querySelectorAll(".adm-row input").forEach(inp=>inp.onchange=collect);
+  c.querySelectorAll(".adm-row .del").forEach(btn=>btn.onclick=()=>{ btn.closest(".adm-row").remove(); collect(); renderAdmin(c); });
+  const addRow=poolName=>{
+    collect();
+    const cur=store.gwsWords[K.id]||{leicht:eff.leicht.slice(), schwer:eff.schwer.slice()};
+    cur[poolName]=(cur[poolName]||[]).concat([{richtig:"neues Wort", falsch:"neuses Wort"}]);
+    store.gwsWords[K.id]=cur; save(); renderAdmin(c);
+  };
+  c.querySelector("#addLeicht").onclick=()=>addRow("leicht");
+  c.querySelector("#addSchwer").onclick=()=>addRow("schwer");
+  c.querySelector("#admReset").onclick=()=>{
+    if(confirm("Eigene Wörter dieser Gruppe verwerfen und die amtliche Liste verwenden?")){
+      delete store.gwsWords[K.id]; save(); renderAdmin(c);
+    }
+  };
+  c.querySelector("#admProg").onclick=()=>{
+    if(confirm("Stufen und Pakete dieser Gruppe auf Anfang setzen?")){
+      delete store.progress[key]; save(); renderAdmin(c);
+    }
+  };
+}
 
 /* ============================================================
    MODUL-REGISTRIERUNG
@@ -3559,6 +3675,7 @@ let store = {
   level:3,        // Klassenstufe: 3, 4 oder 0 (= alle)
   thema:"alltag", // globales Thema für alle Satz-Übungen
   progress:{},    // je Lernfeld: {unlocked:1..3, runs:0, crown:false} – Stufen/Level
+  gwsWords:{},    // Elternbereich: eigene Wortlisten je Grundwortschatz-Gruppe
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
   subjekt:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   praedikat:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -3596,6 +3713,18 @@ function load(){
           unlocked:Math.max(1,Math.min(3,parseInt(v.unlocked,10)||1)),
           runs:Math.max(0,parseInt(v.runs,10)||0),
           crown:!!v.crown }; });
+    }
+    if(d.gwsWords && typeof d.gwsWords==="object"){
+      const cleanList = a => (Array.isArray(a)?a:[])
+        .filter(w=>w && typeof w.richtig==="string" && typeof w.falsch==="string"
+                 && w.richtig.trim() && w.falsch.trim() && w.richtig!==w.falsch)
+        .map(w=>({richtig:w.richtig.trim(), falsch:w.falsch.trim()}));
+      Object.keys(d.gwsWords).forEach(id=>{
+        if(!GWS_KATEGORIEN.some(k=>k.id===id)) return;
+        const v=d.gwsWords[id]||{};
+        const L=cleanList(v.leicht), S=cleanList(v.schwer);
+        if(L.length+S.length>0) store.gwsWords[id]={leicht:L, schwer:S};
+      });
     }
   }catch(e){}
 }
@@ -3716,6 +3845,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Level-Up Overlay schließen
   $("lvlupClose").onclick=hideLevelUp;
   $("levelUp").addEventListener("click",e=>{ if(e.target.id==="levelUp") hideLevelUp(); });
+  // Zurück-Button + Elternbereich
+  $("backBtn").onclick=goHome;
+  $("adminLink").onclick=openAdmin;
   // letztes Lernfeld für die Navigation vormerken, aber auf der Startseite bleiben
   activeModuleId = (store.lastModule && MODULES[store.lastModule]) ? store.lastModule : null;
   goHome();
