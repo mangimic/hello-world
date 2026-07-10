@@ -175,6 +175,7 @@ button.chip.on{background:var(--primary); color:#fff;}
 #worksheet .ws-head .pen{font-size:30px;}
 #worksheet h2{font-size:19px; margin:0;}
 #worksheet .ws-name{margin:14px 0; font-size:17px;}
+#worksheet .ws-level{display:inline-block; border:1.5px solid #000; border-radius:6px; padding:2px 10px; font-size:14px; font-weight:700; margin:0 0 12px;}
 #worksheet .ws-task{background:#f2f6fc; border:1.5px solid #000; border-radius:8px; padding:10px 12px; margin:12px 0; font-size:15px; line-height:1.45;}
 #worksheet .ws-box{border:1.5px solid #000; border-radius:8px; padding:10px; margin:12px 0;}
 #worksheet .ws-step{margin:20px 0;}
@@ -272,6 +273,8 @@ function byLevel(base, extra){
   if(store.level===4) return extra.length ? extra : base;
   return base; // Klasse 3
 }
+// Beschriftung der gewählten Klassenstufe (für Arbeitsblätter)
+function klasseLabel(){ return store.level===3 ? "Klasse 3" : store.level===4 ? "Klasse 4" : "Klasse 3 & 4"; }
 
 /* ============================================================
    GEMEINSAME BAUSTEINE
@@ -670,21 +673,32 @@ function vgSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function vgWorksheetHTML(r){
+  const profi = store.level!==3; // Klasse 4 (und „Alle") mit höheren Anforderungen
   const stepLines = r.schritte.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${s.lead}: Schreibe den ${i+1}. Schritt in einem ganzen Satz auf die Zeilen.</div>
       <div class="cue">Diese Stichworte helfen dir: ${s.cue}</div>
       <div class="writeline"></div><div class="writeline"></div><div class="writeline"></div>
     </div>`).join("");
-  const checkItems = ["Überschrift gefunden","alle Zutaten/Hilfsmittel genannt","jeden Schritt beschrieben",
-    "verschiedene Satzanfänge benutzt","in der Ich-Form geschrieben","Punkte am Satzende gesetzt"]
+  const checkBase = ["Überschrift gefunden","alle Zutaten/Hilfsmittel genannt","jeden Schritt beschrieben",
+    "verschiedene Satzanfänge benutzt"];
+  const checkK3 = ["in der Ich-Form geschrieben","Punkte am Satzende gesetzt"];
+  const checkK4 = ["in der man-Form geschrieben","Fachbegriffe benutzt","mit Bindewörtern verbunden (zuerst, danach, zum Schluss)","alles noch einmal geprüft"];
+  const checkItems = checkBase.concat(profi?checkK4:checkK3)
     .map(t=>`<div class="cline"><span class="cbox"></span>${t}</div>`).join("");
+  const task = profi
+    ? `<b>Deine Aufgabe (Klasse 4):</b> Schreibe eine genaue Vorgangsbeschreibung zum Thema „${r.name}“.
+       Schreibe zu jedem Schritt einen ganzen Satz in der <b>man-Form</b> („Man nimmt …“). Nenne <b>genaue
+       Mengen und Hilfsmittel</b>, benutze <b>Fachbegriffe</b> und verbinde die Schritte mit <b>Bindewörtern</b>
+       (zuerst, danach, sobald, zum Schluss). Halte die <b>richtige Reihenfolge</b> ein.`
+    : `<b>Deine Aufgabe:</b> Schreibe eine Vorgangsbeschreibung zum Thema „${r.name}“.
+       Schreibe zu jedem Schritt einen ganzen Satz in der Ich-Form. Benutze verschiedene Satzanfänge
+       und setze am Ende jedes Satzes einen Punkt.`;
   return `
     <div class="ws-head"><span class="pen">✏️</span><h2>Vorgangsbeschreibung: ${r.name}</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
-    <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe eine Vorgangsbeschreibung zum Thema „${r.name}“.
-      Schreibe zu jedem Schritt einen ganzen Satz in der Ich-Form. Benutze verschiedene Satzanfänge
-      und setze am Ende jedes Satzes einen Punkt.</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
+    <div class="ws-task">${task}</div>
     <div class="ws-box"><b>Schreibe hier deine Überschrift:</b><div class="writeline"></div></div>
     <div class="ws-box"><b>Schreibe hier, was du brauchst (Zutaten &amp; Hilfsmittel):</b>
       <div class="writeline"></div><div class="writeline"></div></div>
@@ -991,6 +1005,7 @@ function sjWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🔍</span><h2>Subjekte (${thema.name}) – Wer oder was?</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Subjekt</b> blau.
       Finde es mit der Frage „<b>Wer oder was?</b>“ + Tun-Wort und schreibe die Frage auf die Linie.
       Denk daran: bei Personen fragst du „Wer?“, bei Dingen und Tieren „Was?“.</div>
@@ -1190,6 +1205,7 @@ function praedWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">⚡</span><h2>Prädikat (${thema.name}) – das Tun-Wort</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Prädikat</b> (das Tun-Wort).
       Finde es mit der Frage „<b>Was tut …?</b>“ oder „<b>Was passiert?</b>“. Achtung: manche Prädikate haben zwei Teile!</div>
     ${lines}`;
@@ -1367,6 +1383,7 @@ function sgWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🧩</span><h2>Satzglieder (${thema.name}) – Subjekt &amp; Prädikat</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Unterstreiche in jedem Satz das <b>Subjekt blau</b> (Wer/Was?)
       und das <b>Prädikat rot</b> (Was tut?). Manche Prädikate haben zwei Teile.</div>
     ${lines}`;
@@ -1526,6 +1543,7 @@ function redeWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">💬</span><h2>Wörtliche Rede (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Setze in jedem Satz die <b>Anführungszeichen</b> „ … “
       um das, was gesagt wird, und unterstreiche die wörtliche Rede. Denk an den Doppelpunkt im Begleitsatz.</div>
     ${lines}`;
@@ -1675,6 +1693,7 @@ function zeitWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">⏰</span><h2>Zeitformen (${thema.name}) – die vier Zeitformen</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Lies jeden Satz. Unterstreiche das <b>Zeitwort</b> und schreibe dahinter die Zeitform:
       <b>Präsens</b> (jetzt), <b>Präteritum</b> (früher), <b>Perfekt</b> (habe/bin … ge…) oder <b>Futur</b> (werde …).</div>
     ${lines}`;
@@ -1804,6 +1823,7 @@ function gkWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🔠</span><h2>Groß &amp; klein (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe jeden Satz richtig ab. Groß schreibst du das
       <b>erste Wort</b> im Satz und alle <b>Nomen</b> (Namenwörter). Alle anderen Wörter bleiben klein.</div>
     ${lines}`;
@@ -1921,6 +1941,7 @@ function ddWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🔤</span><h2>das / dass (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Setze in jede Lücke <b>das</b> oder <b>dass</b>.
       Tipp: Passt „dieses/welches“? → <b>das</b>. Sonst → <b>dass</b>.</div>
     ${lines}`;
@@ -2085,6 +2106,7 @@ function waWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🏷️</span><h2>Wortarten (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Bestimme bei jedem Satz die Wortart des angegebenen Wortes:
       <b>Nomen</b> (Namenwort), <b>Verb</b> (Tun-Wort) oder <b>Adjektiv</b> (Wie-Wort).</div>
     ${lines}`;
@@ -2218,6 +2240,7 @@ function faelleWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🎯</span><h2>Die 4 Fälle (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Bestimme bei jedem Satz den Fall des markierten Teils.
       Nominativ (Wer/Was?), Genitiv (Wessen?), Dativ (Wem?) oder Akkusativ (Wen/Was?).</div>
     ${lines}`;
@@ -2347,6 +2370,7 @@ function doppelWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🔡</span><h2>Doppelte Mitlaute (${thema.name})</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe jedes Wort richtig ab. Nach einem kurz gesprochenen
       Selbstlaut folgt oft ein <b>doppelter Mitlaut</b> (Sonne, Ball, Wasser).</div>
     ${lines}`;
@@ -2672,6 +2696,7 @@ function komWorksheetHTML(){
   return `
     <div class="ws-head"><span class="pen">🧭</span><h2>Kompass 4 – Deutsch üben</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
     <div class="ws-task"><b>Lesetext:</b> ${L.titel}</div>
     <p style="font-size:12pt; line-height:1.5;">${L.text}</p>
     <div class="ws-step"><div class="lead">1. Worum geht es im Text? Schreibe einen Satz.</div><div class="writeline"></div></div>
