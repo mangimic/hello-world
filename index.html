@@ -103,8 +103,6 @@ button.chip.on{background:var(--primary); color:#fff;}
 .feedback.tip{background:#fff8e6; color:#a67c19;}
 /* Kompass: Lesetext & Quiz-Optionen */
 .lesetext{font-size:18px; line-height:1.65;}
-.speak-btn{background:#e4eefb; color:var(--primary-dark); border-radius:20px; padding:6px 12px; font-size:14px; font-weight:700; min-height:auto; margin:0 0 8px; display:inline-block;}
-@media (hover:hover){ .speak-btn:hover{background:#d3e3f8;} }
 .quiz-opt{display:block; width:100%; margin:6px 0; text-align:left; background:var(--soft); color:var(--text); font-weight:600; border-radius:12px; padding:12px 14px; font-size:17px;}
 .quiz-opt.ok{background:#e6f6ee;}
 .quiz-opt.no{background:#fbeceb;}
@@ -264,47 +262,6 @@ const THEMEN = [
   {id:"fussball", name:"Fußball", emoji:"⚽"}
 ];
 function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.name:"Alltag"; }
-
-/* ============================================================
-   VORLESE-FUNKTION (Web Speech API)
-   Liest Texte auf Deutsch vor. Kleine 🔊-Knöpfe werden nach dem
-   Rendern automatisch vor Lese-/Beispiel-/Satzboxen gesetzt.
-   ============================================================ */
-function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
-function stopSpeak(){ if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
-function speak(text){
-  if(!speechOK() || !text) return;
-  try{
-    const s = window.speechSynthesis;
-    s.cancel();
-    const u = new SpeechSynthesisUtterance(String(text).replace(/\s+/g," ").trim());
-    u.lang = "de-DE"; u.rate = 0.9; u.pitch = 1;
-    const de = (s.getVoices()||[]).find(v=>/^de/i.test(v.lang));
-    if(de) u.voice = de;
-    s.speak(u);
-  }catch(e){}
-}
-// stellt sicher, dass Stimmen geladen sind (manche Browser laden sie asynchron)
-if(speechOK()){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
-
-// Fügt automatisch 🔊-Knöpfe vor vorlesbare Boxen ein.
-function addSpeakButtons(root){
-  if(!speechOK() || !root) return;
-  const sel = ".lesetext, .example-box, .sentence-box, .final-solution, .vorlesbar";
-  root.querySelectorAll(sel).forEach(function(box){
-    if(box.dataset.speakReady) return;
-    box.dataset.speakReady = "1";
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = "speak-btn";
-    btn.textContent = "🔊 Vorlesen";
-    btn.addEventListener("click", function(e){
-      e.preventDefault();
-      speak(box.dataset.speakText || box.textContent || "");
-    });
-    box.parentNode.insertBefore(btn, box);
-  });
-}
 
 /* ============================================================
    GEMEINSAME BAUSTEINE
@@ -2336,16 +2293,10 @@ function renderQuizPaged(host, items, getIdx, setIdx, state){
   let answered=false, wrongTries=0;
   host.innerHTML = `
     <p class="muted">Aufgabe ${i+1} von ${items.length}</p>
-    <button type="button" class="speak-btn" id="qspeak">🔊 Vorlesen</button>
     <p style="font-size:19px;"><b>${it.frage}</b></p>
     <div id="opts"></div>
     <div id="qfb"></div>
     <button class="btn-primary btn-small mt" id="qnext" style="width:100%;">Weiter</button>`;
-  const spk=host.querySelector("#qspeak");
-  if(spk){
-    if(speechOK()){ spk.onclick=()=>speak(it.frage+". "+(it.optionen?it.optionen.join(". "):"")); }
-    else { spk.style.display="none"; }
-  }
   const fb=host.querySelector("#qfb");
   const opts=host.querySelector("#opts");
   if(it.typ==="reveal"){
@@ -2423,7 +2374,7 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
     </div>
     <button class="btn-primary mt" id="qagain" style="width:100%;">🔁 Nochmal üben</button>`;
   host.querySelector("#qagain").onclick=()=>{
-    setIdx(0); stopSpeak();
+    setIdx(0);
     renderQuizPaged(host, items, getIdx, setIdx, {res:[]});
     window.scrollTo(0,0);
   };
@@ -2460,8 +2411,8 @@ function komLesen(c){
     <div class="card"><h3>${L.emoji} ${L.titel}</h3><div class="lesetext">${L.text}</div></div>
     <div class="card" id="quizHost"></div>`;
   c.querySelectorAll(".chip[data-ti]").forEach(b=>b.onclick=()=>{
-    kompTextIdx=+b.dataset.ti; kompLeseIdx=0; stopSpeak();
-    komLesen(c); addSpeakButtons(c);
+    kompTextIdx=+b.dataset.ti; kompLeseIdx=0;
+    komLesen(c);
   });
   renderQuizPaged(c.querySelector("#quizHost"), L.fragen, ()=>kompLeseIdx, v=>kompLeseIdx=v);
 }
@@ -2477,8 +2428,8 @@ function komUeben(c){
       <div class="chip-row">${chooser}</div></div>
     <div class="card"><h3>${B.emoji} ${B.name}</h3><div id="quizHost"></div></div>`;
   c.querySelectorAll(".chip[data-bi]").forEach(b=>b.onclick=()=>{
-    kompBereichIdx=+b.dataset.bi; kompUebIdx=0; stopSpeak();
-    komUeben(c); addSpeakButtons(c);
+    kompBereichIdx=+b.dataset.bi; kompUebIdx=0;
+    komUeben(c);
   });
   renderQuizPaged(c.querySelector("#quizHost"), B.items, ()=>kompUebIdx, v=>kompUebIdx=v);
 }
@@ -2746,7 +2697,6 @@ function openModule(id){
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
-  stopSpeak();
   activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-home").classList.add("active");
@@ -2754,14 +2704,12 @@ function goHome(){
   window.scrollTo(0,0);
 }
 function goSection(secId){
-  stopSpeak();
   const m=MODULES[activeModuleId];
   const sec=m.sections.find(s=>s.id===secId) || m.sections[0];
   activeSectionId=sec.id;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
   sec.render($("moduleContent"));
-  addSpeakButtons($("moduleContent"));
   renderNav();
   window.scrollTo(0,0);
 }
