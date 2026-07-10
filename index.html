@@ -2896,60 +2896,333 @@ function komFlower(c){ renderFlower(c, MODULES.kompass.self, store.kompass.self)
    ============================================================ */
 const GWS_KATEGORIEN = [
   {id:"dopp", name:"Doppelte Mitlaute", emoji:"🔡",
-   regel:"Nach einem <b>kurzen</b> Selbstlaut kommt ein <b>doppelter</b> Mitlaut.",
-   tipp:"Kurzer Selbstlaut → doppelter Mitlaut (son-ne).",
-   woerter:[{richtig:"Sonne",falsch:"Sone"},{richtig:"Wasser",falsch:"Waser"},{richtig:"kommen",falsch:"komen"},
-     {richtig:"rennen",falsch:"renen"},{richtig:"Mutter",falsch:"Muter"},{richtig:"immer",falsch:"imer"},
-     {richtig:"Sommer",falsch:"Somer"},{richtig:"Teller",falsch:"Teler"},{richtig:"Puppe",falsch:"Pupe"},
-     {richtig:"schwimmen",falsch:"schwimen"}]},
-  {id:"cktz", name:"ck und tz", emoji:"🔠",
-   regel:"Nach kurzem Selbstlaut schreibt man <b>ck</b> und <b>tz</b>.",
-   tipp:"Nach kurzem Selbstlaut: ck und tz (Ka-tze, Brü-cke).",
-   woerter:[{richtig:"Zucker",falsch:"Zuker"},{richtig:"Brücke",falsch:"Brüke"},{richtig:"backen",falsch:"baken"},
-     {richtig:"Decke",falsch:"Deke"},{richtig:"Glocke",falsch:"Gloke"},{richtig:"Katze",falsch:"Katse"},
-     {richtig:"Platz",falsch:"Plats"},{richtig:"sitzen",falsch:"sitsen"},{richtig:"Mütze",falsch:"Mütse"},
-     {richtig:"Blitz",falsch:"Blits"}]},
-  {id:"ie", name:"ie (langes i)", emoji:"✍️",
-   regel:"Ein <b>lang</b> gesprochenes i schreibt man meist <b>ie</b>.",
-   tipp:"Langes i schreibt man meist ie (Spiel).",
-   woerter:[{richtig:"Spiel",falsch:"Spil"},{richtig:"Wiese",falsch:"Wise"},{richtig:"tief",falsch:"tif"},
-     {richtig:"fliegen",falsch:"fligen"},{richtig:"Brief",falsch:"Brif"},{richtig:"nie",falsch:"ni"},
-     {richtig:"Riese",falsch:"Rise"},{richtig:"Ziel",falsch:"Zil"},{richtig:"viel",falsch:"vil"},
-     {richtig:"lieben",falsch:"liben"}]},
-  {id:"dehnh", name:"Dehnungs-h", emoji:"🅷",
-   regel:"Ein gedehnter Selbstlaut bekommt oft ein <b>stummes h</b>.",
-   tipp:"Gedehnter Selbstlaut → oft ein stummes h (fah-ren).",
-   woerter:[{richtig:"fahren",falsch:"faren"},{richtig:"Lehrer",falsch:"Lerer"},{richtig:"wohnen",falsch:"wonen"},
-     {richtig:"nehmen",falsch:"nemen"},{richtig:"Uhr",falsch:"Ur"},{richtig:"Zahl",falsch:"Zal"},
-     {richtig:"Stuhl",falsch:"Stul"},{richtig:"mehr",falsch:"mer"},{richtig:"fühlen",falsch:"fülen"},
-     {richtig:"Bühne",falsch:"Büne"}]},
-  {id:"sz", name:"ß oder ss", emoji:"🔤",
-   regel:"Nach <b>langem</b> Selbstlaut: <b>ß</b>. Nach <b>kurzem</b> Selbstlaut: <b>ss</b>.",
+   regel:"Nach einem <b>kurzen</b> Selbstlaut kommt ein <b>doppelter</b> Mitlaut.", 
+   tipp:"Kurzer Selbstlaut → doppelter Mitlaut (Son-ne).",
+   leicht:[
+     {richtig:"bitten", falsch:"biten"},
+     {richtig:"die Butter", falsch:"die Buter"},
+     {richtig:"essen", falsch:"esen"},
+     {richtig:"fallen", falsch:"falen"},
+     {richtig:"der Füller", falsch:"der Füler"},
+     {richtig:"der Himmel", falsch:"der Himel"},
+     {richtig:"kennen", falsch:"kenen"},
+     {richtig:"das Kissen", falsch:"das Kisen"},
+     {richtig:"die Klasse", falsch:"die Klase"},
+     {richtig:"können", falsch:"könen"},
+     {richtig:"der Koffer", falsch:"der Kofer"},
+     {richtig:"kommen", falsch:"komen"},
+     {richtig:"lassen", falsch:"lasen"},
+     {richtig:"der Löffel", falsch:"der Löfel"},
+     {richtig:"das Messer", falsch:"das Meser"},
+     {richtig:"müssen", falsch:"müsen"},
+     {richtig:"die Mutter", falsch:"die Muter"},
+     {richtig:"die Puppe", falsch:"die Pupe"},
+     {richtig:"rennen", falsch:"renen"},
+     {richtig:"der Schlitten", falsch:"der Schliten"},
+     {richtig:"der Schlüssel", falsch:"der Schlüsel"},
+     {richtig:"sollen", falsch:"solen"},
+     {richtig:"die Sonne", falsch:"die Sone"},
+     {richtig:"die Spinne", falsch:"die Spine"},
+     {richtig:"die Suppe", falsch:"die Supe"},
+     {richtig:"der Teller", falsch:"der Teler"},
+     {richtig:"treffen", falsch:"trefen"},
+     {richtig:"die Treppe", falsch:"die Trepe"},
+     {richtig:"das Wasser", falsch:"das Waser"},
+     {richtig:"das Wetter", falsch:"das Weter"},
+     {richtig:"wissen", falsch:"wisen"},
+     {richtig:"wollen", falsch:"wolen"},
+     {richtig:"das Zimmer", falsch:"das Zimer"}
+   ],
+   schwer:[
+     {richtig:"beginnen", falsch:"beginen"},
+     {richtig:"besser", falsch:"beser"},
+     {richtig:"das Bett", falsch:"das Bet"},
+     {richtig:"brennen", falsch:"brenen"},
+     {richtig:"die Brille", falsch:"die Brile"},
+     {richtig:"brüllen", falsch:"brülen"},
+     {richtig:"donnern", falsch:"donern"},
+     {richtig:"doppelt", falsch:"dopelt"},
+     {richtig:"dünn", falsch:"dün"},
+     {richtig:"dumm", falsch:"dum"},
+     {richtig:"die Flosse", falsch:"die Flose"},
+     {richtig:"der Fluss", falsch:"der Flus"},
+     {richtig:"fressen", falsch:"fresen"},
+     {richtig:"füttern", falsch:"fütern"},
+     {richtig:"gefallen", falsch:"gefalen"},
+     {richtig:"gewinnen", falsch:"gewinen"},
+     {richtig:"glatt", falsch:"glat"},
+     {richtig:"hell", falsch:"hel"},
+     {richtig:"der Herr", falsch:"der Her"},
+     {richtig:"hoffen", falsch:"hofen"},
+     {richtig:"kaputt", falsch:"kaput"},
+     {richtig:"klettern", falsch:"kletern"},
+     {richtig:"krumm", falsch:"krum"},
+     {richtig:"küssen", falsch:"küsen"},
+     {richtig:"der Mann", falsch:"der Man"},
+     {richtig:"die Mitte", falsch:"die Mite"},
+     {richtig:"der Müll", falsch:"der Mül"},
+     {richtig:"nass", falsch:"nas"},
+     {richtig:"nett", falsch:"net"},
+     {richtig:"die Nuss", falsch:"die Nus"},
+     {richtig:"öffnen", falsch:"öfnen"},
+     {richtig:"offen", falsch:"ofen"},
+     {richtig:"passen", falsch:"pasen"},
+     {richtig:"retten", falsch:"reten"},
+     {richtig:"sammeln", falsch:"sameln"},
+     {richtig:"satt", falsch:"sat"},
+     {richtig:"schaffen", falsch:"schafen"},
+     {richtig:"das Schiff", falsch:"das Schif"},
+     {richtig:"schlimm", falsch:"schlim"},
+     {richtig:"das Schloss", falsch:"das Schlos"},
+     {richtig:"der Schluss", falsch:"der Schlus"},
+     {richtig:"schnell", falsch:"schnel"},
+     {richtig:"schwimmen", falsch:"schwimen"},
+     {richtig:"stellen", falsch:"stelen"},
+     {richtig:"still", falsch:"stil"},
+     {richtig:"stimmen", falsch:"stimen"},
+     {richtig:"der Stoff", falsch:"der Stof"},
+     {richtig:"stumm", falsch:"stum"},
+     {richtig:"toll", falsch:"tol"}
+   ]},
+  {id:"cktz", name:"ck und tz", emoji:"🧦",
+   regel:"Nach kurzem Selbstlaut schreibt man <b>ck</b> und <b>tz</b>.", 
+   tipp:"Nach kurzem Selbstlaut: ck und tz (Ja-cke, Ka-tze).",
+   leicht:[
+     {richtig:"backen", falsch:"baken"},
+     {richtig:"die Decke", falsch:"die Deke"},
+     {richtig:"die Jacke", falsch:"die Jake"},
+     {richtig:"kicken", falsch:"kiken"},
+     {richtig:"lecker", falsch:"leker"},
+     {richtig:"packen", falsch:"paken"},
+     {richtig:"schicken", falsch:"schiken"},
+     {richtig:"schmecken", falsch:"schmeken"},
+     {richtig:"die Schnecke", falsch:"die Schneke"},
+     {richtig:"die Socke", falsch:"die Soke"},
+     {richtig:"die Hitze", falsch:"die Hize"},
+     {richtig:"die Katze", falsch:"die Kaze"},
+     {richtig:"die Mütze", falsch:"die Müze"},
+     {richtig:"sitzen", falsch:"sizen"},
+     {richtig:"die Spitze", falsch:"die Spize"}
+   ],
+   schwer:[
+     {richtig:"die Brücke", falsch:"die Brüke"},
+     {richtig:"dick", falsch:"dik"},
+     {richtig:"drücken", falsch:"drüken"},
+     {richtig:"erschrecken", falsch:"erschreken"},
+     {richtig:"der Fleck", falsch:"der Flek"},
+     {richtig:"das Glück", falsch:"das Glük"},
+     {richtig:"nicken", falsch:"niken"},
+     {richtig:"pflücken", falsch:"pflüken"},
+     {richtig:"der Rock", falsch:"der Rok"},
+     {richtig:"der Rücken", falsch:"der Rüken"},
+     {richtig:"der Schreck", falsch:"der Schrek"},
+     {richtig:"das Stück", falsch:"das Stük"},
+     {richtig:"trocken", falsch:"troken"},
+     {richtig:"der Wecker", falsch:"der Weker"},
+     {richtig:"der Zucker", falsch:"der Zuker"},
+     {richtig:"blitzen", falsch:"blizen"},
+     {richtig:"kratzen", falsch:"krazen"},
+     {richtig:"die Pfütze", falsch:"die Pfüze"},
+     {richtig:"der Platz", falsch:"der Plaz"},
+     {richtig:"der Satz", falsch:"der Saz"},
+     {richtig:"der Schatz", falsch:"der Schaz"},
+     {richtig:"schwitzen", falsch:"schwizen"},
+     {richtig:"der Spatz", falsch:"der Spaz"},
+     {richtig:"spritzen", falsch:"sprizen"},
+     {richtig:"der Witz", falsch:"der Wiz"}
+   ]},
+  {id:"h", name:"Stilles h", emoji:"👻",
+   regel:"Viele Wörter haben ein <b>stilles h</b> (ge-hen, Ru-he, der Schuh).", 
+   tipp:"Sprich in Silben: ge-hen – das h gehört dazu. Merk-Wort!",
+   leicht:[],
+   schwer:[
+     {richtig:"blühen", falsch:"blüen"},
+     {richtig:"drehen", falsch:"dreen"},
+     {richtig:"früh", falsch:"frü"},
+     {richtig:"gehen", falsch:"geen"},
+     {richtig:"die Kuh", falsch:"die Ku"},
+     {richtig:"leihen", falsch:"leien"},
+     {richtig:"die Mühe", falsch:"die Müe"},
+     {richtig:"das Reh", falsch:"das Re"},
+     {richtig:"die Reihe", falsch:"die Reie"},
+     {richtig:"die Ruhe", falsch:"die Rue"},
+     {richtig:"der Schuh", falsch:"der Schu"},
+     {richtig:"sehen", falsch:"seen"},
+     {richtig:"stehen", falsch:"steen"},
+     {richtig:"der Zeh", falsch:"der Ze"},
+     {richtig:"ziehen", falsch:"zieen"}
+   ]},
+  {id:"sz", name:"ß oder ss", emoji:"🥨",
+   regel:"Nach <b>langem</b> Selbstlaut: <b>ß</b>. Nach <b>kurzem</b>: <b>ss</b>.", 
    tipp:"Langer Selbstlaut → ß (Straße). Kurzer → ss (Fluss).",
-   woerter:[{richtig:"Straße",falsch:"Strasse"},{richtig:"groß",falsch:"gross"},{richtig:"Fuß",falsch:"Fuss"},
-     {richtig:"weiß",falsch:"weiss"},{richtig:"draußen",falsch:"draussen"},{richtig:"Fluss",falsch:"Fluß"},
-     {richtig:"muss",falsch:"muß"},{richtig:"Schloss",falsch:"Schloß"},{richtig:"Kuss",falsch:"Kuß"},
-     {richtig:"Nuss",falsch:"Nuß"}]},
-  {id:"ablei", name:"Ableitung ä/äu", emoji:"🔁",
-   regel:"Von welchem Wort kommt es? <b>a→ä</b>, <b>au→äu</b>.",
-   tipp:"Verwandtes Wort suchen: Bäcker ← backen → mit ä.",
-   woerter:[{richtig:"Bäcker",falsch:"Becker"},{richtig:"Wälder",falsch:"Welder"},{richtig:"Hände",falsch:"Hende"},
-     {richtig:"Häuser",falsch:"Heuser"},{richtig:"läuft",falsch:"leuft"},{richtig:"Bäume",falsch:"Beume"},
-     {richtig:"Gläser",falsch:"Gleser"},{richtig:"Räder",falsch:"Reder"},{richtig:"träumen",falsch:"treumen"},
-     {richtig:"Mäuse",falsch:"Meuse"}]},
-  {id:"auslaut", name:"Wortende (verlängern)", emoji:"🔚",
-   regel:"Am Wortende hört man t/p/k. <b>Verlängern</b> zeigt den richtigen Buchstaben.",
-   tipp:"Verlängern: der Hund → die Hunde. Dann hört man den richtigen Buchstaben.",
-   woerter:[{richtig:"Hund",falsch:"Hunt"},{richtig:"Berg",falsch:"Berk"},{richtig:"Kind",falsch:"Kint"},
-     {richtig:"Wald",falsch:"Walt"},{richtig:"gelb",falsch:"gelp"},{richtig:"Dieb",falsch:"Diep"},
-     {richtig:"Hand",falsch:"Hant"},{richtig:"Freund",falsch:"Freunt"},{richtig:"rund",falsch:"runt"},
-     {richtig:"Korb",falsch:"Korp"}]},
-  {id:"vau", name:"Wörter mit V", emoji:"🅅",
-   regel:"Manche Wörter mit <b>v</b> spricht man wie f – merken!",
-   tipp:"Merke: mit v geschrieben, obwohl man f hört (Vater).",
-   woerter:[{richtig:"Vater",falsch:"Fater"},{richtig:"Vogel",falsch:"Fogel"},{richtig:"voll",falsch:"foll"},
-     {richtig:"vor",falsch:"for"},{richtig:"Vase",falsch:"Fase"},{richtig:"verkaufen",falsch:"ferkaufen"},
-     {richtig:"verstecken",falsch:"ferstecken"},{richtig:"Klavier",falsch:"Klafier"}]}
+   leicht:[
+     {richtig:"fließen", falsch:"fliessen"},
+     {richtig:"der Fuß", falsch:"der Fuss"},
+     {richtig:"weiß", falsch:"weiss"}
+   ],
+   schwer:[
+     {richtig:"draußen", falsch:"draussen"},
+     {richtig:"groß", falsch:"gross"},
+     {richtig:"der Gruß", falsch:"der Gruss"},
+     {richtig:"heiß", falsch:"heiss"},
+     {richtig:"heißen", falsch:"heissen"},
+     {richtig:"schließen", falsch:"schliessen"},
+     {richtig:"die Straße", falsch:"die Strasse"},
+     {richtig:"süß", falsch:"süss"}
+   ]},
+  {id:"ae", name:"Merkwörter mit ä", emoji:"🐻",
+   regel:"Diese Wörter schreibt man mit <b>ä</b> – auswendig merken!", 
+   tipp:"Merk-Wort mit ä (der Bär, das Mädchen).",
+   leicht:[
+     {richtig:"der Bär", falsch:"der Ber"},
+     {richtig:"der Käse", falsch:"der Kese"},
+     {richtig:"die Säge", falsch:"die Sege"}
+   ],
+   schwer:[
+     {richtig:"ändern", falsch:"endern"},
+     {richtig:"ärgern", falsch:"ergern"},
+     {richtig:"erklären", falsch:"erkleren"},
+     {richtig:"der Käfer", falsch:"der Kefer"},
+     {richtig:"der Käfig", falsch:"der Kefig"},
+     {richtig:"der Lärm", falsch:"der Lerm"},
+     {richtig:"das Mädchen", falsch:"das Medchen"},
+     {richtig:"das Märchen", falsch:"das Merchen"},
+     {richtig:"nächste", falsch:"nechste"},
+     {richtig:"nämlich", falsch:"nemlich"},
+     {richtig:"das Rätsel", falsch:"das Retsel"},
+     {richtig:"spät", falsch:"spet"},
+     {richtig:"die Träne", falsch:"die Trene"}
+   ]},
+  {id:"v", name:"Wörter mit V", emoji:"🌋",
+   regel:"Man hört <b>f</b> oder <b>w</b>, schreibt aber <b>V</b> – merken!", 
+   tipp:"Merk-Wort mit V (der Vogel, der Vulkan).",
+   leicht:[
+     {richtig:"der Vater", falsch:"der Fater"},
+     {richtig:"vier", falsch:"fier"},
+     {richtig:"der Vogel", falsch:"der Fogel"},
+     {richtig:"die Vase", falsch:"die Wase"},
+     {richtig:"der Vulkan", falsch:"der Wulkan"},
+     {richtig:"vom", falsch:"fom"},
+     {richtig:"von", falsch:"fon"},
+     {richtig:"vor", falsch:"for"}
+   ],
+   schwer:[
+     {richtig:"der Advent", falsch:"der Adwent"},
+     {richtig:"das Silvester", falsch:"das Silwester"},
+     {richtig:"der Verein", falsch:"der Ferein"},
+     {richtig:"das Virus", falsch:"das Wirus"},
+     {richtig:"voll", falsch:"foll"},
+     {richtig:"vorbei", falsch:"forbei"},
+     {richtig:"vorher", falsch:"forher"},
+     {richtig:"vorne", falsch:"forne"}
+   ]},
+  {id:"x", name:"Wörter mit x", emoji:"🧙",
+   regel:"Man hört <b>ks</b>, schreibt aber <b>x</b> (die Hexe).", 
+   tipp:"Merk-Wort mit x (die Hexe, der Text).",
+   leicht:[
+     {richtig:"boxen", falsch:"boksen"},
+     {richtig:"die Hexe", falsch:"die Hekse"},
+     {richtig:"das Taxi", falsch:"das Taksi"}
+   ],
+   schwer:[
+     {richtig:"die Axt", falsch:"die Akst"},
+     {richtig:"das Lexikon", falsch:"das Leksikon"},
+     {richtig:"der Text", falsch:"der Tekst"}
+   ]},
+  {id:"y", name:"Wörter mit y", emoji:"🧸",
+   regel:"Diese Wörter schreibt man mit <b>y</b> (das Baby, die Pyramide).", 
+   tipp:"Merk-Wort mit y – auswendig merken.",
+   leicht:[
+     {richtig:"das Baby", falsch:"das Babi"},
+     {richtig:"das Handy", falsch:"das Handi"},
+     {richtig:"das Pony", falsch:"das Poni"}
+   ],
+   schwer:[
+     {richtig:"das Hobby", falsch:"das Hobbi"},
+     {richtig:"die Party", falsch:"die Parti"},
+     {richtig:"die Pyramide", falsch:"die Piramide"},
+     {richtig:"der Teddy", falsch:"der Teddi"},
+     {richtig:"der Zylinder", falsch:"der Zilinder"}
+   ]},
+  {id:"spst", name:"sp und st", emoji:"⭐",
+   regel:"Am Wortanfang hörst du „schp/scht“, schreibst aber <b>sp/st</b>.", 
+   tipp:"Am Anfang: sp und st (der Stern, das Spiel).",
+   leicht:[
+     {richtig:"sparen", falsch:"schparen"},
+     {richtig:"der Spaten", falsch:"der Schpaten"},
+     {richtig:"der Spiegel", falsch:"der Schpiegel"},
+     {richtig:"das Spiel", falsch:"das Schpiel"},
+     {richtig:"spielen", falsch:"schpielen"},
+     {richtig:"spülen", falsch:"schpülen"},
+     {richtig:"staunen", falsch:"schtaunen"},
+     {richtig:"der Stein", falsch:"der Schtein"},
+     {richtig:"der Stempel", falsch:"der Schtempel"},
+     {richtig:"der Stern", falsch:"der Schtern"},
+     {richtig:"der Stiefel", falsch:"der Schtiefel"},
+     {richtig:"der Stift", falsch:"der Schtift"},
+     {richtig:"stören", falsch:"schtören"},
+     {richtig:"die Stufe", falsch:"die Schtufe"},
+     {richtig:"die Stunde", falsch:"die Schtunde"}
+   ],
+   schwer:[
+     {richtig:"die Sprache", falsch:"die Schprache"},
+     {richtig:"sprechen", falsch:"schprechen"},
+     {richtig:"springen", falsch:"schpringen"},
+     {richtig:"der Sprung", falsch:"der Schprung"},
+     {richtig:"die Strafe", falsch:"die Schtrafe"},
+     {richtig:"streicheln", falsch:"schtreicheln"},
+     {richtig:"streichen", falsch:"schtreichen"},
+     {richtig:"der Streifen", falsch:"der Schtreifen"},
+     {richtig:"streiten", falsch:"schtreiten"},
+     {richtig:"streng", falsch:"schtreng"},
+     {richtig:"der Strom", falsch:"der Schtrom"}
+   ]},
+  {id:"qu", name:"Wörter mit qu", emoji:"🐸",
+   regel:"Man hört „kw“, schreibt aber <b>qu</b> (die Quelle).", 
+   tipp:"qu schreiben, auch wenn man „kw“ hört.",
+   leicht:[
+     {richtig:"bequem", falsch:"bekwem"},
+     {richtig:"quaken", falsch:"kwaken"},
+     {richtig:"der Qualm", falsch:"der Kwalm"}
+   ],
+   schwer:[
+     {richtig:"das Aquarium", falsch:"das Akwarium"},
+     {richtig:"der Quader", falsch:"der Kwader"},
+     {richtig:"das Quadrat", falsch:"das Kwadrat"},
+     {richtig:"der Quatsch", falsch:"der Kwatsch"},
+     {richtig:"die Quelle", falsch:"die Kwelle"},
+     {richtig:"quer", falsch:"kwer"}
+   ]},
+  {id:"chs", name:"Wörter mit chs", emoji:"🦊",
+   regel:"Man hört „ks“, schreibt aber <b>chs</b> (der Fuchs).", 
+   tipp:"Merk-Wort mit chs (der Fuchs, der Dachs).",
+   leicht:[
+     {richtig:"der Dachs", falsch:"der Dax"},
+     {richtig:"der Fuchs", falsch:"der Fux"},
+     {richtig:"der Luchs", falsch:"der Lux"},
+     {richtig:"wachsen", falsch:"waxen"}
+   ],
+   schwer:[]},
+  {id:"merk", name:"Besondere Merkwörter", emoji:"💡",
+   regel:"Besondere Merkwörter (th, ai, Pizza …) – auswendig merken!", 
+   tipp:"Merk-Wort – genau einprägen (vielleicht, das Theater).",
+   leicht:[
+     {richtig:"der Cent", falsch:"der Zent"}
+   ],
+   schwer:[
+     {richtig:"der Hai", falsch:"der Hei"},
+     {richtig:"der Kaiser", falsch:"der Keiser"},
+     {richtig:"der Mais", falsch:"der Meis"},
+     {richtig:"die Pizza", falsch:"die Piza"},
+     {richtig:"die Stadt", falsch:"die Stat"},
+     {richtig:"das Theater", falsch:"das Teater"},
+     {richtig:"das Thema", falsch:"das Tema"},
+     {richtig:"das Thermometer", falsch:"das Termometer"},
+     {richtig:"verwandt", falsch:"verwand"},
+     {richtig:"vielleicht", falsch:"vieleicht"},
+     {richtig:"während", falsch:"wärend"},
+     {richtig:"der Clown", falsch:"der Klaun"}
+   ]}
 ];
 const KRIT_GWS = [
   "Habe ich die Regel der Gruppe benutzt?",
@@ -2959,31 +3232,48 @@ const KRIT_GWS = [
 ];
 const KRIT_GWS_FORM = ["Ich habe mir die Wörter gemerkt.","Ich habe genau hingeschaut.","Ich habe meine Antworten überprüft."];
 let gwsCatIdx=0, gwsIdx=0;
-// Stufen-System je Regel-Gruppe: Stufe 1 = erste Hälfte, Stufe 2 = zweite Hälfte, Stufe 3 = alle.
-// Neue Wörter (z. B. amtliche Liste) einfach an die Kategorie anhängen – die Stufen wachsen mit.
+// Stufen je Regel-Gruppe: Stufe 1 = leichte Wörter (Klasse 1/2), Stufe 2 = schwere (Klasse 3/4),
+// Stufe 3 = alle gemischt. Hat eine Gruppe nur einen Teil, wird hälftig gesteigert.
 GWS_KATEGORIEN.forEach(k=>{
-  const half=Math.ceil(k.woerter.length/2);
-  FIELD_POOLS["gws:"+k.id]=()=>({easy:k.woerter.slice(0,half), hard:k.woerter.slice(half)});
+  FIELD_POOLS["gws:"+k.id]=()=>{
+    const L=k.leicht||[], S=k.schwer||[];
+    if(L.length>=4 && S.length) return {easy:L, hard:S};
+    const all=L.concat(S), half=Math.ceil(all.length/2);
+    return {easy:all.slice(0,half), hard:all.slice(half)};
+  };
 });
 
 function gwsInfo(c){
-  const rows = GWS_KATEGORIEN.map(k=>
-    `<div class="example-box" style="margin-bottom:8px;"><b>${k.emoji} ${k.name}</b><br>${k.regel}<br>
-      <span class="muted">Beispiele: ${k.woerter.slice(0,4).map(w=>w.richtig).join(", ")}</span></div>`).join("");
+  const total = GWS_KATEGORIEN.reduce((a,k)=>a+(k.leicht||[]).length+(k.schwer||[]).length,0);
+  const rows = GWS_KATEGORIEN.map(k=>{
+    const all=(k.leicht||[]).concat(k.schwer||[]);
+    return `<div class="example-box" style="margin-bottom:8px;"><b>${k.emoji} ${k.name}</b><br>${k.regel}<br>
+      <span class="muted">Beispiele: ${all.slice(0,4).map(w=>w.richtig).join(", ")}</span></div>`;
+  }).join("");
   c.innerHTML=`
     <div class="card"><h2>📚 Grundwortschatz üben</h2>
-      <p>Hier übst du wichtige Wörter aus dem <b>Grundwortschatz</b> – geordnet nach Regeln.
-      Wähle die richtige Schreibung und lerne die passende <b>Strategie</b>.</p></div>
+      <p>Hier übst du <b>${total} Wörter</b> aus dem <b>amtlichen Grundwortschatz</b> für
+      Baden-Württemberg (Kultusministerium, 2020) – geordnet nach Regeln.</p>
+      <p class="muted">Jede Gruppe hat Stufen: Erst kommen die <b>leichten</b> Wörter (Klasse 1/2),
+      dann die <b>schweren</b> (Klasse 3/4), zum Schluss <b>alle</b>.</p></div>
     <div class="card"><h3>Die Regel-Gruppen</h3>${rows}</div>
     <div class="card"><div class="hint">💡 Zwei Zauber-Strategien: <b>Verlängern</b> (Hund → Hunde) und <b>Ableiten</b> (Bäcker ← backen).</div>
       <button class="btn-primary" id="toUeben">Los: Wörter üben</button></div>`;
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
+// Runden bleiben kurz: große Wort-Pools werden in Pakete à 10 geteilt,
+// die von Runde zu Runde durchwechseln (nach Anzahl der Durchläufe).
+function gwsChunk(key){
+  const full=fieldPool(key), CH=10;
+  const n=Math.max(1, Math.ceil(full.length/CH));
+  const ci=(fieldProg(key).runs||0)%n;
+  return {S:full.slice(ci*CH, ci*CH+CH), ci:ci, n:n};
+}
 function gwsUeben(c){
   if(gwsCatIdx>=GWS_KATEGORIEN.length) gwsCatIdx=0;
   const K=GWS_KATEGORIEN[gwsCatIdx];
   const key="gws:"+K.id;
-  if(gwsIdx>=fieldPool(key).length) gwsIdx=0;
+  if(gwsIdx>=gwsChunk(key).S.length) gwsIdx=0;
   const chooser = GWS_KATEGORIEN.map((k,ki)=>
     `<button class="chip${ki===gwsCatIdx?" on":""}" data-ki="${ki}">${k.emoji} ${k.name}</button>`).join("");
   c.innerHTML=`
@@ -2999,7 +3289,7 @@ function gwsUeben(c){
 }
 // Paged „richtige Schreibung wählen" mit Bewertung + Stufen am Ende
 function renderSpellPaged(host, K, key){
-  const S=fieldPool(key);
+  const ch=gwsChunk(key), S=ch.S;
   runGet(key, S.length);
   if(gwsIdx>=S.length){ return renderRunResult(host, key, ()=>{ gwsIdx=0; goSection("ueben"); }); }
   const i=gwsIdx, w=S[i];
@@ -3008,7 +3298,7 @@ function renderSpellPaged(host, K, key){
   const b = richtigLinks?w.falsch:w.richtig;
   let answered=false;
   host.innerHTML=`
-    <p class="muted">Wort ${i+1} von ${S.length}</p>
+    <p class="muted">Wort ${i+1} von ${S.length}${ch.n>1?` · Paket ${ch.ci+1} von ${ch.n}`:``}</p>
     <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
     <div style="display:flex; gap:10px;">
       <button class="btn-secondary gws-opt" data-w="${a}" style="flex:1; font-size:22px;">${a}</button>
@@ -3042,7 +3332,8 @@ function gwsSheet(c){
 }
 function gwsWorksheetHTML(){
   const blocks = GWS_KATEGORIEN.map((k,i)=>{
-    const words = k.woerter.slice(0,6).map(w=>w.richtig).join(" · ");
+    // Blatt folgt der aktuellen Stufe der Gruppe (leicht -> schwer -> alle)
+    const words = fieldPool("gws:"+k.id).slice(0,6).map(w=>w.richtig).join(" · ");
     return `<div class="ws-step">
       <div class="lead">${i+1}. ${k.name}</div>
       <div class="cue">Schreibe jedes Wort zweimal richtig ab: ${words}</div>
