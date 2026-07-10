@@ -263,6 +263,16 @@ const THEMEN = [
 ];
 function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.name:"Alltag"; }
 
+/* Wählt die Sätze passend zur Klassenstufe:
+   Klasse 3 -> Grundsätze (base), Klasse 4 -> schwerere Sätze (extra),
+   Alle -> beide zusammen. Fällt zurück auf base, falls extra fehlt. */
+function byLevel(base, extra){
+  extra = extra || [];
+  if(store.level===0) return base.concat(extra);
+  if(store.level===4) return extra.length ? extra : base;
+  return base; // Klasse 3
+}
+
 /* ============================================================
    GEMEINSAME BAUSTEINE
    ============================================================ */
@@ -564,6 +574,16 @@ function vgThema(c){
 // --- Bereich „Üben" (Grundlagen + Beispiel variieren) ---
 function vgBasics(c){
   const r=REZEPTE[store.vorgang.rezept];
+  // Klasse 4: höhere Anforderungen als in Klasse 3
+  const k4 = (store.level===4 || store.level===0) ? `
+    <div class="card"><h3>⭐ Profi-Ziele (Klasse 4)</h3>
+      <div class="example-box">
+        📏 Schreibe <b>mindestens 5 Schritte</b> – genau und in der richtigen <b>Reihenfolge</b>.<br>
+        🧰 Nenne <b>genaue Mengen und Hilfsmittel</b> (z. B. „zwei Esslöffel“, „eine scharfe Schere“).<br>
+        🔤 Benutze <b>Fachbegriffe</b> und schreibe sachlich in der <b>man-Form</b> (z. B. „Man nimmt …“).<br>
+        🔗 Verbinde Sätze mit <b>Bindewörtern</b>: <i>zuerst, danach, sobald, damit, zum Schluss</i>.<br>
+        ✅ <b>Lies am Ende alles noch einmal</b> und prüfe die Reihenfolge.
+      </div></div>` : "";
   c.innerHTML = `
     <div class="card"><h2>📖 Grundlagen</h2>
       <p class="muted">Thema: <b>${r.name}</b>. Lies kurz mit, danach schreibst du auf Papier.</p></div>
@@ -577,6 +597,7 @@ function vgBasics(c){
       <button class="btn-secondary btn-small" id="showEx">Beispielsatz zeigen</button>
       <div class="hint" id="exSent" style="display:none;"></div>
       <button class="btn-secondary btn-small" id="nextEx" style="display:none;">Zeig mir ein weiteres Beispiel</button></div>
+    ${k4}
     <div class="card"><div class="hint">💡 Merke: <b>Ein Schritt = ein ganzer Satz.</b> Schreibe in der <b>Ich-Form</b> und setze am Ende einen <b>Punkt</b>.</div>
       <button class="btn-primary" id="toBlatt">Weiter: Arbeitsblatt</button></div>`;
   let idx=0;
@@ -741,7 +762,37 @@ const SUBJ_THEMEN = {
   ]}
 };
 // Sätze des aktuell gewählten Themas
-function subjSaetze(){ return SUBJ_THEMEN[store.thema].saetze; }
+const SUBJ_K4 = {
+  alltag:[
+    {woerter:["Am","frühen","Morgen","weckt","der","laute","Hahn","die","Kinder."], subj:[4,5,6], subjektText:"der laute Hahn", art:"was", frage:"Wer oder was weckt die Kinder?"},
+    {woerter:["Nach","dem","Essen","räumt","der","Junge","den","Tisch","ab."], subj:[4,5], subjektText:"der Junge", art:"wer", frage:"Wer oder was räumt den Tisch ab?"},
+    {woerter:["Der","Junge","und","seine","Schwester","bauen","eine","Sandburg."], subj:[0,1,2,3,4], subjektText:"Der Junge und seine Schwester", art:"wer", frage:"Wer oder was baut eine Sandburg?"},
+    {woerter:["Am","Abend","liest","die","Mutter","eine","Geschichte","vor."], subj:[3,4], subjektText:"die Mutter", art:"wer", frage:"Wer oder was liest eine Geschichte vor?"},
+    {woerter:["Nach","der","Schule","haben","die","Kinder","Fußball","gespielt."], subj:[4,5], subjektText:"die Kinder", art:"wer", frage:"Wer oder was hat Fußball gespielt?"}
+  ],
+  angeln:[
+    {woerter:["Am","frühen","Morgen","wirft","der","Angler","die","Schnur","aus."], subj:[4,5], subjektText:"der Angler", art:"wer", frage:"Wer oder was wirft die Schnur aus?"},
+    {woerter:["Der","Angler","und","sein","Sohn","sitzen","im","Boot."], subj:[0,1,2,3,4], subjektText:"Der Angler und sein Sohn", art:"wer", frage:"Wer oder was sitzt im Boot?"},
+    {woerter:["Plötzlich","taucht","die","rote","Pose","unter."], subj:[2,3,4], subjektText:"die rote Pose", art:"was", frage:"Wer oder was taucht unter?"},
+    {woerter:["Am","Ufer","packt","der","Junge","seine","Angel","ein."], subj:[3,4], subjektText:"der Junge", art:"wer", frage:"Wer oder was packt seine Angel ein?"},
+    {woerter:["Nach","einer","Stunde","hat","der","Angler","einen","Hecht","gefangen."], subj:[4,5], subjektText:"der Angler", art:"wer", frage:"Wer oder was hat einen Hecht gefangen?"}
+  ],
+  tennis:[
+    {woerter:["Vor","dem","Spiel","räumt","der","Junge","die","Bälle","weg."], subj:[4,5], subjektText:"der Junge", art:"wer", frage:"Wer oder was räumt die Bälle weg?"},
+    {woerter:["Der","Junge","und","seine","Freundin","spielen","ein","Match."], subj:[0,1,2,3,4], subjektText:"Der Junge und seine Freundin", art:"wer", frage:"Wer oder was spielt ein Match?"},
+    {woerter:["Am","Netz","gibt","der","Spieler","dem","Trainer","die","Hand."], subj:[3,4], subjektText:"der Spieler", art:"wer", frage:"Wer oder was gibt die Hand?"},
+    {woerter:["Nach","dem","Aufschlag","läuft","der","Junge","zum","Netz."], subj:[4,5], subjektText:"der Junge", art:"wer", frage:"Wer oder was läuft zum Netz?"},
+    {woerter:["Am","Ende","hat","die","Spielerin","das","Match","gewonnen."], subj:[3,4], subjektText:"die Spielerin", art:"wer", frage:"Wer oder was hat das Match gewonnen?"}
+  ],
+  fussball:[
+    {woerter:["In","der","Pause","wechselt","der","Trainer","den","Torwart","aus."], subj:[4,5], subjektText:"der Trainer", art:"wer", frage:"Wer oder was wechselt den Torwart aus?"},
+    {woerter:["Der","Stürmer","und","der","Verteidiger","laufen","schnell."], subj:[0,1,2,3,4], subjektText:"Der Stürmer und der Verteidiger", art:"wer", frage:"Wer oder was läuft schnell?"},
+    {woerter:["Nach","dem","Foul","zeigt","der","Schiedsrichter","die","Karte."], subj:[4,5], subjektText:"der Schiedsrichter", art:"wer", frage:"Wer oder was zeigt die Karte?"},
+    {woerter:["Am","Spielfeldrand","feuert","der","Trainer","die","Spieler","an."], subj:[3,4], subjektText:"der Trainer", art:"wer", frage:"Wer oder was feuert die Spieler an?"},
+    {woerter:["Am","Ende","hat","die","Mannschaft","das","Spiel","gewonnen."], subj:[3,4], subjektText:"die Mannschaft", art:"wer", frage:"Wer oder was hat das Spiel gewonnen?"}
+  ]
+};
+function subjSaetze(){ return byLevel(SUBJ_THEMEN[store.thema].saetze, SUBJ_K4[store.thema]); }
 
 const KRIT_SUBJEKT = [
   "Habe ich die Frage „Wer oder was?“ benutzt?",
@@ -883,7 +934,7 @@ function sjSheet(c){
 }
 function sjWorksheetHTML(){
   const thema=SUBJ_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>`
+  const lines=subjSaetze().map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
       <div class="cue">Unterstreiche das Subjekt blau. Schreibe die Frage „Wer oder was …?“ auf die Linie.</div>
@@ -950,7 +1001,37 @@ const PRAED_THEMEN = {
     {woerter:["Die","Fans","jubeln","laut."], praed:[2], praedText:"jubeln"}
   ]}
 };
-function praedSaetze(){ return PRAED_THEMEN[store.thema].saetze; }
+const PRAED_K4 = {
+  alltag:[
+    {woerter:["Am","frühen","Morgen","weckt","der","laute","Hahn","die","Kinder."], praed:[3], praedText:"weckt"},
+    {woerter:["Nach","dem","Essen","räumt","der","Junge","den","Tisch","ab."], praed:[3,8], praedText:"räumt … ab"},
+    {woerter:["Der","Junge","und","seine","Schwester","bauen","eine","Sandburg."], praed:[5], praedText:"bauen"},
+    {woerter:["Am","Abend","liest","die","Mutter","eine","Geschichte","vor."], praed:[2,7], praedText:"liest … vor"},
+    {woerter:["Nach","der","Schule","haben","die","Kinder","Fußball","gespielt."], praed:[3,7], praedText:"haben … gespielt"}
+  ],
+  angeln:[
+    {woerter:["Am","frühen","Morgen","wirft","der","Angler","die","Schnur","aus."], praed:[3,8], praedText:"wirft … aus"},
+    {woerter:["Der","Angler","und","sein","Sohn","sitzen","im","Boot."], praed:[5], praedText:"sitzen"},
+    {woerter:["Plötzlich","taucht","die","rote","Pose","unter."], praed:[1,5], praedText:"taucht … unter"},
+    {woerter:["Am","Ufer","packt","der","Junge","seine","Angel","ein."], praed:[2,7], praedText:"packt … ein"},
+    {woerter:["Nach","einer","Stunde","hat","der","Angler","einen","Hecht","gefangen."], praed:[3,8], praedText:"hat … gefangen"}
+  ],
+  tennis:[
+    {woerter:["Vor","dem","Spiel","räumt","der","Junge","die","Bälle","weg."], praed:[3,8], praedText:"räumt … weg"},
+    {woerter:["Der","Junge","und","seine","Freundin","spielen","ein","Match."], praed:[5], praedText:"spielen"},
+    {woerter:["Am","Netz","gibt","der","Spieler","dem","Trainer","die","Hand."], praed:[2], praedText:"gibt"},
+    {woerter:["Nach","dem","Aufschlag","läuft","der","Junge","zum","Netz."], praed:[3], praedText:"läuft"},
+    {woerter:["Am","Ende","hat","die","Spielerin","das","Match","gewonnen."], praed:[2,7], praedText:"hat … gewonnen"}
+  ],
+  fussball:[
+    {woerter:["In","der","Pause","wechselt","der","Trainer","den","Torwart","aus."], praed:[3,8], praedText:"wechselt … aus"},
+    {woerter:["Der","Stürmer","und","der","Verteidiger","laufen","schnell."], praed:[5], praedText:"laufen"},
+    {woerter:["Nach","dem","Foul","zeigt","der","Schiedsrichter","die","Karte."], praed:[3], praedText:"zeigt"},
+    {woerter:["Am","Spielfeldrand","feuert","der","Trainer","die","Spieler","an."], praed:[2,7], praedText:"feuert … an"},
+    {woerter:["Am","Ende","hat","die","Mannschaft","das","Spiel","gewonnen."], praed:[2,7], praedText:"hat … gewonnen"}
+  ]
+};
+function praedSaetze(){ return byLevel(PRAED_THEMEN[store.thema].saetze, PRAED_K4[store.thema]); }
 
 const KRIT_PRAED = [
   "Habe ich das Tun-Wort (Prädikat) gefunden?",
@@ -1050,7 +1131,7 @@ function pjSheet(c){
 }
 function praedWorksheetHTML(){
   const thema=PRAED_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>`
+  const lines=praedSaetze().map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
       <div class="cue">Unterstreiche das Prädikat (Tun-Wort). Manche haben zwei Teile.</div>
@@ -1125,7 +1206,11 @@ const SATZGLIED_THEMEN = {
     {woerter:["Die","Fans","jubeln","laut."], subj:[0,1], praed:[2]}
   ]}
 };
-function satzgliedSaetze(){ return SATZGLIED_THEMEN[store.thema].saetze; }
+const SATZGLIED_K4 = {};
+["alltag","angeln","tennis","fussball"].forEach(function(t){
+  SATZGLIED_K4[t] = SUBJ_K4[t].map(function(s,i){ return {woerter:s.woerter, subj:s.subj, praed:PRAED_K4[t][i].praed}; });
+});
+function satzgliedSaetze(){ return byLevel(SATZGLIED_THEMEN[store.thema].saetze, SATZGLIED_K4[store.thema]); }
 const KRIT_SATZGLIED = [
   "Habe ich das Subjekt gefunden (Wer/Was?)?",
   "Habe ich das Prädikat gefunden (Was tut?)?",
@@ -1220,7 +1305,7 @@ function sgSheet(c){
 }
 function sgWorksheetHTML(){
   const thema=SATZGLIED_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>`
+  const lines=satzgliedSaetze().map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
       <div class="cue">Unterstreiche das Subjekt blau und das Prädikat rot.</div>
@@ -1268,7 +1353,33 @@ const REDE_THEMEN = {
     {woerter:["Das","Kind","sagt:","Ich","spiele","gern","Fußball."], rede:[3,4,5,6]}
   ]}
 };
-function redeSaetze(){ return REDE_THEMEN[store.thema].saetze; }
+const REDE_K4 = {
+  alltag:[
+    {woerter:["Die","neue","Lehrerin","sagt","zu","den","Kindern:","Bitte","seid","jetzt","leise!"], rede:[7,8,9,10]},
+    {woerter:["Der","kleine","Junge","ruft","laut:","Ich","habe","den","Wettlauf","gewonnen!"], rede:[5,6,7,8,9]},
+    {woerter:["Am","Morgen","fragt","die","Mutter:","Hast","du","schon","deine","Zähne","geputzt?"], rede:[5,6,7,8,9,10]},
+    {woerter:["Der","Vater","sagt","am","Telefon:","Wir","kommen","etwas","später","nach","Hause."], rede:[5,6,7,8,9,10]}
+  ],
+  angeln:[
+    {woerter:["Der","alte","Angler","ruft","vom","Boot:","Ich","habe","einen","riesigen","Hecht","gefangen!"], rede:[6,7,8,9,10,11]},
+    {woerter:["Am","Ufer","fragt","der","Junge:","Beißt","heute","überhaupt","ein","Fisch?"], rede:[5,6,7,8,9]},
+    {woerter:["Der","Großvater","sagt","leise:","Wir","müssen","jetzt","ganz","ruhig","sein."], rede:[4,5,6,7,8,9]},
+    {woerter:["Nach","dem","Fang","ruft","das","Kind:","Das","war","der","größte","Fisch!"], rede:[6,7,8,9,10]}
+  ],
+  tennis:[
+    {woerter:["Der","Trainer","ruft","über","den","Platz:","Halte","den","Schläger","richtig","fest!"], rede:[6,7,8,9,10]},
+    {woerter:["Nach","dem","Spiel","sagt","die","Spielerin:","Das","war","ein","spannendes","Match!"], rede:[6,7,8,9,10]},
+    {woerter:["Am","Netz","fragt","der","Junge:","Möchtest","du","noch","einen","Satz","spielen?"], rede:[5,6,7,8,9,10]},
+    {woerter:["Der","Trainer","sagt","zu","dem","Kind:","Du","hast","heute","toll","gespielt!"], rede:[6,7,8,9,10]}
+  ],
+  fussball:[
+    {woerter:["Der","Trainer","ruft","vom","Rand:","Lauft","schneller","nach","vorne!"], rede:[5,6,7,8]},
+    {woerter:["Nach","dem","Tor","jubelt","der","Stürmer:","Wir","haben","endlich","getroffen!"], rede:[6,7,8,9]},
+    {woerter:["Der","Torwart","ruft","laut:","Verteidigt","bitte","den","linken","Pfosten!"], rede:[4,5,6,7,8]},
+    {woerter:["Am","Ende","fragt","der","Junge:","Wer","kommt","morgen","zum","Training","mit?"], rede:[5,6,7,8,9,10]}
+  ]
+};
+function redeSaetze(){ return byLevel(REDE_THEMEN[store.thema].saetze, REDE_K4[store.thema]); }
 function redeQuoted(s){
   const first=s.rede[0];
   const begleit=s.woerter.slice(0,first).join(" ");
@@ -1351,7 +1462,7 @@ function redeSheet(c){
 }
 function redeWorksheetHTML(){
   const thema=REDE_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>`
+  const lines=redeSaetze().map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
       <div class="cue">Setze die Anführungszeichen „ “ um die wörtliche Rede und unterstreiche sie.</div>
@@ -1411,7 +1522,12 @@ const ZEIT_THEMEN = {
     {satz:"Der Torwart wird den Ball halten.", form:"futur"}
   ]}
 };
-function zeitSaetze(){ return ZEIT_THEMEN[store.thema].saetze; }
+function zeitSaetze(){
+  const all=ZEIT_THEMEN[store.thema].saetze;
+  if(store.level===3) return all.filter(s=>s.form==="praesens"||s.form==="praeteritum");
+  if(store.level===4) return all.filter(s=>s.form==="perfekt"||s.form==="futur");
+  return all;
+}
 const KRIT_ZEIT = [
   "Habe ich Präsens (jetzt) erkannt?",
   "Habe ich Präteritum (früher) erkannt?",
@@ -1493,7 +1609,7 @@ function zeitSheet(c){
 }
 function zeitWorksheetHTML(){
   const thema=ZEIT_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>`
+  const lines=zeitSaetze().map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.satz}</div>
       <div class="cue">Unterstreiche das Zeitwort. Schreibe die Zeitform: Präsens, Präteritum, Perfekt oder Futur?</div>
@@ -1785,7 +1901,41 @@ const WA_THEMEN = {
     {woerter:["Das","runde","Tor","steht","dort."], ziel:2, art:"nomen"}
   ]}
 };
-function waSaetze(){ return WA_THEMEN[store.thema].saetze; }
+const WA_K4 = {
+  alltag:[
+    {woerter:["Der","Junge","zeigt","große","Freude."], ziel:4, art:"nomen"},
+    {woerter:["Der","schnellere","Läufer","gewinnt","das","Rennen."], ziel:1, art:"adjektiv"},
+    {woerter:["Am","Abend","liest","die","Mutter","ein","Buch."], ziel:2, art:"verb"},
+    {woerter:["Das","Klassenzimmer","ist","hell","und","sauber."], ziel:1, art:"nomen"},
+    {woerter:["Der","kluge","Schüler","denkt","genau","nach."], ziel:1, art:"adjektiv"},
+    {woerter:["Im","Garten","pflanzt","der","Opa","Blumen."], ziel:2, art:"verb"}
+  ],
+  angeln:[
+    {woerter:["Der","Angler","hat","große","Geduld."], ziel:4, art:"nomen"},
+    {woerter:["Der","größere","Hecht","frisst","kleine","Fische."], ziel:1, art:"adjektiv"},
+    {woerter:["Am","Ufer","wartet","der","Angler","ruhig."], ziel:2, art:"verb"},
+    {woerter:["Die","Angelrute","liegt","im","Boot."], ziel:1, art:"nomen"},
+    {woerter:["Der","geduldige","Angler","fängt","viele","Fische."], ziel:1, art:"adjektiv"},
+    {woerter:["Im","See","schwimmen","die","großen","Hechte."], ziel:2, art:"verb"}
+  ],
+  tennis:[
+    {woerter:["Die","Spielerin","zeigt","große","Freude."], ziel:4, art:"nomen"},
+    {woerter:["Der","bessere","Spieler","gewinnt","das","Match."], ziel:1, art:"adjektiv"},
+    {woerter:["Am","Netz","wartet","der","Junge","gespannt."], ziel:2, art:"verb"},
+    {woerter:["Der","Tennisplatz","ist","heute","frei."], ziel:1, art:"nomen"},
+    {woerter:["Der","starke","Spieler","schlägt","fest."], ziel:1, art:"adjektiv"},
+    {woerter:["Nach","dem","Spiel","trinken","die","Kinder","Wasser."], ziel:3, art:"verb"}
+  ],
+  fussball:[
+    {woerter:["Die","Mannschaft","zeigt","großen","Mut."], ziel:4, art:"nomen"},
+    {woerter:["Der","schnellere","Stürmer","schießt","ein","Tor."], ziel:1, art:"adjektiv"},
+    {woerter:["Am","Tor","steht","der","Torwart","bereit."], ziel:2, art:"verb"},
+    {woerter:["Das","Fußballspiel","beginnt","gleich."], ziel:1, art:"nomen"},
+    {woerter:["Der","starke","Verteidiger","gewinnt","den","Zweikampf."], ziel:1, art:"adjektiv"},
+    {woerter:["Nach","dem","Tor","jubeln","die","Fans","laut."], ziel:3, art:"verb"}
+  ]
+};
+function waSaetze(){ return byLevel(WA_THEMEN[store.thema].saetze, WA_K4[store.thema]); }
 const WA_LABEL = {nomen:"Nomen (Namenwort)", verb:"Verb (Tun-Wort)", adjektiv:"Adjektiv (Wie-Wort)"};
 const KRIT_WA = [
   "Habe ich Nomen (Namenwörter) erkannt?",
@@ -1857,7 +2007,7 @@ function waSheet(c){
 }
 function waWorksheetHTML(){
   const thema=WA_THEMEN[store.thema];
-  const lines=thema.saetze.map((s,i)=>{
+  const lines=waSaetze().map((s,i)=>{
     const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
     return `
     <div class="ws-step">
