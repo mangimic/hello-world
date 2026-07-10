@@ -22,12 +22,12 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
   schneller am PC tippt
 
 ## Umgesetzt
-- 🔊 **Vorlese-Funktion**: kleine „Vorlesen"-Knöpfe an Texten, Beispielen und
-  Fragen (Web Speech API, deutsche Stimme) – hilft beim Lesen und Verstehen
 - 🧭 **Kompass-4-Bereich**: Leseverstehen (mehrere Texte), Sprache &
-  Rechtschreibung nach Bereichen, Arbeitsblatt, Blumentopf-Selbstcheck
+  Rechtschreibung nach Bereichen, Arbeitsblatt, Blumentopf-Selbstcheck,
+  Auswertung mit Einwertung am Ende
 
 ## Ideen für später
 - Weitere Rezepte/Abläufe als Arbeitsblatt
 - Weitere Lesetexte für den Kompass-Bereich
 - Foto des fertigen Arbeitsblatts anhängen und mit der Blume verknüpfen
+- 🔊 Vorlese-/Audio-Hilfe (war eingebaut, wieder entfernt – bei Bedarf zurückholbar)
