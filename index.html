@@ -1230,26 +1230,30 @@ const ZEIT_THEMEN = {
   alltag:{ name:"Alltag", emoji:"🌳", saetze:[
     {satz:"Der Junge spielt mit dem Ball.", form:"praesens"},
     {satz:"Der Junge spielte mit dem Ball.", form:"praeteritum"},
+    {satz:"Der Junge hat mit dem Ball gespielt.", form:"perfekt"},
+    {satz:"Der Junge wird mit dem Ball spielen.", form:"futur"},
     {satz:"Die Oma backt einen Kuchen.", form:"praesens"},
     {satz:"Die Oma backte einen Kuchen.", form:"praeteritum"},
-    {satz:"Die Kinder spielen im Garten.", form:"praesens"},
-    {satz:"Die Kinder spielten im Garten.", form:"praeteritum"}
+    {satz:"Die Oma hat einen Kuchen gebacken.", form:"perfekt"},
+    {satz:"Die Oma wird einen Kuchen backen.", form:"futur"}
   ]},
   angeln:{ name:"Angeln", emoji:"🎣", saetze:[
     {satz:"Der Angler wirft die Schnur aus.", form:"praesens"},
     {satz:"Der Angler warf die Schnur aus.", form:"praeteritum"},
-    {satz:"Der Hecht schwimmt im See.", form:"praesens"},
-    {satz:"Der Hecht schwamm im See.", form:"praeteritum"},
+    {satz:"Der Angler hat die Schnur ausgeworfen.", form:"perfekt"},
+    {satz:"Der Angler wird die Schnur auswerfen.", form:"futur"},
     {satz:"Der Junge fängt einen Zander.", form:"praesens"},
-    {satz:"Der Junge fing einen Zander.", form:"praeteritum"}
+    {satz:"Der Junge fing einen Zander.", form:"praeteritum"},
+    {satz:"Der Junge hat einen Zander gefangen.", form:"perfekt"},
+    {satz:"Der Junge wird einen Zander fangen.", form:"futur"}
   ]}
 };
 function zeitSaetze(){ return ZEIT_THEMEN[store.zeit.thema].saetze; }
 const KRIT_ZEIT = [
-  "Habe ich Präsens (Gegenwart) erkannt?",
-  "Habe ich Präteritum (Vergangenheit) erkannt?",
-  "Habe ich auf das Zeitwort geachtet?",
-  "Habe ich bei mehreren Sätzen geübt?"
+  "Habe ich Präsens (jetzt) erkannt?",
+  "Habe ich Präteritum (früher) erkannt?",
+  "Habe ich Perfekt (habe/bin … ge…) erkannt?",
+  "Habe ich Futur (werde …) erkannt?"
 ];
 const KRIT_ZEIT_FORM = [
   "Ich habe die Sätze genau gelesen.",
@@ -1262,13 +1266,14 @@ function zeitLernen(c){
     <div class="card"><h3>📋 Wähle dein Thema</h3>
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="zeitThemes"></div></div>
-    <div class="card"><h2>📖 Präsens &amp; Präteritum</h2>
-      <p><b>Präsens</b> ist die <b>Gegenwart</b> (jetzt): <i>ich spiele</i>.<br>
-      <b>Präteritum</b> ist die <b>Vergangenheit</b> (früher): <i>ich spielte</i>.</p></div>
-    <div class="card"><h3>Beispiel</h3>
-      <div class="example-box">Heute <b>spielt</b> der Junge. → Präsens (jetzt)<br>
-      Gestern <b>spielte</b> der Junge. → Präteritum (früher)</div></div>
-    <div class="card"><div class="hint">💡 Achte auf das <b>Zeitwort</b> (Verb) – es verändert sich.</div>
+    <div class="card"><h2>📖 Die vier Zeitformen</h2>
+      <div class="example-box">
+        🟩 <b>Präsens</b> (jetzt): <i>ich spiele</i><br>
+        🟦 <b>Präteritum</b> (früher): <i>ich spielte</i><br>
+        🟨 <b>Perfekt</b> (mit haben/sein + ge…): <i>ich habe gespielt</i><br>
+        🟧 <b>Futur</b> (mit werde): <i>ich werde spielen</i>
+      </div></div>
+    <div class="card"><div class="hint">💡 Achte auf das <b>Zeitwort</b>: <b>habe/bin</b> → Perfekt, <b>werde</b> → Futur.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
   themeCards("zeitThemes", ZEIT_THEMEN, store.zeit.thema, key=>{ store.zeit.thema=key; zeitIdx=0; save(); zeitLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
@@ -1282,25 +1287,33 @@ function zeitUeben(c){
       <h2>⏰ Zeitformen</h2>
       <p class="muted">Satz ${zeitIdx+1} von ${S.length}</p>
       <div class="sentence-box">${s.satz}</div>
-      <p>Steht der Satz in der <b>Gegenwart</b> oder in der <b>Vergangenheit</b>?</p>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-secondary" id="praesBtn" style="flex:1;">Jetzt<br><small>Präsens</small></button>
-        <button class="btn-secondary" id="praetBtn" style="flex:1;">Früher<br><small>Präteritum</small></button>
+      <p>In welcher <b>Zeitform</b> steht der Satz?</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn-secondary" id="praesBtn">Präsens<br><small>jetzt</small></button>
+        <button class="btn-secondary" id="praetBtn">Präteritum<br><small>früher</small></button>
+        <button class="btn-secondary" id="perfBtn">Perfekt<br><small>habe/bin … ge…</small></button>
+        <button class="btn-secondary" id="futBtn">Futur<br><small>werde …</small></button>
       </div>
       <div id="zfb"></div>
       <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
     </div>`;
+  const texte={
+    praesens:"Richtig! Das passiert jetzt → Präsens. 🌟",
+    praeteritum:"Richtig! Das war früher → Präteritum. 🌟",
+    perfekt:"Richtig! Vergangenheit mit haben/sein → Perfekt. 🌟",
+    futur:"Richtig! Das passiert später → Futur. 🌟"
+  };
   const check=(form)=>{
     const correct = form===s.form;
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
-    if(correct){ d.textContent = (s.form==="praesens")
-        ? "Richtig! Das passiert jetzt → Präsens (Gegenwart). 🌟"
-        : "Richtig! Das war früher → Präteritum (Vergangenheit). 🌟"; }
-    else{ d.textContent = "Fast! Schau auf das Zeitwort: Passiert es jetzt oder war es früher?"; }
+    d.textContent = correct ? texte[s.form]
+      : "Fast! Achte auf das Zeitwort: jetzt (Präsens), früher (Präteritum), habe/bin … (Perfekt) oder werde … (Futur)?";
     const fb=c.querySelector("#zfb"); fb.innerHTML=""; fb.appendChild(d);
   };
   c.querySelector("#praesBtn").onclick=()=>check("praesens");
   c.querySelector("#praetBtn").onclick=()=>check("praeteritum");
+  c.querySelector("#perfBtn").onclick=()=>check("perfekt");
+  c.querySelector("#futBtn").onclick=()=>check("futur");
   c.querySelector("#nextBtn").onclick=()=>{ zeitIdx=(zeitIdx+1)%S.length; zeitUeben(c); window.scrollTo(0,0); };
 }
 function zeitSheet(c){
@@ -1320,14 +1333,14 @@ function zeitWorksheetHTML(){
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.satz}</div>
-      <div class="cue">Unterstreiche das Zeitwort. Schreibe die Zeitform: Präsens oder Präteritum?</div>
+      <div class="cue">Unterstreiche das Zeitwort. Schreibe die Zeitform: Präsens, Präteritum, Perfekt oder Futur?</div>
       <div class="writeline"></div>
     </div>`).join("");
   return `
-    <div class="ws-head"><span class="pen">⏰</span><h2>Zeitformen (${thema.name}) – Präsens &amp; Präteritum</h2></div>
+    <div class="ws-head"><span class="pen">⏰</span><h2>Zeitformen (${thema.name}) – die vier Zeitformen</h2></div>
     <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
-    <div class="ws-task"><b>Deine Aufgabe:</b> Lies jeden Satz. Unterstreiche das <b>Zeitwort</b> und schreibe dahinter,
-      ob der Satz in der <b>Gegenwart (Präsens)</b> oder <b>Vergangenheit (Präteritum)</b> steht.</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Lies jeden Satz. Unterstreiche das <b>Zeitwort</b> und schreibe dahinter die Zeitform:
+      <b>Präsens</b> (jetzt), <b>Präteritum</b> (früher), <b>Perfekt</b> (habe/bin … ge…) oder <b>Futur</b> (werde …).</div>
     ${lines}`;
 }
 function zeitFlower(c){ renderFlower(c, MODULES.zeit.self, store.zeit.self); }
@@ -1652,6 +1665,226 @@ function waWorksheetHTML(){
 function waFlower(c){ renderFlower(c, MODULES.wortarten.self, store.wortarten.self); }
 
 /* ============================================================
+   MODUL 10: DIE 4 FÄLLE (Nominativ/Genitiv/Dativ/Akkusativ)
+   ============================================================ */
+const FAELLE_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["Der","Hund","bellt","laut."], ziel:[0,1], fall:"nom", frage:"Wer bellt?"},
+    {woerter:["Ich","sehe","den","Hund."], ziel:[2,3], fall:"akk", frage:"Wen sehe ich?"},
+    {woerter:["Ich","gebe","dem","Hund","einen","Knochen."], ziel:[2,3], fall:"dat", frage:"Wem gebe ich einen Knochen?"},
+    {woerter:["Das","ist","das","Haus","des","Nachbarn."], ziel:[4,5], fall:"gen", frage:"Wessen Haus ist das?"},
+    {woerter:["Die","Katze","schläft."], ziel:[0,1], fall:"nom", frage:"Wer schläft?"},
+    {woerter:["Ich","streichle","die","Katze."], ziel:[2,3], fall:"akk", frage:"Wen streichle ich?"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["Der","Angler","wirft","die","Schnur."], ziel:[0,1], fall:"nom", frage:"Wer wirft die Schnur?"},
+    {woerter:["Der","Angler","fängt","den","Hecht."], ziel:[3,4], fall:"akk", frage:"Wen fängt der Angler?"},
+    {woerter:["Der","Junge","gibt","dem","Angler","den","Kescher."], ziel:[3,4], fall:"dat", frage:"Wem gibt der Junge den Kescher?"},
+    {woerter:["Das","ist","die","Rute","des","Anglers."], ziel:[4,5], fall:"gen", frage:"Wessen Rute ist das?"},
+    {woerter:["Der","Hecht","schwimmt","im","See."], ziel:[0,1], fall:"nom", frage:"Wer oder was schwimmt?"},
+    {woerter:["Ich","sehe","den","Zander."], ziel:[2,3], fall:"akk", frage:"Wen oder was sehe ich?"}
+  ]}
+};
+function faelleSaetze(){ return FAELLE_THEMEN[store.faelle.thema].saetze; }
+const FALL_LABEL = {nom:"Nominativ", gen:"Genitiv", dat:"Dativ", akk:"Akkusativ"};
+const FALL_FRAGE = {nom:"Wer oder was?", gen:"Wessen?", dat:"Wem?", akk:"Wen oder was?"};
+const KRIT_FAELLE = [
+  "Habe ich den Nominativ (Wer/Was?) erkannt?",
+  "Habe ich den Dativ (Wem?) erkannt?",
+  "Habe ich den Akkusativ (Wen/Was?) erkannt?",
+  "Habe ich die passende Frage benutzt?"
+];
+const KRIT_FAELLE_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe die Frage gestellt.","Ich habe meine Antworten überprüft."];
+let faelleIdx=0;
+function faelleLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="faelleThemes"></div></div>
+    <div class="card"><h2>📖 Die vier Fälle</h2>
+      <div class="example-box">
+        1. <b>Nominativ</b> – Wer oder was? <i>der Hund</i><br>
+        2. <b>Genitiv</b> – Wessen? <i>des Hundes</i><br>
+        3. <b>Dativ</b> – Wem? <i>dem Hund</i><br>
+        4. <b>Akkusativ</b> – Wen oder was? <i>den Hund</i>
+      </div></div>
+    <div class="card"><div class="hint">💡 Stelle die passende Frage – die Antwort zeigt dir den Fall.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("faelleThemes", FAELLE_THEMEN, store.faelle.thema, key=>{ store.faelle.thema=key; faelleIdx=0; save(); faelleLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function faelleUeben(c){
+  const S=faelleSaetze(); if(faelleIdx>=S.length) faelleIdx=0; const s=S[faelleIdx];
+  const satzHtml = s.woerter.map((w,i)=> s.ziel.includes(i) ? `<span class="wa-target">${w}</span>` : w).join(" ");
+  c.innerHTML=`
+    <div class="card">
+      <h2>🎯 Die 4 Fälle</h2>
+      <p class="muted">Satz ${faelleIdx+1} von ${S.length}</p>
+      <div class="sentence-box">${satzHtml}</div>
+      <p>In welchem <b>Fall</b> steht der <b>markierte</b> Teil?</p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+        <button class="btn-secondary" id="nomBtn">Nominativ<br><small>Wer/Was?</small></button>
+        <button class="btn-secondary" id="genBtn">Genitiv<br><small>Wessen?</small></button>
+        <button class="btn-secondary" id="datBtn">Dativ<br><small>Wem?</small></button>
+        <button class="btn-secondary" id="akkBtn">Akkusativ<br><small>Wen/Was?</small></button>
+      </div>
+      <div id="fafb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
+    </div>`;
+  const phrase=s.ziel.map(i=>s.woerter[i]).join(" ").replace(/[.,!?]$/,"");
+  const check=(fall)=>{
+    const correct = fall===s.fall;
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    d.textContent = correct
+      ? "Richtig! „"+phrase+"“ steht im "+FALL_LABEL[s.fall]+" – Frage: "+s.frage+" 🌟"
+      : "Fast! Frag dich: Wer/Was? (Nominativ), Wessen? (Genitiv), Wem? (Dativ) oder Wen/Was? (Akkusativ)?";
+    const fb=c.querySelector("#fafb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#nomBtn").onclick=()=>check("nom");
+  c.querySelector("#genBtn").onclick=()=>check("gen");
+  c.querySelector("#datBtn").onclick=()=>check("dat");
+  c.querySelector("#akkBtn").onclick=()=>check("akk");
+  c.querySelector("#nextBtn").onclick=()=>{ faelleIdx=(faelleIdx+1)%S.length; faelleUeben(c); window.scrollTo(0,0); };
+}
+function faelleSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und bestimme den Fall mit der Hand.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=faelleWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function faelleWorksheetHTML(){
+  const thema=FAELLE_THEMEN[store.faelle.thema];
+  const lines=thema.saetze.map((s,i)=>{
+    const phrase=s.ziel.map(j=>s.woerter[j]).join(" ").replace(/[.,!?]$/,"");
+    return `
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">In welchem Fall steht „${phrase}“? Schreibe: Nominativ, Genitiv, Dativ oder Akkusativ.</div>
+      <div class="writeline"></div>
+    </div>`;
+  }).join("");
+  return `
+    <div class="ws-head"><span class="pen">🎯</span><h2>Die 4 Fälle (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Bestimme bei jedem Satz den Fall des markierten Teils.
+      Nominativ (Wer/Was?), Genitiv (Wessen?), Dativ (Wem?) oder Akkusativ (Wen/Was?).</div>
+    ${lines}`;
+}
+function faelleFlower(c){ renderFlower(c, MODULES.faelle.self, store.faelle.self); }
+
+/* ============================================================
+   MODUL 11: DOPPELKONSONANTEN (Schärfung, Rechtschreibung)
+   ============================================================ */
+const DOPPEL_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", woerter:[
+    {richtig:"Sonne", falsch:"Sone"},
+    {richtig:"Ball", falsch:"Bal"},
+    {richtig:"Wasser", falsch:"Waser"},
+    {richtig:"Mutter", falsch:"Muter"},
+    {richtig:"Kette", falsch:"Kete"},
+    {richtig:"Roller", falsch:"Roler"},
+    {richtig:"Sommer", falsch:"Somer"},
+    {richtig:"kommen", falsch:"komen"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", woerter:[
+    {richtig:"Rolle", falsch:"Role"},
+    {richtig:"Flosse", falsch:"Flose"},
+    {richtig:"Kutter", falsch:"Kuter"},
+    {richtig:"Wetter", falsch:"Weter"},
+    {richtig:"nass", falsch:"nas"},
+    {richtig:"paddeln", falsch:"padeln"},
+    {richtig:"Wasser", falsch:"Waser"},
+    {richtig:"Sonne", falsch:"Sone"}
+  ]}
+};
+function doppelWoerter(){ return DOPPEL_THEMEN[store.doppel.thema].woerter; }
+const KRIT_DOPPEL = [
+  "Habe ich auf den kurzen Selbstlaut gehört?",
+  "Habe ich den doppelten Mitlaut erkannt?",
+  "Habe ich das Wort richtig geschrieben?",
+  "Habe ich bei mehreren Wörtern geübt?"
+];
+const KRIT_DOPPEL_FORM = ["Ich habe genau hingehört.","Ich habe die Wörter langsam gesprochen.","Ich habe meine Antworten überprüft."];
+let doppelIdx=0;
+function doppelLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Wörtern möchtest du üben?</p>
+      <div class="choice-grid" id="doppelThemes"></div></div>
+    <div class="card"><h2>📖 Doppelte Mitlaute</h2>
+      <p>Nach einem <b>kurz gesprochenen Selbstlaut</b> folgt oft ein <b>doppelter Mitlaut</b>.</p>
+      <div class="example-box">So<b>nn</b>e · Ba<b>ll</b> · Wa<b>ss</b>er · Mu<b>tt</b>er</div></div>
+    <div class="card"><div class="hint">💡 Sprich das Wort langsam: Ist der Selbstlaut <b>kurz</b>? → oft doppelter Mitlaut.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("doppelThemes", DOPPEL_THEMEN, store.doppel.thema, key=>{ store.doppel.thema=key; doppelIdx=0; save(); doppelLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function doppelUeben(c){
+  const W=doppelWoerter(); if(doppelIdx>=W.length) doppelIdx=0; const w=W[doppelIdx];
+  // richtige Antwort abwechselnd links/rechts, aber deterministisch
+  const richtigLinks = doppelIdx%2===0;
+  const links = richtigLinks ? w.richtig : w.falsch;
+  const rechts = richtigLinks ? w.falsch : w.richtig;
+  c.innerHTML=`
+    <div class="card">
+      <h2>🔡 Doppelte Mitlaute</h2>
+      <p class="muted">Wort ${doppelIdx+1} von ${W.length}</p>
+      <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" id="linksBtn" style="flex:1; font-size:22px;">${links}</button>
+        <button class="btn-secondary" id="rechtsBtn" style="flex:1; font-size:22px;">${rechts}</button>
+      </div>
+      <div id="dofb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächstes Wort</button>
+    </div>`;
+  const check=(wahl)=>{
+    const correct = wahl===w.richtig;
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    d.textContent = correct
+      ? "Richtig! Das Wort schreibt man „"+w.richtig+"“. 🌟"
+      : "Fast! Höre auf den kurzen Selbstlaut – dann folgt ein doppelter Mitlaut: „"+w.richtig+"“.";
+    const fb=c.querySelector("#dofb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#linksBtn").onclick=()=>check(links);
+  c.querySelector("#rechtsBtn").onclick=()=>check(rechts);
+  c.querySelector("#nextBtn").onclick=()=>{ doppelIdx=(doppelIdx+1)%W.length; doppelUeben(c); window.scrollTo(0,0); };
+}
+function doppelSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe jedes Wort richtig ab.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=doppelWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function doppelWorksheetHTML(){
+  const thema=DOPPEL_THEMEN[store.doppel.thema];
+  const lines=thema.woerter.map((w,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${w.richtig}</div>
+      <div class="cue">Schreibe das Wort zweimal richtig ab. Achte auf den doppelten Mitlaut.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">🔡</span><h2>Doppelte Mitlaute (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe jedes Wort richtig ab. Nach einem kurz gesprochenen
+      Selbstlaut folgt oft ein <b>doppelter Mitlaut</b> (Sonne, Ball, Wasser).</div>
+    ${lines}`;
+}
+function doppelFlower(c){ renderFlower(c, MODULES.doppel.self, store.doppel.self); }
+
+/* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
@@ -1747,6 +1980,26 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:waFlower}
     ],
     self:{ groups:[{title:"Wortarten", fragen:KRIT_WA}], form:KRIT_WA_FORM }
+  },
+  faelle:{
+    id:"faelle", name:"Die 4 Fälle", emoji:"🎯",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:faelleLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:faelleUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:faelleSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:faelleFlower}
+    ],
+    self:{ groups:[{title:"Die 4 Fälle", fragen:KRIT_FAELLE}], form:KRIT_FAELLE_FORM }
+  },
+  doppel:{
+    id:"doppel", name:"Doppelte Mitlaute", emoji:"🔡",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:doppelLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:doppelUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:doppelSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:doppelFlower}
+    ],
+    self:{ groups:[{title:"Doppelte Mitlaute", fragen:KRIT_DOPPEL}], form:KRIT_DOPPEL_FORM }
   }
 };
 
@@ -1764,7 +2017,9 @@ let store = {
   zeit:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   grossklein:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   dassdas:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  wortarten:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  wortarten:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  faelle:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  doppel:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -1810,6 +2065,14 @@ function load(){
       if(WA_THEMEN[d.wortarten.thema]) store.wortarten.thema=d.wortarten.thema;
       if(d.wortarten.self) mergeSelf(store.wortarten.self, d.wortarten.self);
     }
+    if(d.faelle){
+      if(FAELLE_THEMEN[d.faelle.thema]) store.faelle.thema=d.faelle.thema;
+      if(d.faelle.self) mergeSelf(store.faelle.self, d.faelle.self);
+    }
+    if(d.doppel){
+      if(DOPPEL_THEMEN[d.doppel.thema]) store.doppel.thema=d.doppel.thema;
+      if(d.doppel.self) mergeSelf(store.doppel.self, d.doppel.self);
+    }
   }catch(e){}
 }
 // Übernimmt gespeicherte Werte, ohne die Größe der Zielarrays zu sprengen
@@ -1842,7 +2105,7 @@ function buildModuleChooser(){
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
