@@ -1,5 +1,21 @@
 # Backlog – Lern-App
 
+## Versionierung (verbindlich)
+Die App trägt eine Versionsnummer (`APP_VERSION` in index.html), Regel:
+**1.\<Service-Worker-Cache-Nummer\>.0** (z. B. `lern-app-v20` → `1.20.0`).
+Bei jedem Release: Cache-Nummer + `APP_VERSION` erhöhen **und** einen
+Eintrag in `RELEASE_NOTES` ergänzen (neueste zuerst). Sichtbar in der App
+unten auf der Startseite („Version x.y.z · 📋 Was ist neu?").
+
+## Qualitätssicherung (verbindlich)
+Vor **jeder** Bereitstellung eines neuen Features läuft der voll
+automatisierte Regressionstest: `node tests/regression.js`
+(braucht `npm install playwright`; Chromium-Pfad ggf. über `CHROMIUM_PATH`).
+Er prüft alle Lernfelder (Antwort-Pflicht, Feedback, Stufen-Hinweis),
+Auswertung/Blume, Level-System, Grundwortschatz (amtliche Wörter, Pakete),
+Elternbereich (Wörter + Stufen-Speichern), Kompass, Arbeitsblätter und
+sammelt Konsolenfehler. Nur bei 0 Fehlern wird ausgeliefert.
+
 Bewusst **vorerst entfernte** Funktionen, damit die App simpel bleibt.
 Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 
