@@ -26,6 +26,18 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
   Rechtschreibung nach Bereichen, Arbeitsblatt, Blumentopf-Selbstcheck,
   Auswertung mit Einwertung am Ende
 
+## Wartet auf Material
+- 📚 **Amtliche Grundwortschatz-Liste BW (~870 Wörter)**: Sobald die PDF des
+  Kultusministeriums vorliegt, wird der Grundwortschatz-Trainer 1:1 erweitert.
+  Vorbereitet ist alles:
+  - Wörter einfach je Kategorie in `GWS_KATEGORIEN[..].woerter` anhängen
+    (`{richtig:"…", falsch:"…"}`); die Stufen (1 = erste Hälfte, 2 = zweite
+    Hälfte, 3 = alle) wachsen automatisch mit.
+  - Fehlende amtliche Kategorien (z. B. Merkwörter mit x/y/chs, Vorsilben
+    ver-/vor-) als neue Einträge in `GWS_KATEGORIEN` ergänzen – Trainer,
+    Arbeitsblatt und Info-Seite übernehmen sie automatisch.
+  - Die kuratierten Ersatzwörter dann gegen die amtlichen prüfen/ersetzen.
+
 ## Ideen für später
 - Weitere Rezepte/Abläufe als Arbeitsblatt
 - Weitere Lesetexte für den Kompass-Bereich
