@@ -100,6 +100,7 @@ button:active{transform:scale(0.97);}
 .word.selp{color:#b23b3b; font-weight:700; border-bottom-color:#b23b3b; background:#fbeceb;}
 .word.selr{color:#7a4fb3; font-weight:700; border-bottom-color:#7a4fb3; background:#f1ebfa;}
 @media (hover:hover){ .word:hover{background:#eef2f8;} }
+.wa-target{background:#fff4d6; border-radius:6px; padding:2px 8px; font-weight:800; color:#a67c19;}
 
 /* Lösung */
 .gate-count{background:var(--soft); border-radius:12px; padding:12px; margin:8px 0; font-size:17px;}
@@ -1332,6 +1333,325 @@ function zeitWorksheetHTML(){
 function zeitFlower(c){ renderFlower(c, MODULES.zeit.self, store.zeit.self); }
 
 /* ============================================================
+   MODUL 7: GROSS & KLEIN (Rechtschreibung, Klasse 4)
+   Kuratiert -> Lösungsschlüssel hinterlegt, Feedback 100% korrekt.
+   ============================================================ */
+const GK_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["der","kleine","junge","spielt","mit","dem","ball."], gross:[0,2,6]},
+    {woerter:["ein","mädchen","streichelt","die","süße","katze."], gross:[0,1,5]},
+    {woerter:["der","postbote","kommt","mit","dem","fahrrad."], gross:[0,1,5]},
+    {woerter:["am","morgen","singt","der","vogel","laut."], gross:[0,1,4]},
+    {woerter:["die","kinder","spielen","im","garten."], gross:[0,1,4]},
+    {woerter:["heute","backt","die","oma","einen","kuchen."], gross:[0,3,5]}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["der","angler","wirft","die","schnur","aus."], gross:[0,1,4]},
+    {woerter:["ein","großer","hecht","schwimmt","im","see."], gross:[0,2,5]},
+    {woerter:["die","pose","taucht","plötzlich","unter."], gross:[0,1]},
+    {woerter:["der","junge","fängt","einen","zander."], gross:[0,1,4]},
+    {woerter:["der","wurm","zappelt","am","haken."], gross:[0,1,4]},
+    {woerter:["der","kescher","hebt","den","fisch","heraus."], gross:[0,1,4]}
+  ]}
+};
+function gkSaetze(){ return GK_THEMEN[store.grossklein.thema].saetze; }
+function gkCorrected(s){
+  return s.woerter.map((w,i)=> s.gross.includes(i) ? (w.charAt(0).toUpperCase()+w.slice(1)) : w).join(" ");
+}
+const KRIT_GK = [
+  "Habe ich den Satzanfang groß geschrieben?",
+  "Habe ich alle Nomen (Namenwörter) groß geschrieben?",
+  "Habe ich die anderen Wörter klein gelassen?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_GK_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe nachgedacht.","Ich habe meine Antworten überprüft."];
+let gkIdx=0;
+function gkLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="gkThemes"></div></div>
+    <div class="card"><h2>📖 Groß oder klein?</h2>
+      <p>Groß schreibt man:</p>
+      <div class="example-box">🔠 das <b>erste Wort</b> im Satz<br>🔠 alle <b>Nomen</b> (Namenwörter: der/die/das davor)</div>
+      <p class="muted">Alle anderen Wörter (Tun-Wörter, Wie-Wörter …) schreibt man klein.</p></div>
+    <div class="card"><h3>Beispiel</h3>
+      <div class="sentence-box"><b>Der</b> kleine <b>Junge</b> spielt mit dem <b>Ball</b>.</div>
+      <p>Groß: <b>Der</b> (Satzanfang), <b>Junge</b> und <b>Ball</b> (Nomen).</p></div>
+    <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("gkThemes", GK_THEMEN, store.grossklein.thema, key=>{ store.grossklein.thema=key; gkIdx=0; save(); gkLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function gkUeben(c){
+  const S=gkSaetze(); if(gkIdx>=S.length) gkIdx=0; const s=S[gkIdx];
+  const selected=new Set();
+  c.innerHTML=`
+    <div class="card">
+      <h2>🔠 Groß &amp; klein</h2>
+      <p class="muted">Satz ${gkIdx+1} von ${S.length}</p>
+      <div class="hint">Tippe alle Wörter an, die <b>GROSS</b> geschrieben werden.</div>
+      <div class="sentence-box" id="gkbox"></div>
+      <div id="gkfb"></div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-secondary btn-small" id="checkBtn" style="flex:1;">Prüfen</button>
+        <button class="btn-primary btn-small" id="nextBtn" style="flex:1;">Nächster Satz</button>
+      </div>
+    </div>`;
+  const box=c.querySelector("#gkbox");
+  s.woerter.forEach((w,i)=>{
+    const sp=document.createElement("span"); sp.className="word"; sp.textContent=w;
+    sp.onclick=()=>{ if(selected.has(i)){selected.delete(i);sp.classList.remove("sel");} else {selected.add(i);sp.classList.add("sel");} c.querySelector("#gkfb").innerHTML=""; };
+    box.appendChild(sp); box.appendChild(document.createTextNode(" "));
+  });
+  c.querySelector("#checkBtn").onclick=()=>{
+    const chosen=[...selected].sort((a,b)=>a-b);
+    const correct = chosen.length===s.gross.length && chosen.every((v,k)=>v===s.gross[k]);
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    if(correct){ d.innerHTML="Richtig! 🌟<br>So ist es richtig: <b>"+gkCorrected(s)+"</b>"; }
+    else{ d.textContent="Fast! Denk an: Satzanfang groß und alle Nomen (Namenwörter) groß."; }
+    const fb=c.querySelector("#gkfb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#nextBtn").onclick=()=>{ gkIdx=(gkIdx+1)%S.length; gkUeben(c); window.scrollTo(0,0); };
+}
+function gkSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe jeden Satz <b>richtig ab</b> (groß/klein).</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=gkWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function gkWorksheetHTML(){
+  const thema=GK_THEMEN[store.grossklein.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Schreibe den Satz richtig ab: Satzanfang und Nomen groß.</div>
+      <div class="writeline"></div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">🔠</span><h2>Groß &amp; klein (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe jeden Satz richtig ab. Groß schreibst du das
+      <b>erste Wort</b> im Satz und alle <b>Nomen</b> (Namenwörter). Alle anderen Wörter bleiben klein.</div>
+    ${lines}`;
+}
+function gkFlower(c){ renderFlower(c, MODULES.grossklein.self, store.grossklein.self); }
+
+/* ============================================================
+   MODUL 8: das / dass (Rechtschreibung, Klasse 4)
+   ============================================================ */
+const DD_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {satz:"___ Fahrrad steht im Garten.", loesung:"das"},
+    {satz:"Ich glaube, ___ es heute regnet.", loesung:"dass"},
+    {satz:"Mama sagt, ___ ich aufräumen soll.", loesung:"dass"},
+    {satz:"Ich mag ___ kleine Mädchen.", loesung:"das"},
+    {satz:"Weißt du, ___ Schildkröten Reptilien sind?", loesung:"dass"},
+    {satz:"___ Kind spielt im Garten.", loesung:"das"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {satz:"___ Boot ist blau.", loesung:"das"},
+    {satz:"Ich hoffe, ___ ein Hecht beißt.", loesung:"dass"},
+    {satz:"Der Angler sagt, ___ er einen Zander fängt.", loesung:"dass"},
+    {satz:"___ Wasser ist tief.", loesung:"das"},
+    {satz:"Opa weiß, ___ Rotfedern klein sind.", loesung:"dass"},
+    {satz:"___ Angelzeug liegt bereit.", loesung:"das"}
+  ]}
+};
+function ddSaetze(){ return DD_THEMEN[store.dassdas.thema].saetze; }
+const KRIT_DD = [
+  "Habe ich die Ersatzprobe (dieses/welches) benutzt?",
+  "Habe ich „das“ (Artikel/Fürwort) erkannt?",
+  "Habe ich „dass“ (Bindewort) erkannt?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_DD_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe die Ersatzprobe gemacht.","Ich habe meine Antworten überprüft."];
+let ddIdx=0;
+function ddLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="ddThemes"></div></div>
+    <div class="card"><h2>📖 das oder dass?</h2>
+      <p><b>das</b> (ein s) ist ein <b>Artikel</b> oder <b>Fürwort</b>: <i>das Boot</i>.<br>
+      <b>dass</b> (zwei s) ist ein <b>Bindewort</b>: <i>Ich hoffe, dass …</i></p></div>
+    <div class="card"><h3>Der Trick 🪄</h3>
+      <div class="hint">Kannst du <b>dieses</b>, <b>jenes</b> oder <b>welches</b> einsetzen? → <b>das</b>.<br>Wenn nicht → <b>dass</b>.</div></div>
+    <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("ddThemes", DD_THEMEN, store.dassdas.thema, key=>{ store.dassdas.thema=key; ddIdx=0; save(); ddLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function ddUeben(c){
+  const S=ddSaetze(); if(ddIdx>=S.length) ddIdx=0; const s=S[ddIdx];
+  c.innerHTML=`
+    <div class="card">
+      <h2>🔤 das / dass</h2>
+      <p class="muted">Satz ${ddIdx+1} von ${S.length}</p>
+      <div class="sentence-box">${s.satz.replace("___","<b>___</b>")}</div>
+      <p>Was passt in die Lücke?</p>
+      <div style="display:flex; gap:10px;">
+        <button class="btn-secondary" id="dasBtn" style="flex:1; font-size:22px;">das</button>
+        <button class="btn-secondary" id="dassBtn" style="flex:1; font-size:22px;">dass</button>
+      </div>
+      <div id="ddfb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
+    </div>`;
+  const check=(ans)=>{
+    const correct = ans===s.loesung;
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    if(correct){ d.innerHTML="Richtig! 🌟<br>"+s.satz.replace("___","<b>"+s.loesung+"</b>"); }
+    else{ d.textContent = "Fast! Tipp: Passt „dieses/welches“? → das. Sonst → dass."; }
+    const fb=c.querySelector("#ddfb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#dasBtn").onclick=()=>check("das");
+  c.querySelector("#dassBtn").onclick=()=>check("dass");
+  c.querySelector("#nextBtn").onclick=()=>{ ddIdx=(ddIdx+1)%S.length; ddUeben(c); window.scrollTo(0,0); };
+}
+function ddSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und trage <b>das</b> oder <b>dass</b> mit der Hand ein.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=ddWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function ddWorksheetHTML(){
+  const thema=DD_THEMEN[store.dassdas.thema];
+  const lines=thema.saetze.map((s,i)=>`
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.satz}</div>
+      <div class="cue">Trage „das“ oder „dass“ in die Lücke ein.</div>
+    </div>`).join("");
+  return `
+    <div class="ws-head"><span class="pen">🔤</span><h2>das / dass (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Setze in jede Lücke <b>das</b> oder <b>dass</b>.
+      Tipp: Passt „dieses/welches“? → <b>das</b>. Sonst → <b>dass</b>.</div>
+    ${lines}`;
+}
+function ddFlower(c){ renderFlower(c, MODULES.dassdas.self, store.dassdas.self); }
+
+/* ============================================================
+   MODUL 9: WORTARTEN (Nomen / Verb / Adjektiv)
+   ============================================================ */
+const WA_THEMEN = {
+  alltag:{ name:"Alltag", emoji:"🌳", saetze:[
+    {woerter:["Der","schnelle","Hund","bellt","laut."], ziel:2, art:"nomen"},
+    {woerter:["Die","kleine","Katze","schläft."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Junge","rennt","schnell."], ziel:2, art:"verb"},
+    {woerter:["Ein","großer","Baum","steht","dort."], ziel:1, art:"adjektiv"},
+    {woerter:["Die","Oma","backt","einen","Kuchen."], ziel:2, art:"verb"},
+    {woerter:["Das","rote","Auto","fährt."], ziel:2, art:"nomen"}
+  ]},
+  angeln:{ name:"Angeln", emoji:"🎣", saetze:[
+    {woerter:["Der","große","Hecht","schwimmt."], ziel:2, art:"nomen"},
+    {woerter:["Der","Angler","wirft","die","Schnur."], ziel:2, art:"verb"},
+    {woerter:["Die","schöne","Pose","tanzt."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Wurm","zappelt","am","Haken."], ziel:1, art:"nomen"},
+    {woerter:["Der","Junge","fängt","einen","Zander."], ziel:2, art:"verb"},
+    {woerter:["Die","glänzenden","Fische","springen."], ziel:1, art:"adjektiv"}
+  ]}
+};
+function waSaetze(){ return WA_THEMEN[store.wortarten.thema].saetze; }
+const WA_LABEL = {nomen:"Nomen (Namenwort)", verb:"Verb (Tun-Wort)", adjektiv:"Adjektiv (Wie-Wort)"};
+const KRIT_WA = [
+  "Habe ich Nomen (Namenwörter) erkannt?",
+  "Habe ich Verben (Tun-Wörter) erkannt?",
+  "Habe ich Adjektive (Wie-Wörter) erkannt?",
+  "Habe ich bei mehreren Sätzen geübt?"
+];
+const KRIT_WA_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe nachgedacht.","Ich habe meine Antworten überprüft."];
+let waIdx=0;
+function waLernen(c){
+  c.innerHTML = `
+    <div class="card"><h3>📋 Wähle dein Thema</h3>
+      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
+      <div class="choice-grid" id="waThemes"></div></div>
+    <div class="card"><h2>📖 Wortarten</h2>
+      <div class="example-box">🏷️ <b>Nomen</b> (Namenwort): der/die/das davor – <i>der Hund</i><br>
+      ⚡ <b>Verb</b> (Tun-Wort): was man tut – <i>rennen, spielen</i><br>
+      🌈 <b>Adjektiv</b> (Wie-Wort): wie etwas ist – <i>schnell, groß</i></div></div>
+    <div class="card"><div class="hint">💡 Frag dich: Kann ich der/die/das davorsetzen? → Nomen. Was tut man? → Verb. Wie ist es? → Adjektiv.</div>
+      <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
+  themeCards("waThemes", WA_THEMEN, store.wortarten.thema, key=>{ store.wortarten.thema=key; waIdx=0; save(); waLernen(c); });
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function waUeben(c){
+  const S=waSaetze(); if(waIdx>=S.length) waIdx=0; const s=S[waIdx];
+  const satzHtml = s.woerter.map((w,i)=> i===s.ziel ? `<span class="wa-target">${w}</span>` : w).join(" ");
+  c.innerHTML=`
+    <div class="card">
+      <h2>🏷️ Wortarten</h2>
+      <p class="muted">Satz ${waIdx+1} von ${S.length}</p>
+      <div class="sentence-box">${satzHtml}</div>
+      <p>Welche Wortart ist das <b>markierte</b> Wort?</p>
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <button class="btn-secondary" id="nomenBtn">Nomen (Namenwort)</button>
+        <button class="btn-secondary" id="verbBtn">Verb (Tun-Wort)</button>
+        <button class="btn-secondary" id="adjBtn">Adjektiv (Wie-Wort)</button>
+      </div>
+      <div id="wafb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
+    </div>`;
+  const check=(art)=>{
+    const correct = art===s.art;
+    const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    if(correct){
+      const erkl={nomen:"man kann der/die/das davorsetzen.",verb:"es sagt, was man tut.",adjektiv:"es beschreibt, wie etwas ist."}[s.art];
+      d.textContent="Richtig! „"+wort+"“ ist ein "+WA_LABEL[s.art]+" – "+erkl+" 🌟";
+    }else{
+      d.textContent="Fast! Überlege: Namenwort (der/die/das?), Tun-Wort (was tut man?) oder Wie-Wort (wie ist es?)?";
+    }
+    const fb=c.querySelector("#wafb"); fb.innerHTML=""; fb.appendChild(d);
+  };
+  c.querySelector("#nomenBtn").onclick=()=>check("nomen");
+  c.querySelector("#verbBtn").onclick=()=>check("verb");
+  c.querySelector("#adjBtn").onclick=()=>check("adjektiv");
+  c.querySelector("#nextBtn").onclick=()=>{ waIdx=(waIdx+1)%S.length; waUeben(c); window.scrollTo(0,0); };
+}
+function waSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe die Wortart mit der Hand dazu.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=waWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function waWorksheetHTML(){
+  const thema=WA_THEMEN[store.wortarten.thema];
+  const lines=thema.saetze.map((s,i)=>{
+    const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
+    return `
+    <div class="ws-step">
+      <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
+      <div class="cue">Welche Wortart ist „${wort}“? (Nomen / Verb / Adjektiv)</div>
+      <div class="writeline"></div>
+    </div>`;
+  }).join("");
+  return `
+    <div class="ws-head"><span class="pen">🏷️</span><h2>Wortarten (${thema.name})</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Bestimme bei jedem Satz die Wortart des angegebenen Wortes:
+      <b>Nomen</b> (Namenwort), <b>Verb</b> (Tun-Wort) oder <b>Adjektiv</b> (Wie-Wort).</div>
+    ${lines}`;
+}
+function waFlower(c){ renderFlower(c, MODULES.wortarten.self, store.wortarten.self); }
+
+/* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
@@ -1397,6 +1717,36 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:zeitFlower}
     ],
     self:{ groups:[{title:"Zeitformen", fragen:KRIT_ZEIT}], form:KRIT_ZEIT_FORM }
+  },
+  grossklein:{
+    id:"grossklein", name:"Groß & klein", emoji:"🔠",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:gkLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:gkUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:gkSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:gkFlower}
+    ],
+    self:{ groups:[{title:"Groß- und Kleinschreibung", fragen:KRIT_GK}], form:KRIT_GK_FORM }
+  },
+  dassdas:{
+    id:"dassdas", name:"das / dass", emoji:"🔤",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:ddLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:ddUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:ddSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:ddFlower}
+    ],
+    self:{ groups:[{title:"das / dass", fragen:KRIT_DD}], form:KRIT_DD_FORM }
+  },
+  wortarten:{
+    id:"wortarten", name:"Wortarten", emoji:"🏷️",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:waLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:waUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:waSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:waFlower}
+    ],
+    self:{ groups:[{title:"Wortarten", fragen:KRIT_WA}], form:KRIT_WA_FORM }
   }
 };
 
@@ -1411,7 +1761,10 @@ let store = {
   praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   satzglieder:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   rede:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  zeit:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  zeit:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  grossklein:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  dassdas:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  wortarten:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -1445,6 +1798,18 @@ function load(){
       if(ZEIT_THEMEN[d.zeit.thema]) store.zeit.thema=d.zeit.thema;
       if(d.zeit.self) mergeSelf(store.zeit.self, d.zeit.self);
     }
+    if(d.grossklein){
+      if(GK_THEMEN[d.grossklein.thema]) store.grossklein.thema=d.grossklein.thema;
+      if(d.grossklein.self) mergeSelf(store.grossklein.self, d.grossklein.self);
+    }
+    if(d.dassdas){
+      if(DD_THEMEN[d.dassdas.thema]) store.dassdas.thema=d.dassdas.thema;
+      if(d.dassdas.self) mergeSelf(store.dassdas.self, d.dassdas.self);
+    }
+    if(d.wortarten){
+      if(WA_THEMEN[d.wortarten.thema]) store.wortarten.thema=d.wortarten.thema;
+      if(d.wortarten.self) mergeSelf(store.wortarten.self, d.wortarten.self);
+    }
   }catch(e){}
 }
 // Übernimmt gespeicherte Werte, ohne die Größe der Zielarrays zu sprengen
@@ -1476,7 +1841,8 @@ function buildModuleChooser(){
 }
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
-  subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
+  gkIdx=0; ddIdx=0; waIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
