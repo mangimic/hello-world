@@ -277,8 +277,12 @@ button.locked{opacity:.45; pointer-events:none;}
       </div>
       <div class="choice-grid" id="moduleChooser"></div>
     </div>
-    <p style="text-align:center; margin:4px 0 12px;">
+    <p style="text-align:center; margin:4px 0 2px;">
       <button class="linklike" id="adminLink">🔧 Elternbereich</button>
+    </p>
+    <p style="text-align:center; margin:0 0 12px;" class="muted">
+      <span id="versionInfo" style="font-size:13px;"></span>
+      <button class="linklike" id="notesLink" style="font-size:13px;">📋 Was ist neu?</button>
     </p>
   </section>
 
@@ -318,6 +322,58 @@ button.locked{opacity:.45; pointer-events:none;}
    ============================================================ */
 
 const $ = (id)=>document.getElementById(id);
+
+/* ============================================================
+   VERSION & RELEASE NOTES
+   Regel: App-Version = 1.<Nummer des Service-Worker-Caches>.0
+   (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
+   und hier einen Eintrag ergänzen (neueste zuerst).
+   ============================================================ */
+const APP_VERSION = "1.20.0";
+const RELEASE_NOTES = [
+  {v:"1.20.0", datum:"10.07.2026", punkte:[
+    "Neuer Bereich <b>„Was ist neu?“</b> mit allen Änderungen",
+    "<b>Versionsnummern</b> eingeführt – sichtbar unten auf der Startseite"]},
+  {v:"1.19.0", datum:"10.07.2026", punkte:[
+    "Stufen-Steuerung mit <b>„Speichern &amp; aktivieren“</b> – Stufen gelten danach verlässlich in allen Aufgaben",
+    "Jede Aufgabe zeigt die <b>aktive Stufe</b> (📌 = festgelegt)",
+    "Automatisierter <b>Regressionstest</b> (62 Prüfungen) vor jedem Release"]},
+  {v:"1.18.0", datum:"10.07.2026", punkte:[
+    "Elternbereich: <b>Stufen festlegen</b> – global, je Klassenstufe oder je Bereich"]},
+  {v:"1.17.0", datum:"10.07.2026", punkte:[
+    "Klassischer <b>„← Zurück“-Knopf</b> überall, auch am Testende",
+    "Neuer <b>Elternbereich</b>: Grundwortschatz-Wörter ansehen, ändern und ergänzen"]},
+  {v:"1.16.0", datum:"10.07.2026", punkte:[
+    "Kategorie-Auswahl wieder <b>mehrzeilig</b> – alles auf einen Blick"]},
+  {v:"1.15.0", datum:"10.07.2026", punkte:[
+    "Kompakteres Layout – <b>weniger Scrollen</b>",
+    "<b>Bremse für schnelle Klicker</b>: ohne Antwort geht es nicht weiter, nach Fehlern wird die Erklärung gezeigt"]},
+  {v:"1.14.0", datum:"10.07.2026", punkte:[
+    "<b>Amtliche Grundwortschatz-Liste BW</b> (246 Wörter) integriert",
+    "Stufen inhaltlich: erst leichte Wörter (Klasse 1/2), dann schwere (Klasse 3/4)",
+    "Runden in <b>Paketen à 10 Wörtern</b>, die automatisch rotieren"]},
+  {v:"1.13.0", datum:"10.07.2026", punkte:[
+    "Stufen-System je <b>Grundwortschatz-Gruppe</b>"]},
+  {v:"1.12.0", datum:"10.07.2026", punkte:[
+    "Neues Lernfeld <b>📚 Grundwortschatz</b> mit Regel-Gruppen und Strategie-Feedback"]},
+  {v:"1.11.0", datum:"10.07.2026", punkte:[
+    "<b>Level-System</b>: Runde komplett lösen schaltet schwerere Stufe frei – mit 🎉 Konfetti-Feier und 👑 Profi-Krone"]},
+  {v:"1.10.0", datum:"10.07.2026", punkte:[
+    "Bugfix: <b>Blume passt zur Auswertung</b> – leerer Topf, wenn nichts gelöst wurde"]},
+  {v:"1.9.0", datum:"10.07.2026", punkte:[
+    "Bugfix: Auswertung zählt korrekt – auch ohne „Prüfen“-Klick"]},
+  {v:"1.8.0", datum:"10.07.2026", punkte:[
+    "<b>Arbeitsblätter</b> passen sich der Klassenstufe an (mit Abzeichen)"]},
+  {v:"1.7.0", datum:"10.07.2026", punkte:[
+    "<b>Auswertung mit Blumentopf</b> am Ende jeder Übungsrunde – in allen Lernfeldern"]},
+  {v:"1.6.0", datum:"10.07.2026", punkte:[
+    "Aufgaben in <b>Klasse 4 durchgehend schwerer</b> als in Klasse 3"]},
+  {v:"1.0.0 – 1.5.0", datum:"09.–10.07.2026", punkte:[
+    "Grundversion: <b>12 Lernfelder</b> (Vorgangsbeschreibung, Subjekt, Prädikat, Satzglieder, Wörtliche Rede, Zeitformen, Groß &amp; klein, das/dass, Wortarten, Die 4 Fälle, Doppelte Mitlaute, Kompass 4)",
+    "Globale Themen (Alltag, Angeln, Tennis, Fußball), Klassenstufen-Auswahl",
+    "Druckbare Arbeitsblätter, Blumentopf-Selbstcheck, sofortiges Feedback",
+    "Installierbar als App (PWA), funktioniert offline"]}
+];
 
 // Globale Themen (gelten für alle Satz-Übungen). Neues Thema = hier + in jedem *_THEMEN ergänzen.
 const THEMEN = [
@@ -3470,6 +3526,29 @@ function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
    Zeigt außerdem die Rotation (Pakete), damit klar ist,
    dass alle Wörter drankommen.
    ============================================================ */
+/* ============================================================
+   RELEASE NOTES („Was ist neu?")
+   ============================================================ */
+function openNotes(){
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  renderNotes($("moduleContent"));
+  renderNav();
+  window.scrollTo(0,0);
+}
+function renderNotes(c){
+  const cards = RELEASE_NOTES.map(r=>`
+    <div class="card">
+      <h3>Version ${r.v} <span class="muted" style="font-weight:400; font-size:13px;">· ${r.datum}</span></h3>
+      <ul style="margin:6px 0 0; padding-left:20px;">${r.punkte.map(p=>`<li style="margin-bottom:4px;">${p}</li>`).join("")}</ul>
+    </div>`).join("");
+  c.innerHTML = `
+    <div class="card"><h2>📋 Was ist neu?</h2>
+      <p class="muted">Aktuelle Version: <b>${APP_VERSION}</b>. Hier stehen alle Änderungen der App – die neuesten zuerst.</p></div>
+    ${cards}`;
+}
+
 let adminCatIdx=0;
 function openAdmin(){
   stufenDraft=null; stufenSaved=false; // Stufen-Entwurf frisch vom gespeicherten Stand
@@ -3982,9 +4061,11 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Level-Up Overlay schließen
   $("lvlupClose").onclick=hideLevelUp;
   $("levelUp").addEventListener("click",e=>{ if(e.target.id==="levelUp") hideLevelUp(); });
-  // Zurück-Button + Elternbereich
+  // Zurück-Button + Elternbereich + Release Notes
   $("backBtn").onclick=goHome;
   $("adminLink").onclick=openAdmin;
+  $("versionInfo").textContent="Version "+APP_VERSION+" ·";
+  $("notesLink").onclick=openNotes;
   // letztes Lernfeld für die Navigation vormerken, aber auf der Startseite bleiben
   activeModuleId = (store.lastModule && MODULES[store.lastModule]) ? store.lastModule : null;
   goHome();

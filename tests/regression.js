@@ -219,6 +219,22 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Blatt zeigt Klassen-Abzeichen", ws.includes("Klasse 4"));
   check("Blatt nutzt Stufen-Wörter (K4 schwer)", ws.includes("Hahn") || ws.includes("Schwester"));
 
+  // ---------- 9) Version & Release Notes ----------
+  section("Version & Release Notes");
+  await fresh();
+  const vline = (await page.locator("#versionInfo").textContent()).trim();
+  check("Version auf der Startseite sichtbar", /Version \d+\.\d+\.\d+/.test(vline), vline);
+  const swMatch = fs.readFileSync(path.resolve(__dirname, "..", "service-worker.js"), "utf8").match(/lern-app-v(\d+)/);
+  const appV = await page.evaluate(() => APP_VERSION);
+  check("Versions-Regel 1.<SW-Cache>.0 eingehalten", appV === `1.${swMatch[1]}.0`, `APP ${appV} vs SW v${swMatch[1]}`);
+  await page.locator("#notesLink").click(); await page.waitForTimeout(120);
+  const notes = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  check("Release Notes öffnen sich", notes.includes("Was ist neu?"));
+  check("Aktuelle Version in den Notes", notes.includes(appV));
+  check("Notes: neueste Version ist erster Eintrag", await page.evaluate(() => RELEASE_NOTES[0].v === APP_VERSION));
+  await page.locator("#backBtn").click(); await page.waitForTimeout(90);
+  check("Zurück aus den Notes", (await page.locator("#screen-home.active").count()) > 0);
+
   // ---------- Fehler-Sammlung ----------
   section("Konsolen-/Seitenfehler");
   check("keine JS-Fehler während des gesamten Laufs", errs.length === 0, errs.slice(0, 3).join(" | "));
