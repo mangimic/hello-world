@@ -75,6 +75,11 @@ button:active{transform:scale(0.97);}
 .choice .emoji{display:block; font-size:34px; margin-bottom:6px;}
 .choice.selected{border-color:var(--primary); background:#e4eefb;}
 
+/* Klassenstufen-Auswahl */
+.level-row{display:flex; gap:8px; margin:6px 0 12px;}
+.level-btn{flex:1; background:var(--soft); color:var(--text); font-weight:700; border-radius:14px; min-height:46px; font-size:16px;}
+.level-btn.active{background:var(--primary); color:#fff;}
+
 /* Chips */
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
 .chip{background:#e4eefb; border:2px solid var(--primary); color:var(--primary-dark);
@@ -198,6 +203,11 @@ button:active{transform:scale(0.97);}
     </div>
     <div class="card">
       <h2>Wähle ein Lernfeld</h2>
+      <div class="level-row" id="levelRow">
+        <button class="level-btn" data-level="3">Klasse 3</button>
+        <button class="level-btn" data-level="4">Klasse 4</button>
+        <button class="level-btn" data-level="0">Alle</button>
+      </div>
       <div class="choice-grid" id="moduleChooser"></div>
     </div>
   </section>
@@ -2009,6 +2019,7 @@ const MODULES = {
 let store = {
   name:"",
   lastModule:"vorgang",
+  level:3,   // Klassenstufe: 3, 4 oder 0 (= alle)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
   subjekt:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -2028,6 +2039,7 @@ function load(){
     const d=JSON.parse(localStorage.getItem(KEY)||"null");
     if(!d) return;
     if(typeof d.name==="string") store.name=d.name;
+    if([0,3,4].includes(d.level)) store.level=d.level;
     if(d.lastModule && MODULES[d.lastModule]) store.lastModule=d.lastModule;
     if(d.vorgang){
       if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
@@ -2091,9 +2103,22 @@ function updateGreeting(){ $("greeting").textContent = store.name ? ("Hallo, "+s
 let activeModuleId = null;
 let activeSectionId = null;
 
+// Welche Lernfelder gehören zu welcher Klassenstufe (mehrere möglich)
+const MODUL_KLASSE = {
+  vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
+  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3]
+};
+function buildLevelRow(){
+  document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
+    b.classList.toggle("active", parseInt(b.dataset.level,10)===store.level);
+    b.onclick=()=>{ store.level=parseInt(b.dataset.level,10); save(); buildLevelRow(); buildModuleChooser(); };
+  });
+}
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
-  Object.keys(MODULES).forEach(id=>{
+  Object.keys(MODULES)
+    .filter(id=> store.level===0 || (MODUL_KLASSE[id]||[3,4]).includes(store.level))
+    .forEach(id=>{
     const m=MODULES[id];
     const div=document.createElement("div");
     div.className="choice";
@@ -2147,6 +2172,7 @@ function navItem(icon,label,onclick,active){
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
   load();
+  buildLevelRow();
   buildModuleChooser();
   const ni=$("nameInput");
   ni.value=store.name;
