@@ -2326,9 +2326,12 @@ const KRIT_KOMP = [
 const KRIT_KOMP_FORM = ["Ich habe mir Zeit gelassen.","Ich habe genau gelesen.","Ich habe meine Antworten überprüft."];
 let kompTextIdx=0, kompBereichIdx=0, kompLeseIdx=0, kompUebIdx=0;
 
-// Quiz-Engine mit sofortigem Feedback + Begründung
-function renderQuizPaged(host, items, getIdx, setIdx){
-  let i=getIdx(); if(i>=items.length){ i=0; setIdx(0); }
+// Quiz-Engine mit sofortigem Feedback + Begründung + Auswertung am Ende.
+// state hält den Punktestand über alle Aufgaben (res[i] = "first"/"later"/"wrong"/"open").
+function renderQuizPaged(host, items, getIdx, setIdx, state){
+  if(!state){ state={res:[]}; }
+  let i=getIdx();
+  if(i>=items.length){ return renderQuizResult(host, items, getIdx, setIdx, state); }
   const it=items[i];
   let answered=false, wrongTries=0;
   host.innerHTML = `
@@ -2346,7 +2349,7 @@ function renderQuizPaged(host, items, getIdx, setIdx){
   const fb=host.querySelector("#qfb");
   const opts=host.querySelector("#opts");
   if(it.typ==="reveal"){
-    answered=true; // offene Frage: „Weiter“ immer erlaubt
+    answered=true; state.res[i]="open"; // offene Frage: selbst prüfen, „Weiter“ immer erlaubt
     const rev=document.createElement("button");
     rev.className="btn-secondary btn-small"; rev.style.width="100%"; rev.textContent="Lösung zeigen";
     rev.onclick=()=>{ fb.innerHTML=""; const d=document.createElement("div"); d.className="feedback ok";
@@ -2356,16 +2359,18 @@ function renderQuizPaged(host, items, getIdx, setIdx){
     it.optionen.forEach((o,oi)=>{
       const b=document.createElement("button"); b.className="quiz-opt"; b.textContent=o;
       b.onclick=()=>{
+        if(answered) return; // nach einer gültigen Antwort nicht mehr weiterzählen
         const correct = oi===it.loesung;
         const d=document.createElement("div");
         if(correct){
           answered=true; b.classList.add("ok");
+          state.res[i] = wrongTries===0 ? "first" : "later";
           d.className="feedback ok"; d.textContent="Richtig! 🌟 "+(it.erkl||"");
         }else{
           wrongTries++; b.classList.add("no");
           d.className="feedback tip";
           if(wrongTries>=2){
-            answered=true;
+            answered=true; state.res[i]="wrong";
             d.innerHTML="Das war noch nicht richtig. Die richtige Antwort ist <b>"+it.optionen[it.loesung]+"</b>.<br>"+(it.erkl||"");
             [...opts.children].forEach((bb,bi)=>{ if(bi===it.loesung) bb.classList.add("ok"); });
           }else{
@@ -2383,8 +2388,43 @@ function renderQuizPaged(host, items, getIdx, setIdx){
       d.textContent="Wähle zuerst eine Antwort – dann siehst du, ob sie richtig war.";
       fb.appendChild(d); return;
     }
-    setIdx((i+1)%items.length);
-    renderQuizPaged(host, items, getIdx, setIdx);
+    setIdx(i+1);
+    renderQuizPaged(host, items, getIdx, setIdx, state);
+    window.scrollTo(0,0);
+  };
+}
+// Auswertung + Einwertung am Ende einer Übungsreihe, mit „Nochmal üben".
+function renderQuizResult(host, items, getIdx, setIdx, state){
+  const mc = items.filter(x=>x.typ!=="reveal").length;
+  const open = items.length - mc;
+  let first=0, later=0, wrong=0;
+  for(let k=0;k<items.length;k++){
+    if(state.res[k]==="first") first++;
+    else if(state.res[k]==="later") later++;
+    else if(state.res[k]==="wrong") wrong++;
+  }
+  const geschafft = first+later;            // insgesamt richtig gelöst
+  const ratio = mc>0 ? first/mc : 1;        // Anteil „auf Anhieb"
+  let stufe, titel, text;
+  if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles auf Anhieb richtig!"; }
+  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles konntest du direkt lösen."; }
+  else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
+  else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – wiederhole die Aufgaben ruhig noch einmal."; }
+  host.innerHTML = `
+    <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
+    <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
+    <p style="text-align:center;font-size:20px;font-weight:800;margin:2px 0;">${titel}</p>
+    <p style="text-align:center;" class="muted">${text}</p>
+    <div class="example-box" style="margin-top:10px;">
+      🌟 <b>Auf Anhieb richtig:</b> ${first} von ${mc}<br>
+      ✅ <b>Insgesamt gelöst:</b> ${geschafft} von ${mc}${later?` (davon ${later} nach einem Tipp)`:``}<br>
+      ${wrong?`🔁 <b>Nochmal anschauen:</b> ${wrong}<br>`:``}
+      ${open?`📝 <b>Offene Fragen zum Selbst-Prüfen:</b> ${open}`:``}
+    </div>
+    <button class="btn-primary mt" id="qagain" style="width:100%;">🔁 Nochmal üben</button>`;
+  host.querySelector("#qagain").onclick=()=>{
+    setIdx(0); stopSpeak();
+    renderQuizPaged(host, items, getIdx, setIdx, {res:[]});
     window.scrollTo(0,0);
   };
 }
@@ -2411,6 +2451,7 @@ function komInfo(c){
 function komLesen(c){
   if(kompTextIdx>=KOMP_TEXTE.length) kompTextIdx=0;
   const L=KOMP_TEXTE[kompTextIdx];
+  if(kompLeseIdx>=L.fragen.length) kompLeseIdx=0; // beendete Runde: frisch starten
   const chooser = KOMP_TEXTE.map((t,ti)=>
     `<button class="chip${ti===kompTextIdx?" on":""}" data-ti="${ti}">${t.emoji} ${t.titel}</button>`).join("");
   c.innerHTML = `
@@ -2427,6 +2468,7 @@ function komLesen(c){
 function komUeben(c){
   if(kompBereichIdx>=KOMP_BEREICHE.length) kompBereichIdx=0;
   const B=KOMP_BEREICHE[kompBereichIdx];
+  if(kompUebIdx>=B.items.length) kompUebIdx=0; // beendete Runde: frisch starten
   const chooser = KOMP_BEREICHE.map((b,bi)=>
     `<button class="chip${bi===kompBereichIdx?" on":""}" data-bi="${bi}">${b.emoji} ${b.name}</button>`).join("");
   c.innerHTML = `
