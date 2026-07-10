@@ -310,6 +310,52 @@ function potSVG(stufe){
   return `<svg viewBox="0 0 60 70" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${p}${topf}</svg>`;
 }
 
+/* ============================================================
+   BEWERTUNG je Übungs-Durchlauf (für alle Lernfelder)
+   Zählt „auf Anhieb richtig" (first) und „insgesamt gelöst" (solved)
+   und zeigt am Ende eine Auswertung mit Einwertung + „Nochmal üben".
+   ============================================================ */
+let scoreRuns = {};
+function runGet(key, total){
+  let r = scoreRuns[key];
+  if(!r || r.total!==total){ r = scoreRuns[key] = {total:total, first:0, solved:0, scored:new Set(), wrong:new Set()}; }
+  return r;
+}
+function runWrong(key, idx){ const r=scoreRuns[key]; if(r) r.wrong.add(idx); }
+function runCorrect(key, idx){
+  const r=scoreRuns[key]; if(!r || r.scored.has(idx)) return;
+  r.scored.add(idx); r.solved++; if(!r.wrong.has(idx)) r.first++;
+}
+function runReset(key){ delete scoreRuns[key]; }
+// Auswertung + Einwertung (ohne Note), generisch. onRepeat startet die Runde neu.
+function renderRunResult(host, key, onRepeat){
+  const r = scoreRuns[key] || {total:0, first:0, solved:0};
+  const total=r.total, first=r.first, solved=r.solved;
+  const ratio = total>0 ? first/total : 1;
+  let stufe, titel, text;
+  if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles auf Anhieb richtig!"; }
+  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles konntest du direkt lösen."; }
+  else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
+  else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – übe die Runde ruhig noch einmal."; }
+  host.innerHTML = `
+    <div class="card">
+      <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
+      <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
+      <p style="text-align:center;font-size:20px;font-weight:800;margin:2px 0;">${titel}</p>
+      <p style="text-align:center;" class="muted">${text}</p>
+      <div class="example-box" style="margin-top:10px;">
+        🌟 <b>Auf Anhieb richtig:</b> ${first} von ${total}<br>
+        ✅ <b>Insgesamt gelöst:</b> ${solved} von ${total}
+      </div>
+      <div style="display:flex; gap:10px; margin-top:12px;">
+        <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
+        <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
+      </div>
+    </div>`;
+  host.querySelector("#runAgain").onclick=()=>{ runReset(key); onRepeat(); window.scrollTo(0,0); };
+  host.querySelector("#runBlume").onclick=()=>goSection("blume");
+}
+
 // Generischer Blumentopf-Selbstcheck: cfg = {groups:[{title,fragen:[]}], form:[]}
 //                                      st  = {groups:[[..]], form:[..]}
 function renderFlower(c, cfg, st){
@@ -847,7 +893,8 @@ function sjLernen(c){
 // --- Bereich „Üben" (Wörter antippen) ---
 function sjUeben(c){
   const S=subjSaetze();
-  if(subjIdx>=S.length) subjIdx=0;
+  runGet("subj", S.length);
+  if(subjIdx>=S.length){ return renderRunResult(c, "subj", ()=>{ subjIdx=0; sjUeben(c); }); }
   const s=S[subjIdx];
   const selected=new Set();
   c.innerHTML = `
@@ -874,13 +921,14 @@ function sjUeben(c){
   c.querySelector("#checkBtn").onclick=()=>{
     const chosen=[...selected].sort((a,b)=>a-b);
     const correct = chosen.length===s.subj.length && chosen.every((v,k)=>v===s.subj[k]);
+    if(correct) runCorrect("subj", subjIdx); else runWrong("subj", subjIdx);
     const d=document.createElement("div");
     d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct ? "Richtig! Das ist das Subjekt. 🌟"
                             : "Fast! Frag dich noch einmal „"+s.frage+"“ und tippe nur das Subjekt an.";
     const fb=c.querySelector("#sfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ subjIdx=(subjIdx+1)%S.length; sjUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ subjIdx=subjIdx+1; sjUeben(c); window.scrollTo(0,0); };
 }
 
 // --- Bereich „Frage" (Wer? oder Was?) ---
@@ -1081,7 +1129,8 @@ function pjLernen(c){
 // --- Bereich „Üben" (Prädikat antippen) ---
 function pjUeben(c){
   const S=praedSaetze();
-  if(praedIdx>=S.length) praedIdx=0;
+  runGet("praed", S.length);
+  if(praedIdx>=S.length){ return renderRunResult(c, "praed", ()=>{ praedIdx=0; pjUeben(c); }); }
   const s=S[praedIdx];
   const selected=new Set();
   const zweiteilig = s.praed.length>1;
@@ -1108,12 +1157,13 @@ function pjUeben(c){
   c.querySelector("#checkBtn").onclick=()=>{
     const chosen=[...selected].sort((a,b)=>a-b);
     const correct = chosen.length===s.praed.length && chosen.every((v,k)=>v===s.praed[k]);
+    if(correct) runCorrect("praed", praedIdx); else runWrong("praed", praedIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct ? "Richtig! Das ist das Prädikat (Tun-Wort). 🌟"
                             : "Fast! Das Prädikat sagt, was passiert. Frag dich: Was tut das Subjekt?";
     const fb=c.querySelector("#pfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ praedIdx=(praedIdx+1)%S.length; pjUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ praedIdx=praedIdx+1; pjUeben(c); window.scrollTo(0,0); };
 }
 
 // --- Bereich „Blatt" ---
@@ -1241,7 +1291,8 @@ function sgLernen(c){
 }
 function sgUeben(c){
   const S=satzgliedSaetze();
-  if(sgIdx>=S.length) sgIdx=0;
+  runGet("satzglied", S.length);
+  if(sgIdx>=S.length){ return renderRunResult(c, "satzglied", ()=>{ sgIdx=0; sgPhase=0; sgUeben(c); }); }
   const s=S[sgIdx];
   const target = sgPhase===0 ? s.subj : s.praed;
   const cls = sgPhase===0 ? "sel" : "selp";
@@ -1278,18 +1329,20 @@ function sgUeben(c){
     if(correct){
       if(sgPhase===0){ sgPhase=1; sgUeben(c); }
       else{
+        runCorrect("satzglied", sgIdx);
         const d=document.createElement("div"); d.className="feedback ok";
         d.textContent="Geschafft! Subjekt (blau) und Prädikat (rot) gefunden. 🌟";
         fb.innerHTML=""; fb.appendChild(d);
       }
     }else{
+      runWrong("satzglied", sgIdx);
       const d=document.createElement("div"); d.className="feedback tip";
       d.textContent = sgPhase===0 ? "Fast! Frag: Wer oder was? – tippe nur das Subjekt an."
                                   : "Fast! Frag: Was tut das Subjekt? – tippe nur das Prädikat an.";
       fb.innerHTML=""; fb.appendChild(d);
     }
   };
-  c.querySelector("#nextBtn").onclick=()=>{ sgIdx=(sgIdx+1)%S.length; sgPhase=0; sgUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ sgIdx=sgIdx+1; sgPhase=0; sgUeben(c); window.scrollTo(0,0); };
 }
 function sgSheet(c){
   c.innerHTML = `
@@ -1416,7 +1469,8 @@ function redeLernen(c){
 }
 function redeUeben(c){
   const S=redeSaetze();
-  if(redeIdx>=S.length) redeIdx=0;
+  runGet("rede", S.length);
+  if(redeIdx>=S.length){ return renderRunResult(c, "rede", ()=>{ redeIdx=0; redeUeben(c); }); }
   const s=S[redeIdx];
   const selected=new Set();
   c.innerHTML=`
@@ -1440,13 +1494,14 @@ function redeUeben(c){
   c.querySelector("#checkBtn").onclick=()=>{
     const chosen=[...selected].sort((a,b)=>a-b);
     const correct = chosen.length===s.rede.length && chosen.every((v,k)=>v===s.rede[k]);
+    if(correct) runCorrect("rede", redeIdx); else runWrong("rede", redeIdx);
     const d=document.createElement("div");
     d.className="feedback "+(correct?"ok":"tip");
     if(correct){ d.innerHTML="Richtig! 🌟<br>So schreibt man es: <b>"+redeQuoted(s)+"</b>"; }
     else{ d.textContent="Fast! Tippe genau die Wörter an, die gesprochen werden."; }
     const fb=c.querySelector("#rfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ redeIdx=(redeIdx+1)%S.length; redeUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ redeIdx=redeIdx+1; redeUeben(c); window.scrollTo(0,0); };
 }
 function redeSheet(c){
   c.innerHTML = `
@@ -1559,7 +1614,8 @@ function zeitLernen(c){
 }
 function zeitUeben(c){
   const S=zeitSaetze();
-  if(zeitIdx>=S.length) zeitIdx=0;
+  runGet("zeit", S.length);
+  if(zeitIdx>=S.length){ return renderRunResult(c, "zeit", ()=>{ zeitIdx=0; zeitUeben(c); }); }
   const s=S[zeitIdx];
   c.innerHTML=`
     <div class="card">
@@ -1584,6 +1640,7 @@ function zeitUeben(c){
   };
   const check=(form)=>{
     const correct = form===s.form;
+    if(correct) runCorrect("zeit", zeitIdx); else runWrong("zeit", zeitIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct ? texte[s.form]
       : "Fast! Achte auf das Zeitwort: jetzt (Präsens), früher (Präteritum), habe/bin … (Perfekt) oder werde … (Futur)?";
@@ -1593,7 +1650,7 @@ function zeitUeben(c){
   c.querySelector("#praetBtn").onclick=()=>check("praeteritum");
   c.querySelector("#perfBtn").onclick=()=>check("perfekt");
   c.querySelector("#futBtn").onclick=()=>check("futur");
-  c.querySelector("#nextBtn").onclick=()=>{ zeitIdx=(zeitIdx+1)%S.length; zeitUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ zeitIdx=zeitIdx+1; zeitUeben(c); window.scrollTo(0,0); };
 }
 function zeitSheet(c){
   c.innerHTML = `
@@ -1691,7 +1748,9 @@ function gkLernen(c){
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function gkUeben(c){
-  const S=gkSaetze(); if(gkIdx>=S.length) gkIdx=0; const s=S[gkIdx];
+  const S=gkSaetze(); runGet("gk", S.length);
+  if(gkIdx>=S.length){ return renderRunResult(c, "gk", ()=>{ gkIdx=0; gkUeben(c); }); }
+  const s=S[gkIdx];
   const selected=new Set();
   c.innerHTML=`
     <div class="card">
@@ -1714,12 +1773,13 @@ function gkUeben(c){
   c.querySelector("#checkBtn").onclick=()=>{
     const chosen=[...selected].sort((a,b)=>a-b);
     const correct = chosen.length===s.gross.length && chosen.every((v,k)=>v===s.gross[k]);
+    if(correct) runCorrect("gk", gkIdx); else runWrong("gk", gkIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     if(correct){ d.innerHTML="Richtig! 🌟<br>So ist es richtig: <b>"+gkCorrected(s)+"</b>"; }
     else{ d.textContent="Fast! Denk an: Satzanfang groß und alle Nomen (Namenwörter) groß."; }
     const fb=c.querySelector("#gkfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ gkIdx=(gkIdx+1)%S.length; gkUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ gkIdx=gkIdx+1; gkUeben(c); window.scrollTo(0,0); };
 }
 function gkSheet(c){
   c.innerHTML = `
@@ -1811,7 +1871,9 @@ function ddLernen(c){
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function ddUeben(c){
-  const S=ddSaetze(); if(ddIdx>=S.length) ddIdx=0; const s=S[ddIdx];
+  const S=ddSaetze(); runGet("dd", S.length);
+  if(ddIdx>=S.length){ return renderRunResult(c, "dd", ()=>{ ddIdx=0; ddUeben(c); }); }
+  const s=S[ddIdx];
   c.innerHTML=`
     <div class="card">
       <h2>🔤 das / dass</h2>
@@ -1827,6 +1889,7 @@ function ddUeben(c){
     </div>`;
   const check=(ans)=>{
     const correct = ans===s.loesung;
+    if(correct) runCorrect("dd", ddIdx); else runWrong("dd", ddIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     if(correct){ d.innerHTML="Richtig! 🌟<br>"+s.satz.replace("___","<b>"+s.loesung+"</b>"); }
     else{ d.textContent = "Fast! Tipp: Passt „dieses/welches“? → das. Sonst → dass."; }
@@ -1834,7 +1897,7 @@ function ddUeben(c){
   };
   c.querySelector("#dasBtn").onclick=()=>check("das");
   c.querySelector("#dassBtn").onclick=()=>check("dass");
-  c.querySelector("#nextBtn").onclick=()=>{ ddIdx=(ddIdx+1)%S.length; ddUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ ddIdx=ddIdx+1; ddUeben(c); window.scrollTo(0,0); };
 }
 function ddSheet(c){
   c.innerHTML = `
@@ -1960,7 +2023,9 @@ function waLernen(c){
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function waUeben(c){
-  const S=waSaetze(); if(waIdx>=S.length) waIdx=0; const s=S[waIdx];
+  const S=waSaetze(); runGet("wa", S.length);
+  if(waIdx>=S.length){ return renderRunResult(c, "wa", ()=>{ waIdx=0; waUeben(c); }); }
+  const s=S[waIdx];
   const satzHtml = s.woerter.map((w,i)=> i===s.ziel ? `<span class="wa-target">${w}</span>` : w).join(" ");
   c.innerHTML=`
     <div class="card">
@@ -1978,6 +2043,7 @@ function waUeben(c){
     </div>`;
   const check=(art)=>{
     const correct = art===s.art;
+    if(correct) runCorrect("wa", waIdx); else runWrong("wa", waIdx);
     const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     if(correct){
@@ -1991,7 +2057,7 @@ function waUeben(c){
   c.querySelector("#nomenBtn").onclick=()=>check("nomen");
   c.querySelector("#verbBtn").onclick=()=>check("verb");
   c.querySelector("#adjBtn").onclick=()=>check("adjektiv");
-  c.querySelector("#nextBtn").onclick=()=>{ waIdx=(waIdx+1)%S.length; waUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ waIdx=waIdx+1; waUeben(c); window.scrollTo(0,0); };
 }
 function waSheet(c){
   c.innerHTML = `
@@ -2091,7 +2157,9 @@ function faelleLernen(c){
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function faelleUeben(c){
-  const S=faelleSaetze(); if(faelleIdx>=S.length) faelleIdx=0; const s=S[faelleIdx];
+  const S=faelleSaetze(); runGet("faelle", S.length);
+  if(faelleIdx>=S.length){ return renderRunResult(c, "faelle", ()=>{ faelleIdx=0; faelleUeben(c); }); }
+  const s=S[faelleIdx];
   const satzHtml = s.woerter.map((w,i)=> s.ziel.includes(i) ? `<span class="wa-target">${w}</span>` : w).join(" ");
   c.innerHTML=`
     <div class="card">
@@ -2111,6 +2179,7 @@ function faelleUeben(c){
   const phrase=s.ziel.map(i=>s.woerter[i]).join(" ").replace(/[.,!?]$/,"");
   const check=(fall)=>{
     const correct = fall===s.fall;
+    if(correct) runCorrect("faelle", faelleIdx); else runWrong("faelle", faelleIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct
       ? "Richtig! „"+phrase+"“ steht im "+FALL_LABEL[s.fall]+" – Frage: "+s.frage+" 🌟"
@@ -2121,7 +2190,7 @@ function faelleUeben(c){
   c.querySelector("#genBtn").onclick=()=>check("gen");
   c.querySelector("#datBtn").onclick=()=>check("dat");
   c.querySelector("#akkBtn").onclick=()=>check("akk");
-  c.querySelector("#nextBtn").onclick=()=>{ faelleIdx=(faelleIdx+1)%S.length; faelleUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ faelleIdx=faelleIdx+1; faelleUeben(c); window.scrollTo(0,0); };
 }
 function faelleSheet(c){
   c.innerHTML = `
@@ -2223,7 +2292,9 @@ function doppelLernen(c){
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function doppelUeben(c){
-  const W=doppelWoerter(); if(doppelIdx>=W.length) doppelIdx=0; const w=W[doppelIdx];
+  const W=doppelWoerter(); runGet("doppel", W.length);
+  if(doppelIdx>=W.length){ return renderRunResult(c, "doppel", ()=>{ doppelIdx=0; doppelUeben(c); }); }
+  const w=W[doppelIdx];
   // richtige Antwort abwechselnd links/rechts, aber deterministisch
   const richtigLinks = doppelIdx%2===0;
   const links = richtigLinks ? w.richtig : w.falsch;
@@ -2242,6 +2313,7 @@ function doppelUeben(c){
     </div>`;
   const check=(wahl)=>{
     const correct = wahl===w.richtig;
+    if(correct) runCorrect("doppel", doppelIdx); else runWrong("doppel", doppelIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct
       ? "Richtig! Das Wort schreibt man „"+w.richtig+"“. 🌟"
@@ -2250,7 +2322,7 @@ function doppelUeben(c){
   };
   c.querySelector("#linksBtn").onclick=()=>check(links);
   c.querySelector("#rechtsBtn").onclick=()=>check(rechts);
-  c.querySelector("#nextBtn").onclick=()=>{ doppelIdx=(doppelIdx+1)%W.length; doppelUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{ doppelIdx=doppelIdx+1; doppelUeben(c); window.scrollTo(0,0); };
 }
 function doppelSheet(c){
   c.innerHTML = `
@@ -2813,6 +2885,7 @@ function buildLevelRow(){
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
   subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=0;
+  scoreRuns={};
 }
 function buildThemeRow(){
   const row=$("themeRow"); row.innerHTML="";
@@ -2844,6 +2917,7 @@ function openModule(id){
   save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
   gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  scoreRuns={};
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
