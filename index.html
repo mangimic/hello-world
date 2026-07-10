@@ -392,7 +392,8 @@ const FIELD_POOLS = {
 function fieldProg(key){ if(!store.progress[key]) store.progress[key]={unlocked:1,runs:0,crown:false}; return store.progress[key]; }
 function fieldHard(key){ const h=FIELD_POOLS[key]().hard; return (h&&h.length)?h:null; }
 function fieldMax(key){ return fieldHard(key)?3:2; }
-function fieldStart(key){ return (store.level===4 && fieldHard(key)) ? 2 : 1; } // Klasse 4 startet schwerer
+// Klasse 4 startet schwerer – außer beim Grundwortschatz (Wörter sind stufenneutral)
+function fieldStart(key){ return (store.level===4 && !key.startsWith("gws:") && fieldHard(key)) ? 2 : 1; }
 function fieldLevel(key){ const p=fieldProg(key); return Math.min(fieldMax(key), Math.max(fieldStart(key), p.unlocked||1)); }
 function fieldPool(key){
   const {easy,hard}=FIELD_POOLS[key](); const lvl=fieldLevel(key);
@@ -2958,6 +2959,12 @@ const KRIT_GWS = [
 ];
 const KRIT_GWS_FORM = ["Ich habe mir die Wörter gemerkt.","Ich habe genau hingeschaut.","Ich habe meine Antworten überprüft."];
 let gwsCatIdx=0, gwsIdx=0;
+// Stufen-System je Regel-Gruppe: Stufe 1 = erste Hälfte, Stufe 2 = zweite Hälfte, Stufe 3 = alle.
+// Neue Wörter (z. B. amtliche Liste) einfach an die Kategorie anhängen – die Stufen wachsen mit.
+GWS_KATEGORIEN.forEach(k=>{
+  const half=Math.ceil(k.woerter.length/2);
+  FIELD_POOLS["gws:"+k.id]=()=>({easy:k.woerter.slice(0,half), hard:k.woerter.slice(half)});
+});
 
 function gwsInfo(c){
   const rows = GWS_KATEGORIEN.map(k=>
@@ -2975,7 +2982,8 @@ function gwsInfo(c){
 function gwsUeben(c){
   if(gwsCatIdx>=GWS_KATEGORIEN.length) gwsCatIdx=0;
   const K=GWS_KATEGORIEN[gwsCatIdx];
-  if(gwsIdx>=K.woerter.length) gwsIdx=0;
+  const key="gws:"+K.id;
+  if(gwsIdx>=fieldPool(key).length) gwsIdx=0;
   const chooser = GWS_KATEGORIEN.map((k,ki)=>
     `<button class="chip${ki===gwsCatIdx?" on":""}" data-ki="${ki}">${k.emoji} ${k.name}</button>`).join("");
   c.innerHTML=`
@@ -2983,16 +2991,17 @@ function gwsUeben(c){
       <p class="muted">Wähle eine Regel-Gruppe. Welches Wort ist richtig geschrieben?</p>
       <div class="chip-row">${chooser}</div></div>
     <div class="card"><h3>${K.emoji} ${K.name}</h3>
+      <div class="lvl-row">${fieldBadge(key)}</div>
       <div class="hint">${K.regel}</div>
       <div id="gwsHost"></div></div>`;
   c.querySelectorAll(".chip[data-ki]").forEach(b=>b.onclick=()=>{ gwsCatIdx=+b.dataset.ki; gwsIdx=0; gwsUeben(c); });
-  renderSpellPaged(c.querySelector("#gwsHost"), K, "gws:"+K.id);
+  renderSpellPaged(c.querySelector("#gwsHost"), K, key);
 }
-// Paged „richtige Schreibung wählen" mit Bewertung am Ende
+// Paged „richtige Schreibung wählen" mit Bewertung + Stufen am Ende
 function renderSpellPaged(host, K, key){
-  const S=K.woerter;
+  const S=fieldPool(key);
   runGet(key, S.length);
-  if(gwsIdx>=S.length){ return renderRunResult(host, key, ()=>{ gwsIdx=0; renderSpellPaged(host, K, key); }); }
+  if(gwsIdx>=S.length){ return renderRunResult(host, key, ()=>{ gwsIdx=0; goSection("ueben"); }); }
   const i=gwsIdx, w=S[i];
   const richtigLinks = i%2===0;
   const a = richtigLinks?w.richtig:w.falsch;
