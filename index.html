@@ -66,13 +66,13 @@ button:active{transform:scale(0.97);}
 }
 
 /* Auswahl-Karten (Lernfeld / Thema) */
-.choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:14px 0;}
+.choice-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:12px 0;}
 .choice{
-  background:var(--soft); border:3px solid transparent; border-radius:16px; padding:18px 12px;
-  text-align:center; font-size:17px; font-weight:700; color:var(--text); min-height:96px;
+  background:var(--soft); border:3px solid transparent; border-radius:14px; padding:10px 10px;
+  text-align:center; font-size:15px; font-weight:700; color:var(--text); min-height:74px;
   display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer;
 }
-.choice .emoji{display:block; font-size:34px; margin-bottom:6px;}
+.choice .emoji{display:block; font-size:26px; margin-bottom:4px;}
 .choice.selected{border-color:var(--primary); background:#e4eefb;}
 
 /* Klassenstufen-Auswahl */
@@ -83,7 +83,10 @@ button:active{transform:scale(0.97);}
 .theme-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 4px;}
 
 /* Chips */
-.chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
+/* Eine wischbare Zeile statt hohem Block – spart Scrollen */
+.chip-row{display:flex; flex-wrap:nowrap; gap:8px; margin:10px 0; overflow-x:auto;
+  -webkit-overflow-scrolling:touch; padding-bottom:4px; scrollbar-width:thin;}
+.chip-row .chip{flex:0 0 auto; white-space:nowrap;}
 .chip{background:#e4eefb; border:2px solid var(--primary); color:var(--primary-dark);
   border-radius:20px; padding:8px 14px; font-weight:700; font-size:15px;}
 button.chip{cursor:pointer; min-height:auto; font-family:inherit; line-height:1.2;}
@@ -209,6 +212,12 @@ button.chip.on{background:var(--primary); color:#fff;}
 .card-lvl{display:block; margin-top:6px; font-size:12px; font-weight:800; color:var(--primary-dark);
   background:var(--soft); border-radius:999px; padding:2px 8px;}
 .lvl-row{margin:4px 0 2px;}
+
+/* Schnell-Klicker-Bremse: gesperrter Weiter-Knopf + Feedback-Puls */
+button.locked{opacity:.45; pointer-events:none;}
+.feedback{animation:fbpulse .5s ease;}
+@keyframes fbpulse{0%{transform:scale(.96); opacity:.4;} 100%{transform:scale(1); opacity:1;}}
+@media (prefers-reduced-motion: reduce){ .feedback{animation:none;} }
 
 /* Level-Up Feier-Overlay */
 .lvlup-overlay{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
@@ -366,6 +375,21 @@ function runCorrect(key, idx){
   r.scored.add(idx); r.solved++; if(!r.wrong.has(idx)) r.first++;
 }
 function runReset(key){ delete scoreRuns[key]; }
+
+/* Bremst schnelle Klicker: holt das Feedback ins Bild und sperrt den
+   Weiter-Knopf kurz, damit die Erklärung wirklich gesehen wird. */
+function focusFeedback(d, nextBtn){
+  try{ d.scrollIntoView({behavior:"smooth", block:"nearest"}); }catch(e){}
+  if(nextBtn){ nextBtn.disabled=true; nextBtn.classList.add("locked");
+    setTimeout(()=>{ nextBtn.disabled=false; nextBtn.classList.remove("locked"); }, 1100); }
+}
+// Hinweis, wenn ohne Antwort weitergeklickt wird
+function needAnswer(fb, text){
+  const d=document.createElement("div"); d.className="feedback tip";
+  d.textContent=text || "Wähle zuerst eine Antwort – dann geht es weiter.";
+  fb.innerHTML=""; fb.appendChild(d);
+  try{ d.scrollIntoView({behavior:"smooth", block:"nearest"}); }catch(e){}
+}
 
 /* ============================================================
    STUFEN / LEVEL je Lernfeld
@@ -1087,11 +1111,13 @@ function sjUeben(c){
     d.textContent = correct ? "Richtig! Das ist das Subjekt. 🌟"
                             : "Fast! Frag dich noch einmal „"+s.frage+"“ und tippe nur das Subjekt an.";
     const fb=c.querySelector("#sfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nextBtn").onclick=()=>{
-    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
-      const ok=ch.length===s.subj.length && ch.every((v,k)=>v===s.subj[k]);
-      if(ok) runCorrect("subj", subjIdx); else runWrong("subj", subjIdx); }
+    if(!selected.size){ needAnswer(c.querySelector("#sfb"), "Tippe zuerst das Subjekt an – dann geht es weiter."); return; }
+    const ch=[...selected].sort((a,b)=>a-b);
+    const ok=ch.length===s.subj.length && ch.every((v,k)=>v===s.subj[k]);
+    if(ok) runCorrect("subj", subjIdx); else runWrong("subj", subjIdx);
     subjIdx=subjIdx+1; sjUeben(c); window.scrollTo(0,0);
   };
 }
@@ -1329,11 +1355,13 @@ function pjUeben(c){
     d.textContent = correct ? "Richtig! Das ist das Prädikat (Tun-Wort). 🌟"
                             : "Fast! Das Prädikat sagt, was passiert. Frag dich: Was tut das Subjekt?";
     const fb=c.querySelector("#pfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nextBtn").onclick=()=>{
-    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
-      const ok=ch.length===s.praed.length && ch.every((v,k)=>v===s.praed[k]);
-      if(ok) runCorrect("praed", praedIdx); else runWrong("praed", praedIdx); }
+    if(!selected.size){ needAnswer(c.querySelector("#pfb"), "Tippe zuerst das Prädikat an – dann geht es weiter."); return; }
+    const ch=[...selected].sort((a,b)=>a-b);
+    const ok=ch.length===s.praed.length && ch.every((v,k)=>v===s.praed[k]);
+    if(ok) runCorrect("praed", praedIdx); else runWrong("praed", praedIdx);
     praedIdx=praedIdx+1; pjUeben(c); window.scrollTo(0,0);
   };
 }
@@ -1514,12 +1542,15 @@ function sgUeben(c){
       d.textContent = sgPhase===0 ? "Fast! Frag: Wer oder was? – tippe nur das Subjekt an."
                                   : "Fast! Frag: Was tut das Subjekt? – tippe nur das Prädikat an.";
       fb.innerHTML=""; fb.appendChild(d);
+      focusFeedback(d, c.querySelector("#nextBtn"));
     }
   };
   c.querySelector("#nextBtn").onclick=()=>{
-    if(sgPhase===1 && selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+    if(!selected.size){ needAnswer(c.querySelector("#gfb"), sgPhase===0 ? "Tippe zuerst das Subjekt an – dann geht es weiter." : "Tippe zuerst das Prädikat an – dann geht es weiter."); return; }
+    if(sgPhase===1){ const ch=[...selected].sort((a,b)=>a-b);
       const ok=ch.length===s.praed.length && ch.every((v,k)=>v===s.praed[k]);
       if(ok) runCorrect("satzglied", sgIdx); else runWrong("satzglied", sgIdx); }
+    else { runWrong("satzglied", sgIdx); } // Subjekt-Phase übersprungen -> zählt nicht als gelöst
     sgIdx=sgIdx+1; sgPhase=0; sgUeben(c); window.scrollTo(0,0);
   };
 }
@@ -1681,11 +1712,13 @@ function redeUeben(c){
     if(correct){ d.innerHTML="Richtig! 🌟<br>So schreibt man es: <b>"+redeQuoted(s)+"</b>"; }
     else{ d.textContent="Fast! Tippe genau die Wörter an, die gesprochen werden."; }
     const fb=c.querySelector("#rfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nextBtn").onclick=()=>{
-    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
-      const ok=ch.length===s.rede.length && ch.every((v,k)=>v===s.rede[k]);
-      if(ok) runCorrect("rede", redeIdx); else runWrong("rede", redeIdx); }
+    if(!selected.size){ needAnswer(c.querySelector("#rfb"), "Tippe zuerst die wörtliche Rede an – dann geht es weiter."); return; }
+    const ch=[...selected].sort((a,b)=>a-b);
+    const ok=ch.length===s.rede.length && ch.every((v,k)=>v===s.rede[k]);
+    if(ok) runCorrect("rede", redeIdx); else runWrong("rede", redeIdx);
     redeIdx=redeIdx+1; redeUeben(c); window.scrollTo(0,0);
   };
 }
@@ -1821,19 +1854,24 @@ function zeitUeben(c){
     perfekt:"Richtig! Vergangenheit mit haben/sein → Perfekt. 🌟",
     futur:"Richtig! Das passiert später → Futur. 🌟"
   };
+  let zAnswered=false;
   const check=(form)=>{
+    zAnswered=true;
     const correct = form===s.form;
     if(correct) runCorrect("zeit", zeitIdx); else runWrong("zeit", zeitIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     d.textContent = correct ? texte[s.form]
       : "Fast! Achte auf das Zeitwort: jetzt (Präsens), früher (Präteritum), habe/bin … (Perfekt) oder werde … (Futur)?";
     const fb=c.querySelector("#zfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#praesBtn").onclick=()=>check("praesens");
   c.querySelector("#praetBtn").onclick=()=>check("praeteritum");
   c.querySelector("#perfBtn").onclick=()=>check("perfekt");
   c.querySelector("#futBtn").onclick=()=>check("futur");
-  c.querySelector("#nextBtn").onclick=()=>{ zeitIdx=zeitIdx+1; zeitUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!zAnswered){ needAnswer(c.querySelector("#zfb")); return; }
+    zeitIdx=zeitIdx+1; zeitUeben(c); window.scrollTo(0,0); };
 }
 function zeitSheet(c){
   c.innerHTML = `
@@ -1963,11 +2001,13 @@ function gkUeben(c){
     if(correct){ d.innerHTML="Richtig! 🌟<br>So ist es richtig: <b>"+gkCorrected(s)+"</b>"; }
     else{ d.textContent="Fast! Denk an: Satzanfang groß und alle Nomen (Namenwörter) groß."; }
     const fb=c.querySelector("#gkfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nextBtn").onclick=()=>{
-    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
-      const ok=ch.length===s.gross.length && ch.every((v,k)=>v===s.gross[k]);
-      if(ok) runCorrect("gk", gkIdx); else runWrong("gk", gkIdx); }
+    if(!selected.size){ needAnswer(c.querySelector("#gkfb"), "Tippe zuerst die großen Wörter an – dann geht es weiter."); return; }
+    const ch=[...selected].sort((a,b)=>a-b);
+    const ok=ch.length===s.gross.length && ch.every((v,k)=>v===s.gross[k]);
+    if(ok) runCorrect("gk", gkIdx); else runWrong("gk", gkIdx);
     gkIdx=gkIdx+1; gkUeben(c); window.scrollTo(0,0);
   };
 }
@@ -2079,17 +2119,22 @@ function ddUeben(c){
       <div id="ddfb"></div>
       <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
     </div>`;
+  let ddAnswered=false;
   const check=(ans)=>{
+    ddAnswered=true;
     const correct = ans===s.loesung;
     if(correct) runCorrect("dd", ddIdx); else runWrong("dd", ddIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     if(correct){ d.innerHTML="Richtig! 🌟<br>"+s.satz.replace("___","<b>"+s.loesung+"</b>"); }
     else{ d.textContent = "Fast! Tipp: Passt „dieses/welches“? → das. Sonst → dass."; }
     const fb=c.querySelector("#ddfb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#dasBtn").onclick=()=>check("das");
   c.querySelector("#dassBtn").onclick=()=>check("dass");
-  c.querySelector("#nextBtn").onclick=()=>{ ddIdx=ddIdx+1; ddUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!ddAnswered){ needAnswer(c.querySelector("#ddfb")); return; }
+    ddIdx=ddIdx+1; ddUeben(c); window.scrollTo(0,0); };
 }
 function ddSheet(c){
   c.innerHTML = `
@@ -2235,7 +2280,9 @@ function waUeben(c){
       <div id="wafb"></div>
       <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
     </div>`;
+  let waAnswered=false;
   const check=(art)=>{
+    waAnswered=true;
     const correct = art===s.art;
     if(correct) runCorrect("wa", waIdx); else runWrong("wa", waIdx);
     const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
@@ -2247,11 +2294,14 @@ function waUeben(c){
       d.textContent="Fast! Überlege: Namenwort (der/die/das?), Tun-Wort (was tut man?) oder Wie-Wort (wie ist es?)?";
     }
     const fb=c.querySelector("#wafb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nomenBtn").onclick=()=>check("nomen");
   c.querySelector("#verbBtn").onclick=()=>check("verb");
   c.querySelector("#adjBtn").onclick=()=>check("adjektiv");
-  c.querySelector("#nextBtn").onclick=()=>{ waIdx=waIdx+1; waUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!waAnswered){ needAnswer(c.querySelector("#wafb")); return; }
+    waIdx=waIdx+1; waUeben(c); window.scrollTo(0,0); };
 }
 function waSheet(c){
   c.innerHTML = `
@@ -2373,7 +2423,9 @@ function faelleUeben(c){
       <button class="btn-primary mt" id="nextBtn">Nächster Satz</button>
     </div>`;
   const phrase=s.ziel.map(i=>s.woerter[i]).join(" ").replace(/[.,!?]$/,"");
+  let faAnswered=false;
   const check=(fall)=>{
+    faAnswered=true;
     const correct = fall===s.fall;
     if(correct) runCorrect("faelle", faelleIdx); else runWrong("faelle", faelleIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
@@ -2381,12 +2433,15 @@ function faelleUeben(c){
       ? "Richtig! „"+phrase+"“ steht im "+FALL_LABEL[s.fall]+" – Frage: "+s.frage+" 🌟"
       : "Fast! Frag dich: Wer/Was? (Nominativ), Wessen? (Genitiv), Wem? (Dativ) oder Wen/Was? (Akkusativ)?";
     const fb=c.querySelector("#fafb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#nomBtn").onclick=()=>check("nom");
   c.querySelector("#genBtn").onclick=()=>check("gen");
   c.querySelector("#datBtn").onclick=()=>check("dat");
   c.querySelector("#akkBtn").onclick=()=>check("akk");
-  c.querySelector("#nextBtn").onclick=()=>{ faelleIdx=faelleIdx+1; faelleUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!faAnswered){ needAnswer(c.querySelector("#fafb")); return; }
+    faelleIdx=faelleIdx+1; faelleUeben(c); window.scrollTo(0,0); };
 }
 function faelleSheet(c){
   c.innerHTML = `
@@ -2509,7 +2564,9 @@ function doppelUeben(c){
       <div id="dofb"></div>
       <button class="btn-primary mt" id="nextBtn">Nächstes Wort</button>
     </div>`;
+  let doAnswered=false;
   const check=(wahl)=>{
+    doAnswered=true;
     const correct = wahl===w.richtig;
     if(correct) runCorrect("doppel", doppelIdx); else runWrong("doppel", doppelIdx);
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
@@ -2517,10 +2574,13 @@ function doppelUeben(c){
       ? "Richtig! Das Wort schreibt man „"+w.richtig+"“. 🌟"
       : "Fast! Höre auf den kurzen Selbstlaut – dann folgt ein doppelter Mitlaut: „"+w.richtig+"“.";
     const fb=c.querySelector("#dofb"); fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
   c.querySelector("#linksBtn").onclick=()=>check(links);
   c.querySelector("#rechtsBtn").onclick=()=>check(rechts);
-  c.querySelector("#nextBtn").onclick=()=>{ doppelIdx=doppelIdx+1; doppelUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!doAnswered){ needAnswer(c.querySelector("#dofb")); return; }
+    doppelIdx=doppelIdx+1; doppelUeben(c); window.scrollTo(0,0); };
 }
 function doppelSheet(c){
   c.innerHTML = `
@@ -2750,6 +2810,7 @@ function renderQuizPaged(host, items, getIdx, setIdx, state){
           }
         }
         fb.innerHTML=""; fb.appendChild(d);
+        if(!correct) focusFeedback(d, host.querySelector("#qnext"));
       };
       opts.appendChild(b);
     });
@@ -3315,8 +3376,11 @@ function renderSpellPaged(host, K, key){
     d.innerHTML = correct ? ("Richtig! 🌟 So schreibt man „<b>"+w.richtig+"</b>“. "+K.tipp)
                           : ("Fast! Richtig ist <b>"+w.richtig+"</b>. "+K.tipp);
     fb.innerHTML=""; fb.appendChild(d);
+    focusFeedback(d, correct?null:host.querySelector("#gwsNext"));
   });
-  host.querySelector("#gwsNext").onclick=()=>{ gwsIdx=i+1; renderSpellPaged(host, K, key); window.scrollTo(0,0); };
+  host.querySelector("#gwsNext").onclick=()=>{
+    if(!answered){ needAnswer(fb, "Wähle zuerst ein Wort – dann geht es weiter."); return; }
+    gwsIdx=i+1; renderSpellPaged(host, K, key); window.scrollTo(0,0); };
 }
 function gwsSheet(c){
   c.innerHTML=`
