@@ -288,7 +288,8 @@ function potSVG(stufe){
     <rect x="13" y="41" width="34" height="7" rx="2.5" fill="#d98a58"/>
     <ellipse cx="30" cy="44.5" rx="15" ry="2.6" fill="#5e3f24"/>`;
   let p = "";
-  if(stufe===1){ p = `<ellipse cx="30" cy="43" rx="2.4" ry="1.5" fill="#7a5230"/>`; }
+  if(stufe<=0){ p = ""; } // leerer Topf – noch nichts gelöst
+  else if(stufe===1){ p = `<ellipse cx="30" cy="43" rx="2.4" ry="1.5" fill="#7a5230"/>`; }
   else if(stufe===2){ p = `
       <path d="M30 44 V33" stroke="#3f9d54" stroke-width="3" fill="none" stroke-linecap="round"/>
       <ellipse cx="24.5" cy="35" rx="5" ry="3" fill="#5bb98c" transform="rotate(-25 24.5 35)"/>
@@ -335,14 +336,15 @@ function renderRunResult(host, key, onRepeat){
   const r = scoreRuns[key] || {total:0, first:0, solved:0};
   const total=r.total, first=r.first, solved=r.solved;
   // Einwertung nach dem, was das Kind wirklich gelöst hat (nicht nur „auf Anhieb").
-  const ratio = total>0 ? solved/total : 1;
+  const ratio = total>0 ? solved/total : 0;
   const allFirst = solved===total && first===total && total>0;
   let stufe, titel, text;
-  if(allFirst){ stufe=3; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
-  else if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
-  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
-  else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
-  else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – übe die Runde ruhig noch einmal."; }
+  if(solved===0){ stufe=0; titel="Guter Anfang! 🌰"; text="Hier war noch keine Lösung dabei – probiere die Runde ruhig noch einmal."; }
+  else if(allFirst){ stufe=4; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
+  else if(ratio>=0.85){ stufe=4; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
+  else if(ratio>=0.6){ stufe=3; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
+  else if(ratio>=0.35){ stufe=2; titel="Du wächst! 🌿"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
+  else { stufe=1; titel="Es keimt! 🌱"; text="Ein Anfang ist gemacht – übe die Runde ruhig noch einmal."; }
   host.innerHTML = `
     <div class="card">
       <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
@@ -2629,14 +2631,15 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
     else if(state.res[k]==="wrong") wrong++;
   }
   const geschafft = first+later;            // insgesamt richtig gelöst
-  const ratio = mc>0 ? geschafft/mc : 1;    // Einwertung nach dem, was gelöst wurde
+  const ratio = mc>0 ? geschafft/mc : 0;    // Einwertung nach dem, was gelöst wurde
   const allFirst = geschafft===mc && first===mc && mc>0;
   let stufe, titel, text;
-  if(allFirst){ stufe=3; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
-  else if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
-  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
-  else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
-  else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – wiederhole die Aufgaben ruhig noch einmal."; }
+  if(geschafft===0){ stufe=0; titel="Guter Anfang! 🌰"; text="Hier war noch keine Lösung dabei – probiere die Aufgaben ruhig noch einmal."; }
+  else if(allFirst){ stufe=4; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
+  else if(ratio>=0.85){ stufe=4; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
+  else if(ratio>=0.6){ stufe=3; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
+  else if(ratio>=0.35){ stufe=2; titel="Du wächst! 🌿"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
+  else { stufe=1; titel="Es keimt! 🌱"; text="Ein Anfang ist gemacht – wiederhole die Aufgaben ruhig noch einmal."; }
   host.innerHTML = `
     <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
     <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
