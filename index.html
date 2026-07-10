@@ -98,6 +98,11 @@ button:active{transform:scale(0.97);}
 .feedback{margin-top:10px; padding:12px 14px; border-radius:12px; font-size:17px; font-weight:700;}
 .feedback.ok{background:#e6f6ee; color:var(--green-dark);}
 .feedback.tip{background:#fff8e6; color:#a67c19;}
+/* Kompass: Lesetext & Quiz-Optionen */
+.lesetext{font-size:18px; line-height:1.65;}
+.quiz-opt{display:block; width:100%; margin:6px 0; text-align:left; background:var(--soft); color:var(--text); font-weight:600; border-radius:12px; padding:12px 14px; font-size:17px;}
+.quiz-opt.ok{background:#e6f6ee;}
+.quiz-opt.no{background:#fbeceb;}
 
 /* Wörter zum Antippen (Subjekt) */
 .sentence-box{font-size:22px; line-height:2.2; margin:10px 0;}
@@ -2084,6 +2089,191 @@ function doppelWorksheetHTML(){
 function doppelFlower(c){ renderFlower(c, MODULES.doppel.self, store.doppel.self); }
 
 /* ============================================================
+   MODUL 12: KOMPASS 4 (Deutsch-Testvorbereitung)
+   Deckt die drei Testbereiche ab: Leseverstehen, Rechtschreibung,
+   Sprache untersuchen. Sofortiges Feedback mit Begründung.
+   ============================================================ */
+const KOMP_LESE = {
+  titel:"Der Hecht",
+  text:"Der Hecht ist ein Raubfisch. Er lebt in Seen und langsamen Flüssen. Sein Körper ist lang und schmal, damit er schnell schwimmen kann. Der Hecht hat ein großes Maul mit vielen spitzen Zähnen. Damit fängt er andere Fische. Meistens versteckt sich der Hecht zwischen Wasserpflanzen und wartet reglos. Kommt ein kleiner Fisch vorbei, schnappt der Hecht blitzschnell zu. Im Frühling legt das Hecht-Weibchen tausende Eier ins flache Wasser. Aus den Eiern schlüpfen winzige Junghechte. Ein ausgewachsener Hecht kann über einen Meter lang werden.",
+  fragen:[
+    {typ:"mc", frage:"Wo lebt der Hecht?", optionen:["In Seen und langsamen Flüssen","Im Meer","In der Wüste"], loesung:0,
+      erkl:"Im Text steht: „Er lebt in Seen und langsamen Flüssen.“", tipp:"Suche im Text die Stelle, wo steht, wo der Hecht lebt."},
+    {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht ist ein Raubfisch.“", optionen:["stimmt","stimmt nicht"], loesung:0,
+      erkl:"Der erste Satz sagt genau das.", tipp:"Lies noch einmal den Anfang des Textes."},
+    {typ:"mc", frage:"Stimmt die Aussage? „Der Hecht hat keine Zähne.“", optionen:["stimmt","stimmt nicht"], loesung:1,
+      erkl:"Im Text steht: „viele spitze Zähne“ – er hat also welche.", tipp:"Suche im Text das Wort „Zähne“."},
+    {typ:"mc", frage:"Warum ist der Körper des Hechts lang und schmal?", optionen:["Damit er schnell schwimmen kann","Damit er Eier legen kann","Damit er bunt aussieht"], loesung:0,
+      erkl:"Der Text nennt genau diesen Grund.", tipp:"Suche den Satz mit „lang und schmal“."},
+    {typ:"mc", frage:"Was bedeutet „reglos“?", optionen:["ohne Bewegung","sehr laut","sehr schnell"], loesung:0,
+      erkl:"reg-los = ohne Regung, also ohne Bewegung.", tipp:"Die Endung „-los“ heißt „ohne“."},
+    {typ:"reveal", frage:"Wie fängt der Hecht seine Beute? Erkläre mit dem Text.",
+      loesung:"Er versteckt sich zwischen Wasserpflanzen, wartet reglos und schnappt blitzschnell zu, wenn ein kleiner Fisch vorbeikommt."}
+  ]
+};
+const KOMP_UEBEN = [
+  {typ:"mc", frage:"Welches Wort ist richtig? Verlängere: „Er flieg_.“", optionen:["Er fliegt","Er fliegd","Er fliekt"], loesung:0,
+    erkl:"Verlängern: „sie fliegen“ – man hört das g.", tipp:"Verlängere das Wort: sie flie…?"},
+  {typ:"mc", frage:"Von welchem Wort kommt „bräunlich“?", optionen:["braun","brauch","bräun"], loesung:0,
+    erkl:"„bräunlich“ ist von „braun“ abgeleitet.", tipp:"Welche Farbe steckt im Wort?"},
+  {typ:"mc", frage:"Ein Regal für Bücher ist ein …", optionen:["Bücherregal","Regalbuch","Buchregale"], loesung:0,
+    erkl:"Bei zusammengesetzten Nomen steht das Grundwort hinten: Regal.", tipp:"Welches Ding ist es? Ein Regal → das Wort steht hinten."},
+  {typ:"mc", frage:"Eine Höhle, in der Räuber wohnen, ist eine …", optionen:["Räuberhöhle","Höhlenräuber","Räubernhöhle"], loesung:0,
+    erkl:"Das Ding ist eine Höhle → „Höhle“ steht hinten.", tipp:"Grundwort (das Ding) steht hinten."},
+  {typ:"mc", frage:"Steigere: klug – klüger – …", optionen:["am klügsten","am klugsten","kluger"], loesung:0,
+    erkl:"Die höchste Stufe: „am … -sten“ (mit Umlaut).", tipp:"Die höchste Steigerung beginnt mit „am“."},
+  {typ:"mc", frage:"Steigere: groß – … – am größten", optionen:["größer","großer","gerößer"], loesung:0,
+    erkl:"Die 1. Vergleichsstufe: „größer“ (mit ö).", tipp:"Zwischen „groß“ und „am größten“ fehlt die -er-Form."},
+  {typ:"mc", frage:"Im Wort „Schwimmbad“ – welche Wortart ist „schwimmen“?", optionen:["Verb","Nomen","Adjektiv"], loesung:0,
+    erkl:"„schwimmen“ ist ein Tun-Wort → Verb.", tipp:"Frag: Was kann man tun?"},
+  {typ:"mc", frage:"Im Wort „Buntspecht“ – welche Wortart ist „bunt“?", optionen:["Adjektiv","Nomen","Verb"], loesung:0,
+    erkl:"„bunt“ beschreibt, wie etwas ist → Adjektiv (Wie-Wort).", tipp:"Frag: Wie ist der Specht?"},
+  {typ:"mc", frage:"„Paula malt ein Bild.“ In welcher Zeitform steht der Satz?", optionen:["Präsens","Präteritum","Perfekt"], loesung:0,
+    erkl:"„malt“ passiert jetzt → Präsens (Gegenwart).", tipp:"Passiert es jetzt, früher oder mit „habe/bin … ge…“?"},
+  {typ:"mc", frage:"„Ich habe ein Bild gemalt.“ In welcher Zeitform steht der Satz?", optionen:["Perfekt","Präsens","Präteritum"], loesung:0,
+    erkl:"„habe … gemalt“ → Perfekt.", tipp:"Achte auf „habe/bin … ge…“."},
+  {typ:"mc", frage:"Welches Wort hat den gleichen Wortstamm wie „fahren“?", optionen:["Mitfahrer","Fahne","Faden"], loesung:0,
+    erkl:"Der Wortstamm „fahr“ steckt in „Mitfahrer“.", tipp:"Suche den gemeinsamen Wortteil „fahr“."},
+  {typ:"mc", frage:"Wo stehen die Anführungszeichen richtig?", optionen:["Karl sagt: „Ich mag Lollis.“","Karl sagt „Ich: mag Lollis.“","Karl: sagt „Ich mag Lollis.“"], loesung:0,
+    erkl:"Erst der Begleitsatz mit Doppelpunkt, dann „…“ um die Rede.", tipp:"Der Doppelpunkt steht vor der wörtlichen Rede."},
+  {typ:"mc", frage:"Welches Wort muss großgeschrieben werden? „die kinder essen gerne.“", optionen:["Kinder","essen","gerne"], loesung:0,
+    erkl:"„Kinder“ ist ein Nomen (Namenwort) → groß.", tipp:"Welches Wort kann man mit der/die/das davor sagen?"},
+  {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["müssen","müsen","mussen"], loesung:0,
+    erkl:"Nach dem kurzen u folgt ss: müssen.", tipp:"Kurzer Selbstlaut → doppelter Mitlaut."},
+  {typ:"mc", frage:"Welches Wort ist richtig geschrieben?", optionen:["ausspucken","ausspuken","auspucken"], loesung:0,
+    erkl:"aus-spucken – mit ck.", tipp:"Sprich langsam: aus-spuk-ken."},
+  {typ:"mc", frage:"„Der kleine Hund spielt.“ Welches Wort ist das Subjekt?", optionen:["Der kleine Hund","spielt","kleine"], loesung:0,
+    erkl:"Wer spielt? – „Der kleine Hund“ (das Subjekt).", tipp:"Frage: Wer oder was spielt?"}
+];
+const KRIT_KOMP = [
+  "Habe ich den Text genau gelesen?",
+  "Habe ich die Fragen ruhig beantwortet?",
+  "Habe ich Rechtschreib-Strategien benutzt (verlängern, ableiten)?",
+  "Habe ich meine Antworten am Ende überprüft?"
+];
+const KRIT_KOMP_FORM = ["Ich habe mir Zeit gelassen.","Ich habe genau gelesen.","Ich habe meine Antworten überprüft."];
+let kompLeseIdx=0, kompUebIdx=0;
+
+// Quiz-Engine mit sofortigem Feedback + Begründung
+function renderQuizPaged(host, items, getIdx, setIdx){
+  let i=getIdx(); if(i>=items.length){ i=0; setIdx(0); }
+  const it=items[i];
+  let answered=false, wrongTries=0;
+  host.innerHTML = `
+    <p class="muted">Aufgabe ${i+1} von ${items.length}</p>
+    <p style="font-size:19px;"><b>${it.frage}</b></p>
+    <div id="opts"></div>
+    <div id="qfb"></div>
+    <button class="btn-primary btn-small mt" id="qnext" style="width:100%;">Weiter</button>`;
+  const fb=host.querySelector("#qfb");
+  const opts=host.querySelector("#opts");
+  if(it.typ==="reveal"){
+    answered=true; // offene Frage: „Weiter“ immer erlaubt
+    const rev=document.createElement("button");
+    rev.className="btn-secondary btn-small"; rev.style.width="100%"; rev.textContent="Lösung zeigen";
+    rev.onclick=()=>{ fb.innerHTML=""; const d=document.createElement("div"); d.className="feedback ok";
+      d.textContent="Mögliche Lösung: "+it.loesung; fb.appendChild(d); };
+    opts.appendChild(rev);
+  } else {
+    it.optionen.forEach((o,oi)=>{
+      const b=document.createElement("button"); b.className="quiz-opt"; b.textContent=o;
+      b.onclick=()=>{
+        const correct = oi===it.loesung;
+        const d=document.createElement("div");
+        if(correct){
+          answered=true; b.classList.add("ok");
+          d.className="feedback ok"; d.textContent="Richtig! 🌟 "+(it.erkl||"");
+        }else{
+          wrongTries++; b.classList.add("no");
+          d.className="feedback tip";
+          if(wrongTries>=2){
+            answered=true;
+            d.innerHTML="Das war noch nicht richtig. Die richtige Antwort ist <b>"+it.optionen[it.loesung]+"</b>.<br>"+(it.erkl||"");
+            [...opts.children].forEach((bb,bi)=>{ if(bi===it.loesung) bb.classList.add("ok"); });
+          }else{
+            d.textContent="Das stimmt noch nicht. 💡 "+(it.tipp||"Überlege noch einmal.");
+          }
+        }
+        fb.innerHTML=""; fb.appendChild(d);
+      };
+      opts.appendChild(b);
+    });
+  }
+  host.querySelector("#qnext").onclick=()=>{
+    if(!answered){
+      fb.innerHTML=""; const d=document.createElement("div"); d.className="feedback tip";
+      d.textContent="Wähle zuerst eine Antwort – dann siehst du, ob sie richtig war.";
+      fb.appendChild(d); return;
+    }
+    setIdx((i+1)%items.length);
+    renderQuizPaged(host, items, getIdx, setIdx);
+    window.scrollTo(0,0);
+  };
+}
+function komInfo(c){
+  c.innerHTML = `
+    <div class="card"><h2>🧭 Kompass 4 – Deutsch</h2>
+      <p>Der Kompass-4-Test prüft, was du in Deutsch kannst. Hier übst du genau diese Bereiche.</p></div>
+    <div class="card"><h3>Das wird geprüft</h3>
+      <div class="example-box">
+        📚 <b>Lesen</b>: einen Text verstehen und Fragen beantworten<br>
+        🔤 <b>Rechtschreibung</b>: richtig schreiben, Strategien nutzen<br>
+        🔎 <b>Sprache untersuchen</b>: Wortarten, Zeitformen, Satzglieder …
+      </div></div>
+    <div class="card"><h3>Meine Test-Tipps</h3>
+      <ul>
+        <li>Lies jede Aufgabe <b>genau</b> und in Ruhe.</li>
+        <li>Weißt du etwas nicht? <b>Überspringe</b> es und komm später zurück.</li>
+        <li>Prüfe schwere Wörter mit einer <b>Strategie</b>: verlängern (Berg → Berge) oder ableiten (bräunlich → braun).</li>
+        <li>Am Ende: <b>alles noch einmal kontrollieren</b>.</li>
+      </ul>
+      <button class="btn-primary" id="toLesen">Los: Leseverstehen üben</button></div>`;
+  c.querySelector("#toLesen").onclick=()=>goSection("lesen");
+}
+function komLesen(c){
+  const L=KOMP_LESE;
+  c.innerHTML = `
+    <div class="card"><h2>📚 Leseverstehen</h2><p class="muted">Lies den Text. Beantworte dann die Fragen.</p></div>
+    <div class="card"><h3>${L.titel}</h3><div class="lesetext">${L.text}</div></div>
+    <div class="card" id="quizHost"></div>`;
+  renderQuizPaged(c.querySelector("#quizHost"), L.fragen, ()=>kompLeseIdx, v=>kompLeseIdx=v);
+}
+function komUeben(c){
+  c.innerHTML = `
+    <div class="card"><h2>✏️ Sprache &amp; Rechtschreibung</h2>
+      <p class="muted">Kompass-Aufgaben. Du siehst sofort, ob es richtig war.</p></div>
+    <div class="card" id="quizHost"></div>`;
+  renderQuizPaged(c.querySelector("#quizHost"), KOMP_UEBEN, ()=>kompUebIdx, v=>kompUebIdx=v);
+}
+function komSheet(c){
+  c.innerHTML = `
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und übe wie im Test mit der Hand.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=komWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function komWorksheetHTML(){
+  const L=KOMP_LESE;
+  return `
+    <div class="ws-head"><span class="pen">🧭</span><h2>Kompass 4 – Deutsch üben</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-task"><b>Lesetext:</b> ${L.titel}</div>
+    <p style="font-size:12pt; line-height:1.5;">${L.text}</p>
+    <div class="ws-step"><div class="lead">1. Wo lebt der Hecht?</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">2. Wie fängt der Hecht seine Beute? Erkläre.</div><div class="writeline"></div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">3. Bilde zusammengesetzte Nomen: Regal für Bücher = ____________ · Höhle für Räuber = ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">4. Steigere: klug – ____________ – ____________</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">5. Setze die Zeichen der wörtlichen Rede: Karl sagt ____ Ich mag Lollis ____</div><div class="writeline"></div></div>
+    <div class="ws-step"><div class="lead">6. Trage die Zeitform ein: „Ich habe ein Bild gemalt.“ = ____________</div><div class="writeline"></div></div>`;
+}
+function komFlower(c){ renderFlower(c, MODULES.kompass.self, store.kompass.self); }
+
+/* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
@@ -2199,6 +2389,17 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:doppelFlower}
     ],
     self:{ groups:[{title:"Doppelte Mitlaute", fragen:KRIT_DOPPEL}], form:KRIT_DOPPEL_FORM }
+  },
+  kompass:{
+    id:"kompass", name:"Kompass 4", emoji:"🧭",
+    sections:[
+      {id:"info",  icon:"ℹ️", label:"Info",    render:komInfo},
+      {id:"lesen", icon:"📚", label:"Lesen",   render:komLesen},
+      {id:"ueben", icon:"✏️", label:"Sprache", render:komUeben},
+      {id:"blatt", icon:"🖨️", label:"Blatt",   render:komSheet},
+      {id:"blume", icon:"🌱", label:"Blume",   render:komFlower}
+    ],
+    self:{ groups:[{title:"Kompass-Vorbereitung", fragen:KRIT_KOMP}], form:KRIT_KOMP_FORM }
   }
 };
 
@@ -2220,7 +2421,8 @@ let store = {
   dassdas:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   wortarten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   faelle:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  doppel:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  doppel:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -2236,7 +2438,7 @@ function load(){
       if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
-    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel"].forEach(m=>{
+    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
   }catch(e){}
@@ -2260,7 +2462,7 @@ let activeSectionId = null;
 // Welche Lernfelder gehören zu welcher Klassenstufe (mehrere möglich)
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
-  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3]
+  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -2270,7 +2472,7 @@ function buildLevelRow(){
 }
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
-  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=0;
+  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=0;
 }
 function buildThemeRow(){
   const row=$("themeRow"); row.innerHTML="";
@@ -2298,7 +2500,7 @@ function buildModuleChooser(){
 function openModule(id){
   activeModuleId=id; store.lastModule=id; save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
