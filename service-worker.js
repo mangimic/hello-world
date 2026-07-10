@@ -8,7 +8,7 @@
    ============================================================ */
 
 // Version bei jeder Änderung hochzählen -> alte Caches werden entfernt.
-const CACHE_NAME = "lern-app-v9";
+const CACHE_NAME = "lern-app-v10";
 
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
