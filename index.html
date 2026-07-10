@@ -334,10 +334,13 @@ function runReset(key){ delete scoreRuns[key]; }
 function renderRunResult(host, key, onRepeat){
   const r = scoreRuns[key] || {total:0, first:0, solved:0};
   const total=r.total, first=r.first, solved=r.solved;
-  const ratio = total>0 ? first/total : 1;
+  // Einwertung nach dem, was das Kind wirklich gelöst hat (nicht nur „auf Anhieb").
+  const ratio = total>0 ? solved/total : 1;
+  const allFirst = solved===total && first===total && total>0;
   let stufe, titel, text;
-  if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles auf Anhieb richtig!"; }
-  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles konntest du direkt lösen."; }
+  if(allFirst){ stufe=3; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
+  else if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
+  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
   else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
   else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – übe die Runde ruhig noch einmal."; }
   host.innerHTML = `
@@ -942,7 +945,12 @@ function sjUeben(c){
                             : "Fast! Frag dich noch einmal „"+s.frage+"“ und tippe nur das Subjekt an.";
     const fb=c.querySelector("#sfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ subjIdx=subjIdx+1; sjUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+      const ok=ch.length===s.subj.length && ch.every((v,k)=>v===s.subj[k]);
+      if(ok) runCorrect("subj", subjIdx); else runWrong("subj", subjIdx); }
+    subjIdx=subjIdx+1; sjUeben(c); window.scrollTo(0,0);
+  };
 }
 
 // --- Bereich „Frage" (Wer? oder Was?) ---
@@ -1178,7 +1186,12 @@ function pjUeben(c){
                             : "Fast! Das Prädikat sagt, was passiert. Frag dich: Was tut das Subjekt?";
     const fb=c.querySelector("#pfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ praedIdx=praedIdx+1; pjUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+      const ok=ch.length===s.praed.length && ch.every((v,k)=>v===s.praed[k]);
+      if(ok) runCorrect("praed", praedIdx); else runWrong("praed", praedIdx); }
+    praedIdx=praedIdx+1; pjUeben(c); window.scrollTo(0,0);
+  };
 }
 
 // --- Bereich „Blatt" ---
@@ -1358,7 +1371,12 @@ function sgUeben(c){
       fb.innerHTML=""; fb.appendChild(d);
     }
   };
-  c.querySelector("#nextBtn").onclick=()=>{ sgIdx=sgIdx+1; sgPhase=0; sgUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(sgPhase===1 && selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+      const ok=ch.length===s.praed.length && ch.every((v,k)=>v===s.praed[k]);
+      if(ok) runCorrect("satzglied", sgIdx); else runWrong("satzglied", sgIdx); }
+    sgIdx=sgIdx+1; sgPhase=0; sgUeben(c); window.scrollTo(0,0);
+  };
 }
 function sgSheet(c){
   c.innerHTML = `
@@ -1518,7 +1536,12 @@ function redeUeben(c){
     else{ d.textContent="Fast! Tippe genau die Wörter an, die gesprochen werden."; }
     const fb=c.querySelector("#rfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ redeIdx=redeIdx+1; redeUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+      const ok=ch.length===s.rede.length && ch.every((v,k)=>v===s.rede[k]);
+      if(ok) runCorrect("rede", redeIdx); else runWrong("rede", redeIdx); }
+    redeIdx=redeIdx+1; redeUeben(c); window.scrollTo(0,0);
+  };
 }
 function redeSheet(c){
   c.innerHTML = `
@@ -1798,7 +1821,12 @@ function gkUeben(c){
     else{ d.textContent="Fast! Denk an: Satzanfang groß und alle Nomen (Namenwörter) groß."; }
     const fb=c.querySelector("#gkfb"); fb.innerHTML=""; fb.appendChild(d);
   };
-  c.querySelector("#nextBtn").onclick=()=>{ gkIdx=gkIdx+1; gkUeben(c); window.scrollTo(0,0); };
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(selected.size){ const ch=[...selected].sort((a,b)=>a-b);
+      const ok=ch.length===s.gross.length && ch.every((v,k)=>v===s.gross[k]);
+      if(ok) runCorrect("gk", gkIdx); else runWrong("gk", gkIdx); }
+    gkIdx=gkIdx+1; gkUeben(c); window.scrollTo(0,0);
+  };
 }
 function gkSheet(c){
   c.innerHTML = `
@@ -2601,10 +2629,12 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
     else if(state.res[k]==="wrong") wrong++;
   }
   const geschafft = first+later;            // insgesamt richtig gelöst
-  const ratio = mc>0 ? first/mc : 1;        // Anteil „auf Anhieb"
+  const ratio = mc>0 ? geschafft/mc : 1;    // Einwertung nach dem, was gelöst wurde
+  const allFirst = geschafft===mc && first===mc && mc>0;
   let stufe, titel, text;
-  if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles auf Anhieb richtig!"; }
-  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles konntest du direkt lösen."; }
+  if(allFirst){ stufe=3; titel="Aufgeblüht! 🌸"; text="Perfekt – alles auf Anhieb richtig gelöst!"; }
+  else if(ratio>=0.85){ stufe=3; titel="Aufgeblüht! 🌸"; text="Klasse gemacht – fast alles gelöst!"; }
+  else if(ratio>=0.6){ stufe=2; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
   else if(ratio>=0.35){ stufe=1; titel="Du wächst! 🌱"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
   else { stufe=0; titel="Guter Anfang! 🌰"; text="Kein Problem – wiederhole die Aufgaben ruhig noch einmal."; }
   host.innerHTML = `
