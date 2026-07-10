@@ -198,6 +198,31 @@ button.chip.on{background:var(--primary); color:#fff;}
   #worksheet .writeline{height:12mm;}
 }
 #printArea{display:none;}
+
+/* Stufen-/Level-System */
+.lvl-badge{display:inline-block; background:var(--soft); color:var(--primary-dark);
+  border-radius:999px; padding:3px 12px; font-size:13px; font-weight:800; letter-spacing:.01em;}
+.lvl-note{margin-top:10px; text-align:center; font-size:14px; line-height:1.45; color:var(--text);
+  background:#eef6ff; border:1.5px solid #cfe2fb; border-radius:12px; padding:9px 12px;}
+.lvl-note.up{background:#e9f9ec; border-color:#bfe6c8;}
+.lvl-note.crown{background:#fff5da; border-color:#f0dca0;}
+.card-lvl{display:block; margin-top:6px; font-size:12px; font-weight:800; color:var(--primary-dark);
+  background:var(--soft); border-radius:999px; padding:2px 8px;}
+.lvl-row{margin:4px 0 2px;}
+
+/* Level-Up Feier-Overlay */
+.lvlup-overlay{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+  background:rgba(20,35,60,.55); padding:20px;}
+.lvlup-overlay.show{display:flex;}
+.lvlup-overlay canvas{position:absolute; inset:0; width:100%; height:100%; pointer-events:none;}
+.lvlup-card{position:relative; background:#fff; border-radius:22px; padding:26px 22px 22px; max-width:340px; width:100%;
+  text-align:center; box-shadow:0 18px 50px rgba(0,0,0,.3); animation:lvlpop .45s cubic-bezier(.2,1.3,.5,1) both;}
+.lvlup-emoji{font-size:58px; line-height:1; margin-bottom:6px;}
+.lvlup-card h2{font-size:24px; margin:4px 0 8px; color:#1f3a6e;}
+.lvlup-card p{font-size:15px; line-height:1.5; color:#4a5b78; margin:0 0 16px;}
+.lvlup-card .btn-primary{width:100%;}
+@keyframes lvlpop{0%{transform:scale(.6); opacity:0;} 100%{transform:scale(1); opacity:1;}}
+@media (prefers-reduced-motion: reduce){ .lvlup-card{animation:none;} }
 </style>
 </head>
 <body>
@@ -238,6 +263,16 @@ button.chip.on{background:var(--primary); color:#fff;}
 
 <!-- Druckbereich -->
 <div id="printArea"></div>
+
+<div id="levelUp" class="lvlup-overlay" aria-hidden="true" role="dialog" aria-modal="true">
+  <canvas id="lvlupCanvas"></canvas>
+  <div class="lvlup-card">
+    <div class="lvlup-emoji" id="lvlupEmoji">🎉</div>
+    <h2 id="lvlupTitle">Stufe freigeschaltet!</h2>
+    <p id="lvlupText"></p>
+    <button class="btn-primary" id="lvlupClose">Weiter geht's! 🚀</button>
+  </div>
+</div>
 
 <!-- Untere Navigation (wird je Modul dynamisch aufgebaut) -->
 <nav class="bottom-nav" id="bottomNav"></nav>
@@ -331,6 +366,45 @@ function runCorrect(key, idx){
   r.scored.add(idx); r.solved++; if(!r.wrong.has(idx)) r.first++;
 }
 function runReset(key){ delete scoreRuns[key]; }
+
+/* ============================================================
+   STUFEN / LEVEL je Lernfeld
+   Wer eine Runde komplett löst, schaltet die nächste (schwerere)
+   Stufe frei. Die Fortschritte werden gespeichert (store.progress).
+   Stufe 1 = Aufwärmen · 2 = Fortgeschritten · 3 = Profi.
+   ============================================================ */
+const MOD_FIELD = {subjekt:"subj",praedikat:"praed",satzglieder:"satzglied",rede:"rede",zeit:"zeit",grossklein:"gk",dassdas:"dd",wortarten:"wa",faelle:"faelle",doppel:"doppel"};
+const LEVEL_NAME = {1:"Aufwärmen",2:"Fortgeschritten",3:"Profi"};
+const FIELD_POOLS = {
+  subj:()=>({easy:SUBJ_THEMEN[store.thema].saetze, hard:SUBJ_K4[store.thema]}),
+  praed:()=>({easy:PRAED_THEMEN[store.thema].saetze, hard:PRAED_K4[store.thema]}),
+  satzglied:()=>({easy:SATZGLIED_THEMEN[store.thema].saetze, hard:SATZGLIED_K4[store.thema]}),
+  rede:()=>({easy:REDE_THEMEN[store.thema].saetze, hard:REDE_K4[store.thema]}),
+  wa:()=>({easy:WA_THEMEN[store.thema].saetze, hard:WA_K4[store.thema]}),
+  zeit:()=>{ const a=ZEIT_THEMEN[store.thema].saetze;
+    return {easy:a.filter(s=>s.form==="praesens"||s.form==="praeteritum"),
+            hard:a.filter(s=>s.form==="perfekt"||s.form==="futur")}; },
+  gk:()=>({easy:GK_THEMEN[store.thema].saetze, hard:[]}),
+  dd:()=>({easy:DD_THEMEN[store.thema].saetze, hard:[]}),
+  faelle:()=>({easy:FAELLE_THEMEN[store.thema].saetze, hard:[]}),
+  doppel:()=>({easy:DOPPEL_THEMEN[store.thema].woerter, hard:[]})
+};
+function fieldProg(key){ if(!store.progress[key]) store.progress[key]={unlocked:1,runs:0,crown:false}; return store.progress[key]; }
+function fieldHard(key){ const h=FIELD_POOLS[key]().hard; return (h&&h.length)?h:null; }
+function fieldMax(key){ return fieldHard(key)?3:2; }
+function fieldStart(key){ return (store.level===4 && fieldHard(key)) ? 2 : 1; } // Klasse 4 startet schwerer
+function fieldLevel(key){ const p=fieldProg(key); return Math.min(fieldMax(key), Math.max(fieldStart(key), p.unlocked||1)); }
+function fieldPool(key){
+  const {easy,hard}=FIELD_POOLS[key](); const lvl=fieldLevel(key);
+  if(lvl>=3) return easy.concat(hard||[]);
+  if(lvl===2) return (hard&&hard.length)?hard:easy;
+  return easy;
+}
+function fieldBadge(key){
+  const lvl=fieldLevel(key), max=fieldMax(key), p=fieldProg(key);
+  return `<span class="lvl-badge">🎯 Stufe ${lvl}/${max} · ${LEVEL_NAME[lvl]}${p.crown?" 👑":""}</span>`;
+}
+
 // Auswertung + Einwertung (ohne Note), generisch. onRepeat startet die Runde neu.
 function renderRunResult(host, key, onRepeat){
   const r = scoreRuns[key] || {total:0, first:0, solved:0};
@@ -345,9 +419,30 @@ function renderRunResult(host, key, onRepeat){
   else if(ratio>=0.6){ stufe=3; titel="Stark! 🌼"; text="Sehr gut – vieles hast du gelöst."; }
   else if(ratio>=0.35){ stufe=2; titel="Du wächst! 🌿"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
   else { stufe=1; titel="Es keimt! 🌱"; text="Ein Anfang ist gemacht – übe die Runde ruhig noch einmal."; }
+
+  // ---- Stufen-Fortschritt: einmal je abgeschlossener Runde auswerten ----
+  let unlockedTo=null, newCrown=false, levelLine="";
+  const isField = !!FIELD_POOLS[key];
+  if(isField){
+    const p=fieldProg(key), lvl=fieldLevel(key), maxL=fieldMax(key);
+    const mastered = total>0 && solved===total;
+    if(!r.done){
+      r.done=true; p.runs=(p.runs||0)+1;
+      if(mastered && lvl<maxL){ p.unlocked=Math.max(p.unlocked||1, lvl+1); unlockedTo=lvl+1; }
+      else if(mastered && lvl>=maxL && first===total && !p.crown){ p.crown=true; newCrown=true; }
+      save();
+    }
+    // Motivations-Zeile
+    if(unlockedTo){ levelLine=`<div class="lvl-note up">🎉 <b>Stufe ${unlockedTo} freigeschaltet:</b> „${LEVEL_NAME[unlockedTo]}“!</div>`; }
+    else if(newCrown || (lvl>=maxL && p.crown)){ levelLine=`<div class="lvl-note crown">👑 <b>Profi-Stufe gemeistert!</b> Alles beim ersten Versuch.</div>`; }
+    else if(lvl<maxL){ levelLine=`<div class="lvl-note">🎯 Löse <b>alle Aufgaben</b>, um <b>Stufe ${lvl+1} (${LEVEL_NAME[lvl+1]})</b> freizuschalten.</div>`; }
+    else { levelLine=`<div class="lvl-note">👑 Löse <b>alles beim ersten Versuch</b> für die Profi-Krone!</div>`; }
+  }
+
   host.innerHTML = `
     <div class="card">
       <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
+      ${isField?`<p style="text-align:center;margin:0 0 4px;">${fieldBadge(key)}</p>`:``}
       <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
       <p style="text-align:center;font-size:20px;font-weight:800;margin:2px 0;">${titel}</p>
       <p style="text-align:center;" class="muted">${text}</p>
@@ -355,6 +450,7 @@ function renderRunResult(host, key, onRepeat){
         🌟 <b>Auf Anhieb richtig:</b> ${first} von ${total}<br>
         ✅ <b>Insgesamt gelöst:</b> ${solved} von ${total}
       </div>
+      ${levelLine}
       <div style="display:flex; gap:10px; margin-top:12px;">
         <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
         <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
@@ -362,6 +458,49 @@ function renderRunResult(host, key, onRepeat){
     </div>`;
   host.querySelector("#runAgain").onclick=()=>{ runReset(key); onRepeat(); window.scrollTo(0,0); };
   host.querySelector("#runBlume").onclick=()=>goSection("blume");
+  if(unlockedTo) setTimeout(()=>celebrateLevelUp(unlockedTo), 260);
+  else if(newCrown) setTimeout(()=>celebrateCrown(), 260);
+}
+
+/* ---- Level-Up Feier + Konfetti (Canvas) ---- */
+let _confettiRAF=null;
+function startConfetti(){
+  const cv=$("lvlupCanvas"); if(!cv) return;
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ctx=cv.getContext("2d"); if(!ctx) return;
+  const w=cv.width=cv.offsetWidth||window.innerWidth, h=cv.height=cv.offsetHeight||window.innerHeight;
+  const colors=["#4a7fd6","#f5c451","#ef8fb3","#5bb98c","#f0872f"];
+  const N=reduce?0:130; const parts=[];
+  for(let i=0;i<N;i++){ parts.push({x:Math.random()*w, y:-20-Math.random()*h*0.5,
+    r:5+Math.random()*7, c:colors[i%colors.length], vy:2+Math.random()*3.5, vx:-1.6+Math.random()*3.2,
+    rot:Math.random()*6.28, vr:-0.2+Math.random()*0.4}); }
+  let t=0;
+  function frame(){
+    ctx.clearRect(0,0,w,h);
+    parts.forEach(p=>{ p.x+=p.vx; p.y+=p.vy; p.rot+=p.vr; p.vy+=0.035;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot); ctx.fillStyle=p.c;
+      ctx.fillRect(-p.r/2,-p.r/2,p.r,p.r*0.62); ctx.restore(); });
+    t++;
+    if(t<260 && parts.some(p=>p.y<h+40)){ _confettiRAF=requestAnimationFrame(frame); }
+    else { ctx.clearRect(0,0,w,h); _confettiRAF=null; }
+  }
+  if(N) frame();
+}
+function stopConfetti(){ if(_confettiRAF){ cancelAnimationFrame(_confettiRAF); _confettiRAF=null; }
+  const cv=$("lvlupCanvas"); if(cv){ const c=cv.getContext("2d"); if(c) c.clearRect(0,0,cv.width,cv.height); } }
+function showLevelUp(){ const ov=$("levelUp"); ov.classList.add("show"); ov.setAttribute("aria-hidden","false"); startConfetti(); }
+function hideLevelUp(){ const ov=$("levelUp"); ov.classList.remove("show"); ov.setAttribute("aria-hidden","true"); stopConfetti(); }
+function celebrateLevelUp(newLevel){
+  $("lvlupEmoji").textContent="🎉";
+  $("lvlupTitle").textContent="Stufe "+newLevel+" freigeschaltet!";
+  $("lvlupText").innerHTML="Stark! Du kommst jetzt in <b>„"+(LEVEL_NAME[newLevel]||"")+"“</b> – neue, schwerere Aufgaben warten auf dich.";
+  showLevelUp();
+}
+function celebrateCrown(){
+  $("lvlupEmoji").textContent="👑";
+  $("lvlupTitle").textContent="Profi gemeistert!";
+  $("lvlupText").innerHTML="Wow! Du hast <b>alles beim ersten Versuch</b> richtig gelöst. Du bist ein echter Profi! 🌟";
+  showLevelUp();
 }
 
 // Generischer Blumentopf-Selbstcheck: cfg = {groups:[{title,fragen:[]}], form:[]}
@@ -857,7 +996,7 @@ const SUBJ_K4 = {
     {woerter:["Am","Ende","hat","die","Mannschaft","das","Spiel","gewonnen."], subj:[3,4], subjektText:"die Mannschaft", art:"wer", frage:"Wer oder was hat das Spiel gewonnen?"}
   ]
 };
-function subjSaetze(){ return byLevel(SUBJ_THEMEN[store.thema].saetze, SUBJ_K4[store.thema]); }
+function subjSaetze(){ return fieldPool("subj"); }
 
 const KRIT_SUBJEKT = [
   "Habe ich die Frage „Wer oder was?“ benutzt?",
@@ -920,6 +1059,7 @@ function sjUeben(c){
     <div class="card">
       <h2>✏️ Subjekt finden</h2>
       <p class="muted">Satz ${subjIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("subj")}</div>
       <div class="hint">Frage: <b>${s.frage}</b></div>
       <p>Tippe das <b>Subjekt</b> an (ein oder mehrere Wörter):</p>
       <div class="sentence-box" id="sbox"></div>
@@ -1104,7 +1244,7 @@ const PRAED_K4 = {
     {woerter:["Am","Ende","hat","die","Mannschaft","das","Spiel","gewonnen."], praed:[2,7], praedText:"hat … gewonnen"}
   ]
 };
-function praedSaetze(){ return byLevel(PRAED_THEMEN[store.thema].saetze, PRAED_K4[store.thema]); }
+function praedSaetze(){ return fieldPool("praed"); }
 
 const KRIT_PRAED = [
   "Habe ich das Tun-Wort (Prädikat) gefunden?",
@@ -1163,6 +1303,7 @@ function pjUeben(c){
     <div class="card">
       <h2>✏️ Prädikat finden</h2>
       <p class="muted">Satz ${praedIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("praed")}</div>
       <div class="hint">Tippe das <b>Prädikat</b> an – das <b>Tun-Wort</b> (was passiert / was jemand tut).${zweiteilig?"<br>⚠️ Dieses Prädikat hat <b>zwei Teile</b> – tippe beide an!":""}</div>
       <div class="sentence-box" id="pbox"></div>
       <div id="pfb"></div>
@@ -1291,7 +1432,7 @@ const SATZGLIED_K4 = {};
 ["alltag","angeln","tennis","fussball"].forEach(function(t){
   SATZGLIED_K4[t] = SUBJ_K4[t].map(function(s,i){ return {woerter:s.woerter, subj:s.subj, praed:PRAED_K4[t][i].praed}; });
 });
-function satzgliedSaetze(){ return byLevel(SATZGLIED_THEMEN[store.thema].saetze, SATZGLIED_K4[store.thema]); }
+function satzgliedSaetze(){ return fieldPool("satzglied"); }
 const KRIT_SATZGLIED = [
   "Habe ich das Subjekt gefunden (Wer/Was?)?",
   "Habe ich das Prädikat gefunden (Was tut?)?",
@@ -1335,6 +1476,7 @@ function sgUeben(c){
     <div class="card">
       <h2>🧩 Satzglieder</h2>
       <p class="muted">Satz ${sgIdx+1} von ${S.length} · Teil ${sgPhase+1} von 2</p>
+      <div class="lvl-row">${fieldBadge("satzglied")}</div>
       <div class="hint">${instr}</div>
       <div class="sentence-box" id="gbox"></div>
       <div id="gfb"></div>
@@ -1469,7 +1611,7 @@ const REDE_K4 = {
     {woerter:["Am","Ende","fragt","der","Junge:","Wer","kommt","morgen","zum","Training","mit?"], rede:[5,6,7,8,9,10]}
   ]
 };
-function redeSaetze(){ return byLevel(REDE_THEMEN[store.thema].saetze, REDE_K4[store.thema]); }
+function redeSaetze(){ return fieldPool("rede"); }
 function redeQuoted(s){
   const first=s.rede[0];
   const begleit=s.woerter.slice(0,first).join(" ");
@@ -1514,6 +1656,7 @@ function redeUeben(c){
     <div class="card">
       <h2>💬 Wörtliche Rede</h2>
       <p class="muted">Satz ${redeIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("rede")}</div>
       <div class="hint">Tippe an, <b>was gesagt wird</b> (die wörtliche Rede).</div>
       <div class="sentence-box" id="rbox"></div>
       <div id="rfb"></div>
@@ -1620,12 +1763,7 @@ const ZEIT_THEMEN = {
     {satz:"Der Torwart wird den Ball halten.", form:"futur"}
   ]}
 };
-function zeitSaetze(){
-  const all=ZEIT_THEMEN[store.thema].saetze;
-  if(store.level===3) return all.filter(s=>s.form==="praesens"||s.form==="praeteritum");
-  if(store.level===4) return all.filter(s=>s.form==="perfekt"||s.form==="futur");
-  return all;
-}
+function zeitSaetze(){ return fieldPool("zeit"); }
 const KRIT_ZEIT = [
   "Habe ich Präsens (jetzt) erkannt?",
   "Habe ich Präteritum (früher) erkannt?",
@@ -1664,6 +1802,7 @@ function zeitUeben(c){
     <div class="card">
       <h2>⏰ Zeitformen</h2>
       <p class="muted">Satz ${zeitIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("zeit")}</div>
       <div class="sentence-box">${s.satz}</div>
       <p>In welcher <b>Zeitform</b> steht der Satz?</p>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -1763,7 +1902,7 @@ const GK_THEMEN = {
     {woerter:["die","fans","jubeln","laut."], gross:[0,1]}
   ]}
 };
-function gkSaetze(){ return GK_THEMEN[store.thema].saetze; }
+function gkSaetze(){ return fieldPool("gk"); }
 function gkCorrected(s){
   return s.woerter.map((w,i)=> s.gross.includes(i) ? (w.charAt(0).toUpperCase()+w.slice(1)) : w).join(" ");
 }
@@ -1800,6 +1939,7 @@ function gkUeben(c){
     <div class="card">
       <h2>🔠 Groß &amp; klein</h2>
       <p class="muted">Satz ${gkIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("gk")}</div>
       <div class="hint">Tippe alle Wörter an, die <b>GROSS</b> geschrieben werden.</div>
       <div class="sentence-box" id="gkbox"></div>
       <div id="gkfb"></div>
@@ -1897,7 +2037,7 @@ const DD_THEMEN = {
     {satz:"___ runde Tor steht dort.", loesung:"das"}
   ]}
 };
-function ddSaetze(){ return DD_THEMEN[store.thema].saetze; }
+function ddSaetze(){ return fieldPool("dd"); }
 const KRIT_DD = [
   "Habe ich die Ersatzprobe (dieses/welches) benutzt?",
   "Habe ich „das“ (Artikel/Fürwort) erkannt?",
@@ -1928,6 +2068,7 @@ function ddUeben(c){
     <div class="card">
       <h2>🔤 das / dass</h2>
       <p class="muted">Satz ${ddIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("dd")}</div>
       <div class="sentence-box">${s.satz.replace("___","<b>___</b>")}</div>
       <p>Was passt in die Lücke?</p>
       <div style="display:flex; gap:10px;">
@@ -2049,7 +2190,7 @@ const WA_K4 = {
     {woerter:["Nach","dem","Tor","jubeln","die","Fans","laut."], ziel:3, art:"verb"}
   ]
 };
-function waSaetze(){ return byLevel(WA_THEMEN[store.thema].saetze, WA_K4[store.thema]); }
+function waSaetze(){ return fieldPool("wa"); }
 const WA_LABEL = {nomen:"Nomen (Namenwort)", verb:"Verb (Tun-Wort)", adjektiv:"Adjektiv (Wie-Wort)"};
 const KRIT_WA = [
   "Habe ich Nomen (Namenwörter) erkannt?",
@@ -2082,6 +2223,7 @@ function waUeben(c){
     <div class="card">
       <h2>🏷️ Wortarten</h2>
       <p class="muted">Satz ${waIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("wa")}</div>
       <div class="sentence-box">${satzHtml}</div>
       <p>Welche Wortart ist das <b>markierte</b> Wort?</p>
       <div style="display:flex; flex-direction:column; gap:8px;">
@@ -2180,7 +2322,7 @@ const FAELLE_THEMEN = {
     {woerter:["Ich","hole","den","Ball."], ziel:[2,3], fall:"akk", frage:"Wen oder was hole ich?"}
   ]}
 };
-function faelleSaetze(){ return FAELLE_THEMEN[store.thema].saetze; }
+function faelleSaetze(){ return fieldPool("faelle"); }
 const FALL_LABEL = {nom:"Nominativ", gen:"Genitiv", dat:"Dativ", akk:"Akkusativ"};
 const FALL_FRAGE = {nom:"Wer oder was?", gen:"Wessen?", dat:"Wem?", akk:"Wen oder was?"};
 const KRIT_FAELLE = [
@@ -2217,6 +2359,7 @@ function faelleUeben(c){
     <div class="card">
       <h2>🎯 Die 4 Fälle</h2>
       <p class="muted">Satz ${faelleIdx+1} von ${S.length}</p>
+      <div class="lvl-row">${fieldBadge("faelle")}</div>
       <div class="sentence-box">${satzHtml}</div>
       <p>In welchem <b>Fall</b> steht der <b>markierte</b> Teil?</p>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
@@ -2322,7 +2465,7 @@ const DOPPEL_THEMEN = {
     {richtig:"Wetter", falsch:"Weter"}
   ]}
 };
-function doppelWoerter(){ return DOPPEL_THEMEN[store.thema].woerter; }
+function doppelWoerter(){ return fieldPool("doppel"); }
 const KRIT_DOPPEL = [
   "Habe ich auf den kurzen Selbstlaut gehört?",
   "Habe ich den doppelten Mitlaut erkannt?",
@@ -2356,6 +2499,7 @@ function doppelUeben(c){
     <div class="card">
       <h2>🔡 Doppelte Mitlaute</h2>
       <p class="muted">Wort ${doppelIdx+1} von ${W.length}</p>
+      <div class="lvl-row">${fieldBadge("doppel")}</div>
       <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
       <div style="display:flex; gap:10px;">
         <button class="btn-secondary" id="linksBtn" style="flex:1; font-size:22px;">${links}</button>
@@ -2881,6 +3025,7 @@ let store = {
   lastModule:"vorgang",
   level:3,        // Klassenstufe: 3, 4 oder 0 (= alle)
   thema:"alltag", // globales Thema für alle Satz-Übungen
+  progress:{},    // je Lernfeld: {unlocked:1..3, runs:0, crown:false} – Stufen/Level
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
   subjekt:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   praedikat:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -2911,6 +3056,13 @@ function load(){
     ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
+    if(d.progress && typeof d.progress==="object"){
+      Object.keys(d.progress).forEach(k=>{ const v=d.progress[k];
+        if(v && typeof v==="object") store.progress[k]={
+          unlocked:Math.max(1,Math.min(3,parseInt(v.unlocked,10)||1)),
+          runs:Math.max(0,parseInt(v.runs,10)||0),
+          crown:!!v.crown }; });
+    }
   }catch(e){}
 }
 // Übernimmt gespeicherte Werte, ohne die Größe der Zielarrays zu sprengen
@@ -2963,7 +3115,9 @@ function buildModuleChooser(){
     const m=MODULES[id];
     const div=document.createElement("div");
     div.className="choice";
-    div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}`;
+    const fk=MOD_FIELD[id];
+    const lvlTag = fk ? `<span class="card-lvl">🎯 Stufe ${fieldLevel(fk)}/${fieldMax(fk)}${fieldProg(fk).crown?" 👑":""}</span>` : "";
+    div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}${lvlTag}`;
     div.onclick=()=>openModule(id);
     grid.appendChild(div);
   });
@@ -2982,6 +3136,7 @@ function goHome(){
   activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-home").classList.add("active");
+  buildModuleChooser(); // Stufen-Abzeichen auf den Karten aktualisieren
   renderNav();
   window.scrollTo(0,0);
 }
@@ -3024,6 +3179,9 @@ document.addEventListener("DOMContentLoaded",()=>{
   ni.value=store.name;
   updateGreeting();
   ni.oninput=()=>{ store.name=ni.value.trim(); save(); updateGreeting(); };
+  // Level-Up Overlay schließen
+  $("lvlupClose").onclick=hideLevelUp;
+  $("levelUp").addEventListener("click",e=>{ if(e.target.id==="levelUp") hideLevelUp(); });
   // letztes Lernfeld für die Navigation vormerken, aber auf der Startseite bleiben
   activeModuleId = (store.lastModule && MODULES[store.lastModule]) ? store.lastModule : null;
   goHome();
