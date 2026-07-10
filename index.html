@@ -2888,6 +2888,168 @@ function komWorksheetHTML(){
 function komFlower(c){ renderFlower(c, MODULES.kompass.self, store.kompass.self); }
 
 /* ============================================================
+   MODUL: GRUNDWORTSCHATZ (Baden-Württemberg)
+   Wörter nach Rechtschreib-Kategorien. Kuratierte Auswahl typischer
+   Grundwortschatz-Wörter mit hinterlegter richtiger Schreibung und
+   Strategie-Feedback. Erweiterbar mit der amtlichen Wortliste.
+   ============================================================ */
+const GWS_KATEGORIEN = [
+  {id:"dopp", name:"Doppelte Mitlaute", emoji:"🔡",
+   regel:"Nach einem <b>kurzen</b> Selbstlaut kommt ein <b>doppelter</b> Mitlaut.",
+   tipp:"Kurzer Selbstlaut → doppelter Mitlaut (son-ne).",
+   woerter:[{richtig:"Sonne",falsch:"Sone"},{richtig:"Wasser",falsch:"Waser"},{richtig:"kommen",falsch:"komen"},
+     {richtig:"rennen",falsch:"renen"},{richtig:"Mutter",falsch:"Muter"},{richtig:"immer",falsch:"imer"},
+     {richtig:"Sommer",falsch:"Somer"},{richtig:"Teller",falsch:"Teler"},{richtig:"Puppe",falsch:"Pupe"},
+     {richtig:"schwimmen",falsch:"schwimen"}]},
+  {id:"cktz", name:"ck und tz", emoji:"🔠",
+   regel:"Nach kurzem Selbstlaut schreibt man <b>ck</b> und <b>tz</b>.",
+   tipp:"Nach kurzem Selbstlaut: ck und tz (Ka-tze, Brü-cke).",
+   woerter:[{richtig:"Zucker",falsch:"Zuker"},{richtig:"Brücke",falsch:"Brüke"},{richtig:"backen",falsch:"baken"},
+     {richtig:"Decke",falsch:"Deke"},{richtig:"Glocke",falsch:"Gloke"},{richtig:"Katze",falsch:"Katse"},
+     {richtig:"Platz",falsch:"Plats"},{richtig:"sitzen",falsch:"sitsen"},{richtig:"Mütze",falsch:"Mütse"},
+     {richtig:"Blitz",falsch:"Blits"}]},
+  {id:"ie", name:"ie (langes i)", emoji:"✍️",
+   regel:"Ein <b>lang</b> gesprochenes i schreibt man meist <b>ie</b>.",
+   tipp:"Langes i schreibt man meist ie (Spiel).",
+   woerter:[{richtig:"Spiel",falsch:"Spil"},{richtig:"Wiese",falsch:"Wise"},{richtig:"tief",falsch:"tif"},
+     {richtig:"fliegen",falsch:"fligen"},{richtig:"Brief",falsch:"Brif"},{richtig:"nie",falsch:"ni"},
+     {richtig:"Riese",falsch:"Rise"},{richtig:"Ziel",falsch:"Zil"},{richtig:"viel",falsch:"vil"},
+     {richtig:"lieben",falsch:"liben"}]},
+  {id:"dehnh", name:"Dehnungs-h", emoji:"🅷",
+   regel:"Ein gedehnter Selbstlaut bekommt oft ein <b>stummes h</b>.",
+   tipp:"Gedehnter Selbstlaut → oft ein stummes h (fah-ren).",
+   woerter:[{richtig:"fahren",falsch:"faren"},{richtig:"Lehrer",falsch:"Lerer"},{richtig:"wohnen",falsch:"wonen"},
+     {richtig:"nehmen",falsch:"nemen"},{richtig:"Uhr",falsch:"Ur"},{richtig:"Zahl",falsch:"Zal"},
+     {richtig:"Stuhl",falsch:"Stul"},{richtig:"mehr",falsch:"mer"},{richtig:"fühlen",falsch:"fülen"},
+     {richtig:"Bühne",falsch:"Büne"}]},
+  {id:"sz", name:"ß oder ss", emoji:"🔤",
+   regel:"Nach <b>langem</b> Selbstlaut: <b>ß</b>. Nach <b>kurzem</b> Selbstlaut: <b>ss</b>.",
+   tipp:"Langer Selbstlaut → ß (Straße). Kurzer → ss (Fluss).",
+   woerter:[{richtig:"Straße",falsch:"Strasse"},{richtig:"groß",falsch:"gross"},{richtig:"Fuß",falsch:"Fuss"},
+     {richtig:"weiß",falsch:"weiss"},{richtig:"draußen",falsch:"draussen"},{richtig:"Fluss",falsch:"Fluß"},
+     {richtig:"muss",falsch:"muß"},{richtig:"Schloss",falsch:"Schloß"},{richtig:"Kuss",falsch:"Kuß"},
+     {richtig:"Nuss",falsch:"Nuß"}]},
+  {id:"ablei", name:"Ableitung ä/äu", emoji:"🔁",
+   regel:"Von welchem Wort kommt es? <b>a→ä</b>, <b>au→äu</b>.",
+   tipp:"Verwandtes Wort suchen: Bäcker ← backen → mit ä.",
+   woerter:[{richtig:"Bäcker",falsch:"Becker"},{richtig:"Wälder",falsch:"Welder"},{richtig:"Hände",falsch:"Hende"},
+     {richtig:"Häuser",falsch:"Heuser"},{richtig:"läuft",falsch:"leuft"},{richtig:"Bäume",falsch:"Beume"},
+     {richtig:"Gläser",falsch:"Gleser"},{richtig:"Räder",falsch:"Reder"},{richtig:"träumen",falsch:"treumen"},
+     {richtig:"Mäuse",falsch:"Meuse"}]},
+  {id:"auslaut", name:"Wortende (verlängern)", emoji:"🔚",
+   regel:"Am Wortende hört man t/p/k. <b>Verlängern</b> zeigt den richtigen Buchstaben.",
+   tipp:"Verlängern: der Hund → die Hunde. Dann hört man den richtigen Buchstaben.",
+   woerter:[{richtig:"Hund",falsch:"Hunt"},{richtig:"Berg",falsch:"Berk"},{richtig:"Kind",falsch:"Kint"},
+     {richtig:"Wald",falsch:"Walt"},{richtig:"gelb",falsch:"gelp"},{richtig:"Dieb",falsch:"Diep"},
+     {richtig:"Hand",falsch:"Hant"},{richtig:"Freund",falsch:"Freunt"},{richtig:"rund",falsch:"runt"},
+     {richtig:"Korb",falsch:"Korp"}]},
+  {id:"vau", name:"Wörter mit V", emoji:"🅅",
+   regel:"Manche Wörter mit <b>v</b> spricht man wie f – merken!",
+   tipp:"Merke: mit v geschrieben, obwohl man f hört (Vater).",
+   woerter:[{richtig:"Vater",falsch:"Fater"},{richtig:"Vogel",falsch:"Fogel"},{richtig:"voll",falsch:"foll"},
+     {richtig:"vor",falsch:"for"},{richtig:"Vase",falsch:"Fase"},{richtig:"verkaufen",falsch:"ferkaufen"},
+     {richtig:"verstecken",falsch:"ferstecken"},{richtig:"Klavier",falsch:"Klafier"}]}
+];
+const KRIT_GWS = [
+  "Habe ich die Regel der Gruppe benutzt?",
+  "Habe ich schwierige Wörter mit einer Strategie geprüft (verlängern, ableiten)?",
+  "Habe ich die Wörter genau angeschaut?",
+  "Habe ich bei mehreren Gruppen geübt?"
+];
+const KRIT_GWS_FORM = ["Ich habe mir die Wörter gemerkt.","Ich habe genau hingeschaut.","Ich habe meine Antworten überprüft."];
+let gwsCatIdx=0, gwsIdx=0;
+
+function gwsInfo(c){
+  const rows = GWS_KATEGORIEN.map(k=>
+    `<div class="example-box" style="margin-bottom:8px;"><b>${k.emoji} ${k.name}</b><br>${k.regel}<br>
+      <span class="muted">Beispiele: ${k.woerter.slice(0,4).map(w=>w.richtig).join(", ")}</span></div>`).join("");
+  c.innerHTML=`
+    <div class="card"><h2>📚 Grundwortschatz üben</h2>
+      <p>Hier übst du wichtige Wörter aus dem <b>Grundwortschatz</b> – geordnet nach Regeln.
+      Wähle die richtige Schreibung und lerne die passende <b>Strategie</b>.</p></div>
+    <div class="card"><h3>Die Regel-Gruppen</h3>${rows}</div>
+    <div class="card"><div class="hint">💡 Zwei Zauber-Strategien: <b>Verlängern</b> (Hund → Hunde) und <b>Ableiten</b> (Bäcker ← backen).</div>
+      <button class="btn-primary" id="toUeben">Los: Wörter üben</button></div>`;
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+function gwsUeben(c){
+  if(gwsCatIdx>=GWS_KATEGORIEN.length) gwsCatIdx=0;
+  const K=GWS_KATEGORIEN[gwsCatIdx];
+  if(gwsIdx>=K.woerter.length) gwsIdx=0;
+  const chooser = GWS_KATEGORIEN.map((k,ki)=>
+    `<button class="chip${ki===gwsCatIdx?" on":""}" data-ki="${ki}">${k.emoji} ${k.name}</button>`).join("");
+  c.innerHTML=`
+    <div class="card"><h2>📚 Grundwortschatz</h2>
+      <p class="muted">Wähle eine Regel-Gruppe. Welches Wort ist richtig geschrieben?</p>
+      <div class="chip-row">${chooser}</div></div>
+    <div class="card"><h3>${K.emoji} ${K.name}</h3>
+      <div class="hint">${K.regel}</div>
+      <div id="gwsHost"></div></div>`;
+  c.querySelectorAll(".chip[data-ki]").forEach(b=>b.onclick=()=>{ gwsCatIdx=+b.dataset.ki; gwsIdx=0; gwsUeben(c); });
+  renderSpellPaged(c.querySelector("#gwsHost"), K, "gws:"+K.id);
+}
+// Paged „richtige Schreibung wählen" mit Bewertung am Ende
+function renderSpellPaged(host, K, key){
+  const S=K.woerter;
+  runGet(key, S.length);
+  if(gwsIdx>=S.length){ return renderRunResult(host, key, ()=>{ gwsIdx=0; renderSpellPaged(host, K, key); }); }
+  const i=gwsIdx, w=S[i];
+  const richtigLinks = i%2===0;
+  const a = richtigLinks?w.richtig:w.falsch;
+  const b = richtigLinks?w.falsch:w.richtig;
+  let answered=false;
+  host.innerHTML=`
+    <p class="muted">Wort ${i+1} von ${S.length}</p>
+    <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
+    <div style="display:flex; gap:10px;">
+      <button class="btn-secondary gws-opt" data-w="${a}" style="flex:1; font-size:22px;">${a}</button>
+      <button class="btn-secondary gws-opt" data-w="${b}" style="flex:1; font-size:22px;">${b}</button>
+    </div>
+    <div id="gwsfb"></div>
+    <button class="btn-primary btn-small mt" id="gwsNext" style="width:100%;">Weiter</button>`;
+  const fb=host.querySelector("#gwsfb");
+  host.querySelectorAll(".gws-opt").forEach(btn=>btn.onclick=()=>{
+    if(answered) return;
+    const correct = btn.dataset.w===w.richtig; answered=true;
+    if(correct) runCorrect(key,i); else runWrong(key,i);
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    d.innerHTML = correct ? ("Richtig! 🌟 So schreibt man „<b>"+w.richtig+"</b>“. "+K.tipp)
+                          : ("Fast! Richtig ist <b>"+w.richtig+"</b>. "+K.tipp);
+    fb.innerHTML=""; fb.appendChild(d);
+  });
+  host.querySelector("#gwsNext").onclick=()=>{ gwsIdx=i+1; renderSpellPaged(host, K, key); window.scrollTo(0,0); };
+}
+function gwsSheet(c){
+  c.innerHTML=`
+    <div class="card"><h2>🖨️ Arbeitsblatt</h2>
+      <p>Drucke das Blatt aus und schreibe die Wörter <b>mit der Hand</b> richtig ab.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>
+    <div class="card"><button class="btn-green" id="toBlume">Fertig? → Meine Blume</button></div>`;
+  const inner=gwsWorksheetHTML();
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+  c.querySelector("#toBlume").onclick=()=>goSection("blume");
+}
+function gwsWorksheetHTML(){
+  const blocks = GWS_KATEGORIEN.map((k,i)=>{
+    const words = k.woerter.slice(0,6).map(w=>w.richtig).join(" · ");
+    return `<div class="ws-step">
+      <div class="lead">${i+1}. ${k.name}</div>
+      <div class="cue">Schreibe jedes Wort zweimal richtig ab: ${words}</div>
+      <div class="writeline"></div><div class="writeline"></div></div>`;
+  }).join("");
+  return `
+    <div class="ws-head"><span class="pen">📚</span><h2>Grundwortschatz üben</h2></div>
+    <div class="ws-name">Name: ____________________________&nbsp;&nbsp;&nbsp;Datum: ____________</div>
+    <div class="ws-level">📘 ${klasseLabel()}</div>
+    <div class="ws-task"><b>Deine Aufgabe:</b> Schreibe die Wörter richtig ab. Nutze die Strategien
+      <b>verlängern</b> (Hund → Hunde) und <b>ableiten</b> (Bäcker ← backen).</div>
+    ${blocks}`;
+}
+function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
+
+/* ============================================================
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
@@ -3014,6 +3176,16 @@ const MODULES = {
       {id:"blume", icon:"🌱", label:"Blume",   render:komFlower}
     ],
     self:{ groups:[{title:"Kompass-Vorbereitung", fragen:KRIT_KOMP}], form:KRIT_KOMP_FORM }
+  },
+  gws:{
+    id:"gws", name:"Grundwortschatz", emoji:"📚",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:gwsInfo},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:gwsUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:gwsSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:gwsFlower}
+    ],
+    self:{ groups:[{title:"Grundwortschatz", fragen:KRIT_GWS}], form:KRIT_GWS_FORM }
   }
 };
 
@@ -3037,6 +3209,7 @@ let store = {
   wortarten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   faelle:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   doppel:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  gws:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
@@ -3053,7 +3226,7 @@ function load(){
       if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
-    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass"].forEach(m=>{
+    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass","gws"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
     if(d.progress && typeof d.progress==="object"){
@@ -3084,7 +3257,7 @@ let activeSectionId = null;
 // Welche Lernfelder gehören zu welcher Klassenstufe (mehrere möglich)
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
-  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4]
+  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -3094,7 +3267,7 @@ function buildLevelRow(){
 }
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
-  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=0;
+  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=gwsCatIdx=gwsIdx=0;
   scoreRuns={};
 }
 function buildThemeRow(){
@@ -3128,7 +3301,7 @@ function openModule(id){
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
   save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; gwsCatIdx=0; gwsIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   scoreRuns={};
   goSection(MODULES[id].sections[0].id);
 }
