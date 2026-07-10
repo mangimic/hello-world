@@ -79,6 +79,8 @@ button:active{transform:scale(0.97);}
 .level-row{display:flex; gap:8px; margin:6px 0 12px;}
 .level-btn{flex:1; background:var(--soft); color:var(--text); font-weight:700; border-radius:14px; min-height:46px; font-size:16px;}
 .level-btn.active{background:var(--primary); color:#fff;}
+/* Themen-Auswahl (2x2) */
+.theme-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 4px;}
 
 /* Chips */
 .chip-row{display:flex; flex-wrap:wrap; gap:8px; margin:12px 0;}
@@ -202,6 +204,12 @@ button:active{transform:scale(0.97);}
       <p class="muted" style="font-size:13px; margin-top:6px;">Wird nur auf diesem Gerät gespeichert.</p>
     </div>
     <div class="card">
+      <h2>Thema</h2>
+      <p class="muted" style="margin-bottom:4px;">Gilt für alle Übungen mit Sätzen.</p>
+      <div class="theme-grid" id="themeRow"></div>
+    </div>
+
+    <div class="card">
       <h2>Wähle ein Lernfeld</h2>
       <div class="level-row" id="levelRow">
         <button class="level-btn" data-level="3">Klasse 3</button>
@@ -237,6 +245,15 @@ button:active{transform:scale(0.97);}
    ============================================================ */
 
 const $ = (id)=>document.getElementById(id);
+
+// Globale Themen (gelten für alle Satz-Übungen). Neues Thema = hier + in jedem *_THEMEN ergänzen.
+const THEMEN = [
+  {id:"alltag",   name:"Alltag",  emoji:"🌳"},
+  {id:"angeln",   name:"Angeln",  emoji:"🎣"},
+  {id:"tennis",   name:"Tennis",  emoji:"🎾"},
+  {id:"fussball", name:"Fußball", emoji:"⚽"}
+];
+function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.name:"Alltag"; }
 
 /* ============================================================
    GEMEINSAME BAUSTEINE
@@ -655,10 +672,28 @@ const SUBJ_THEMEN = {
     {woerter:["Im","Wasser","glänzen","die","Fische."], subj:[3,4], subjektText:"die Fische", art:"was", frage:"Wer oder was glänzt im Wasser?"},
     {woerter:["Der","Kescher","hebt","den","Fisch","heraus."], subj:[0,1], subjektText:"Der Kescher", art:"was", frage:"Wer oder was hebt den Fisch heraus?"},
     {woerter:["Zwei","Angler","teilen","sich","ein","Boot."], subj:[0,1], subjektText:"Zwei Angler", art:"wer", frage:"Wer oder was teilt sich ein Boot?"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","Junge","schlägt","den","Ball."], subj:[0,1], subjektText:"Der Junge", art:"wer", frage:"Wer oder was schlägt den Ball?"},
+    {woerter:["Die","Spielerin","gewinnt","das","Spiel."], subj:[0,1], subjektText:"Die Spielerin", art:"wer", frage:"Wer oder was gewinnt das Spiel?"},
+    {woerter:["Der","Ball","fliegt","über","das","Netz."], subj:[0,1], subjektText:"Der Ball", art:"was", frage:"Wer oder was fliegt über das Netz?"},
+    {woerter:["Der","Trainer","zeigt","den","Aufschlag."], subj:[0,1], subjektText:"Der Trainer", art:"wer", frage:"Wer oder was zeigt den Aufschlag?"},
+    {woerter:["Zwei","Freunde","spielen","ein","Match."], subj:[0,1], subjektText:"Zwei Freunde", art:"wer", frage:"Wer oder was spielt ein Match?"},
+    {woerter:["Am","Netz","steht","der","Spieler","bereit."], subj:[3,4], subjektText:"der Spieler", art:"wer", frage:"Wer oder was steht am Netz bereit?"},
+    {woerter:["Die","Zuschauer","klatschen","laut."], subj:[0,1], subjektText:"Die Zuschauer", art:"wer", frage:"Wer oder was klatscht laut?"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","Stürmer","schießt","ein","Tor."], subj:[0,1], subjektText:"Der Stürmer", art:"wer", frage:"Wer oder was schießt ein Tor?"},
+    {woerter:["Der","Torwart","hält","den","Ball."], subj:[0,1], subjektText:"Der Torwart", art:"wer", frage:"Wer oder was hält den Ball?"},
+    {woerter:["Die","Mannschaft","gewinnt","das","Spiel."], subj:[0,1], subjektText:"Die Mannschaft", art:"wer", frage:"Wer oder was gewinnt das Spiel?"},
+    {woerter:["Der","Ball","rollt","ins","Tor."], subj:[0,1], subjektText:"Der Ball", art:"was", frage:"Wer oder was rollt ins Tor?"},
+    {woerter:["Der","Schiedsrichter","pfeift","ein","Foul."], subj:[0,1], subjektText:"Der Schiedsrichter", art:"wer", frage:"Wer oder was pfeift ein Foul?"},
+    {woerter:["Am","Spielfeldrand","steht","der","Trainer."], subj:[3,4], subjektText:"der Trainer", art:"wer", frage:"Wer oder was steht am Spielfeldrand?"},
+    {woerter:["Die","Fans","jubeln","laut."], subj:[0,1], subjektText:"Die Fans", art:"wer", frage:"Wer oder was jubelt laut?"}
   ]}
 };
 // Sätze des aktuell gewählten Themas
-function subjSaetze(){ return SUBJ_THEMEN[store.subjekt.thema].saetze; }
+function subjSaetze(){ return SUBJ_THEMEN[store.thema].saetze; }
 
 const KRIT_SUBJEKT = [
   "Habe ich die Frage „Wer oder was?“ benutzt?",
@@ -702,9 +737,9 @@ function sjLernen(c){
   Object.keys(SUBJ_THEMEN).forEach(key=>{
     const t=SUBJ_THEMEN[key];
     const div=document.createElement("div");
-    div.className="choice"+(key===store.subjekt.thema?" selected":"");
+    div.className="choice"+(key===store.thema?" selected":"");
     div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
-    div.onclick=()=>{ store.subjekt.thema=key; subjIdx=0; frageIdx=0; save(); sjLernen(c); };
+    div.onclick=()=>{ store.thema=key; subjIdx=0; frageIdx=0; save(); sjLernen(c); };
     grid.appendChild(div);
   });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
@@ -799,7 +834,7 @@ function sjSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function sjWorksheetHTML(){
-  const thema=SUBJ_THEMEN[store.subjekt.thema];
+  const thema=SUBJ_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
@@ -847,9 +882,27 @@ const PRAED_THEMEN = {
     {woerter:["Im","Wasser","glänzen","die","Fische."], praed:[2], praedText:"glänzen"},
     {woerter:["Der","Kescher","hebt","den","Fisch","heraus."], praed:[2,5], praedText:"hebt … heraus"},
     {woerter:["Zwei","Angler","teilen","sich","ein","Boot."], praed:[2], praedText:"teilen"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","Junge","schlägt","den","Ball."], praed:[2], praedText:"schlägt"},
+    {woerter:["Die","Spielerin","gewinnt","das","Spiel."], praed:[2], praedText:"gewinnt"},
+    {woerter:["Der","Ball","fliegt","über","das","Netz."], praed:[2], praedText:"fliegt"},
+    {woerter:["Der","Trainer","zeigt","den","Aufschlag."], praed:[2], praedText:"zeigt"},
+    {woerter:["Zwei","Freunde","spielen","ein","Match."], praed:[2], praedText:"spielen"},
+    {woerter:["Am","Netz","steht","der","Spieler","bereit."], praed:[2], praedText:"steht"},
+    {woerter:["Die","Zuschauer","klatschen","laut."], praed:[2], praedText:"klatschen"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","Stürmer","schießt","ein","Tor."], praed:[2], praedText:"schießt"},
+    {woerter:["Der","Torwart","hält","den","Ball."], praed:[2], praedText:"hält"},
+    {woerter:["Die","Mannschaft","gewinnt","das","Spiel."], praed:[2], praedText:"gewinnt"},
+    {woerter:["Der","Ball","rollt","ins","Tor."], praed:[2], praedText:"rollt"},
+    {woerter:["Der","Schiedsrichter","pfeift","ein","Foul."], praed:[2], praedText:"pfeift"},
+    {woerter:["Am","Spielfeldrand","steht","der","Trainer."], praed:[2], praedText:"steht"},
+    {woerter:["Die","Fans","jubeln","laut."], praed:[2], praedText:"jubeln"}
   ]}
 };
-function praedSaetze(){ return PRAED_THEMEN[store.praedikat.thema].saetze; }
+function praedSaetze(){ return PRAED_THEMEN[store.thema].saetze; }
 
 const KRIT_PRAED = [
   "Habe ich das Tun-Wort (Prädikat) gefunden?",
@@ -888,9 +941,9 @@ function pjLernen(c){
   Object.keys(PRAED_THEMEN).forEach(key=>{
     const t=PRAED_THEMEN[key];
     const div=document.createElement("div");
-    div.className="choice"+(key===store.praedikat.thema?" selected":"");
+    div.className="choice"+(key===store.thema?" selected":"");
     div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
-    div.onclick=()=>{ store.praedikat.thema=key; praedIdx=0; save(); pjLernen(c); };
+    div.onclick=()=>{ store.thema=key; praedIdx=0; save(); pjLernen(c); };
     grid.appendChild(div);
   });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
@@ -948,7 +1001,7 @@ function pjSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function praedWorksheetHTML(){
-  const thema=PRAED_THEMEN[store.praedikat.thema];
+  const thema=PRAED_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
@@ -1004,9 +1057,27 @@ const SATZGLIED_THEMEN = {
     {woerter:["Im","Wasser","glänzen","die","Fische."], subj:[3,4], praed:[2]},
     {woerter:["Der","Kescher","hebt","den","Fisch","heraus."], subj:[0,1], praed:[2,5]},
     {woerter:["Zwei","Angler","teilen","sich","ein","Boot."], subj:[0,1], praed:[2]}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","Junge","schlägt","den","Ball."], subj:[0,1], praed:[2]},
+    {woerter:["Die","Spielerin","gewinnt","das","Spiel."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Ball","fliegt","über","das","Netz."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Trainer","zeigt","den","Aufschlag."], subj:[0,1], praed:[2]},
+    {woerter:["Zwei","Freunde","spielen","ein","Match."], subj:[0,1], praed:[2]},
+    {woerter:["Am","Netz","steht","der","Spieler","bereit."], subj:[3,4], praed:[2]},
+    {woerter:["Die","Zuschauer","klatschen","laut."], subj:[0,1], praed:[2]}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","Stürmer","schießt","ein","Tor."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Torwart","hält","den","Ball."], subj:[0,1], praed:[2]},
+    {woerter:["Die","Mannschaft","gewinnt","das","Spiel."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Ball","rollt","ins","Tor."], subj:[0,1], praed:[2]},
+    {woerter:["Der","Schiedsrichter","pfeift","ein","Foul."], subj:[0,1], praed:[2]},
+    {woerter:["Am","Spielfeldrand","steht","der","Trainer."], subj:[3,4], praed:[2]},
+    {woerter:["Die","Fans","jubeln","laut."], subj:[0,1], praed:[2]}
   ]}
 };
-function satzgliedSaetze(){ return SATZGLIED_THEMEN[store.satzglieder.thema].saetze; }
+function satzgliedSaetze(){ return SATZGLIED_THEMEN[store.thema].saetze; }
 const KRIT_SATZGLIED = [
   "Habe ich das Subjekt gefunden (Wer/Was?)?",
   "Habe ich das Prädikat gefunden (Was tut?)?",
@@ -1032,7 +1103,7 @@ function sgLernen(c){
       <b>Was tut</b> er? → <b>spielt</b> (Prädikat, rot).</p></div>
     <div class="card"><div class="hint">💡 Subjekt = <b>blau</b>, Prädikat = <b>rot</b>.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("sgThemes", SATZGLIED_THEMEN, store.satzglieder.thema, key=>{ store.satzglieder.thema=key; sgIdx=0; sgPhase=0; save(); sgLernen(c); });
+  themeCards("sgThemes", SATZGLIED_THEMEN, store.thema, key=>{ store.thema=key; sgIdx=0; sgPhase=0; save(); sgLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function sgUeben(c){
@@ -1100,7 +1171,7 @@ function sgSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function sgWorksheetHTML(){
-  const thema=SATZGLIED_THEMEN[store.satzglieder.thema];
+  const thema=SATZGLIED_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
@@ -1133,9 +1204,23 @@ const REDE_THEMEN = {
     {woerter:["Opa","fragt:","Beißt","schon","ein","Fisch?"], rede:[2,3,4,5]},
     {woerter:["Der","Mann","ruft:","Die","Pose","geht","unter!"], rede:[3,4,5,6]},
     {woerter:["Das","Kind","sagt:","Ich","mag","Rotfedern."], rede:[3,4,5]}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","Trainer","ruft:","Guter","Schlag!"], rede:[3,4]},
+    {woerter:["Der","Junge","sagt:","Ich","habe","gewonnen!"], rede:[3,4,5]},
+    {woerter:["Die","Spielerin","fragt:","Bist","du","bereit?"], rede:[3,4,5]},
+    {woerter:["Der","Mann","ruft:","Der","Ball","war","drin!"], rede:[3,4,5,6]},
+    {woerter:["Das","Kind","sagt:","Ich","mag","Tennis."], rede:[3,4,5]}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","Trainer","ruft:","Schießt","ein","Tor!"], rede:[3,4,5]},
+    {woerter:["Der","Stürmer","sagt:","Ich","habe","getroffen!"], rede:[3,4,5]},
+    {woerter:["Der","Junge","ruft:","Wir","haben","gewonnen!"], rede:[3,4,5]},
+    {woerter:["Der","Torwart","fragt:","Wer","kommt","zum","Training?"], rede:[3,4,5,6]},
+    {woerter:["Das","Kind","sagt:","Ich","spiele","gern","Fußball."], rede:[3,4,5,6]}
   ]}
 };
-function redeSaetze(){ return REDE_THEMEN[store.rede.thema].saetze; }
+function redeSaetze(){ return REDE_THEMEN[store.thema].saetze; }
 function redeQuoted(s){
   const first=s.rede[0];
   const begleit=s.woerter.slice(0,first).join(" ");
@@ -1167,7 +1252,7 @@ function redeLernen(c){
       <p><b>Begleitsatz:</b> Der Angler ruft:<br><b>Wörtliche Rede:</b> „Ich habe einen Zander!“</p></div>
     <div class="card"><div class="hint">💡 Das Satzzeichen (! ? .) steht <b>innerhalb</b> der Anführungszeichen.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("redeThemes", REDE_THEMEN, store.rede.thema, key=>{ store.rede.thema=key; redeIdx=0; save(); redeLernen(c); });
+  themeCards("redeThemes", REDE_THEMEN, store.thema, key=>{ store.thema=key; redeIdx=0; save(); redeLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function redeUeben(c){
@@ -1217,7 +1302,7 @@ function redeSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function redeWorksheetHTML(){
-  const thema=REDE_THEMEN[store.rede.thema];
+  const thema=REDE_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
@@ -1256,9 +1341,29 @@ const ZEIT_THEMEN = {
     {satz:"Der Junge fing einen Zander.", form:"praeteritum"},
     {satz:"Der Junge hat einen Zander gefangen.", form:"perfekt"},
     {satz:"Der Junge wird einen Zander fangen.", form:"futur"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {satz:"Der Junge schlägt den Ball.", form:"praesens"},
+    {satz:"Der Junge schlug den Ball.", form:"praeteritum"},
+    {satz:"Der Junge hat den Ball geschlagen.", form:"perfekt"},
+    {satz:"Der Junge wird den Ball schlagen.", form:"futur"},
+    {satz:"Die Spielerin gewinnt das Match.", form:"praesens"},
+    {satz:"Die Spielerin gewann das Match.", form:"praeteritum"},
+    {satz:"Die Spielerin hat das Match gewonnen.", form:"perfekt"},
+    {satz:"Die Spielerin wird das Match gewinnen.", form:"futur"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {satz:"Der Stürmer schießt ein Tor.", form:"praesens"},
+    {satz:"Der Stürmer schoss ein Tor.", form:"praeteritum"},
+    {satz:"Der Stürmer hat ein Tor geschossen.", form:"perfekt"},
+    {satz:"Der Stürmer wird ein Tor schießen.", form:"futur"},
+    {satz:"Der Torwart hält den Ball.", form:"praesens"},
+    {satz:"Der Torwart hielt den Ball.", form:"praeteritum"},
+    {satz:"Der Torwart hat den Ball gehalten.", form:"perfekt"},
+    {satz:"Der Torwart wird den Ball halten.", form:"futur"}
   ]}
 };
-function zeitSaetze(){ return ZEIT_THEMEN[store.zeit.thema].saetze; }
+function zeitSaetze(){ return ZEIT_THEMEN[store.thema].saetze; }
 const KRIT_ZEIT = [
   "Habe ich Präsens (jetzt) erkannt?",
   "Habe ich Präteritum (früher) erkannt?",
@@ -1285,7 +1390,7 @@ function zeitLernen(c){
       </div></div>
     <div class="card"><div class="hint">💡 Achte auf das <b>Zeitwort</b>: <b>habe/bin</b> → Perfekt, <b>werde</b> → Futur.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("zeitThemes", ZEIT_THEMEN, store.zeit.thema, key=>{ store.zeit.thema=key; zeitIdx=0; save(); zeitLernen(c); });
+  themeCards("zeitThemes", ZEIT_THEMEN, store.thema, key=>{ store.thema=key; zeitIdx=0; save(); zeitLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function zeitUeben(c){
@@ -1339,7 +1444,7 @@ function zeitSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function zeitWorksheetHTML(){
-  const thema=ZEIT_THEMEN[store.zeit.thema];
+  const thema=ZEIT_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.satz}</div>
@@ -1375,9 +1480,25 @@ const GK_THEMEN = {
     {woerter:["der","junge","fängt","einen","zander."], gross:[0,1,4]},
     {woerter:["der","wurm","zappelt","am","haken."], gross:[0,1,4]},
     {woerter:["der","kescher","hebt","den","fisch","heraus."], gross:[0,1,4]}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["der","junge","schlägt","den","ball."], gross:[0,1,4]},
+    {woerter:["die","spielerin","gewinnt","das","spiel."], gross:[0,1,4]},
+    {woerter:["der","ball","fliegt","über","das","netz."], gross:[0,1,5]},
+    {woerter:["der","trainer","zeigt","den","aufschlag."], gross:[0,1,4]},
+    {woerter:["zwei","freunde","spielen","ein","match."], gross:[0,1,4]},
+    {woerter:["die","zuschauer","klatschen","laut."], gross:[0,1]}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["der","stürmer","schießt","ein","tor."], gross:[0,1,4]},
+    {woerter:["der","torwart","hält","den","ball."], gross:[0,1,4]},
+    {woerter:["die","mannschaft","gewinnt","das","spiel."], gross:[0,1,4]},
+    {woerter:["der","junge","spielt","im","verein."], gross:[0,1,4]},
+    {woerter:["der","ball","rollt","ins","tor."], gross:[0,1,4]},
+    {woerter:["die","fans","jubeln","laut."], gross:[0,1]}
   ]}
 };
-function gkSaetze(){ return GK_THEMEN[store.grossklein.thema].saetze; }
+function gkSaetze(){ return GK_THEMEN[store.thema].saetze; }
 function gkCorrected(s){
   return s.woerter.map((w,i)=> s.gross.includes(i) ? (w.charAt(0).toUpperCase()+w.slice(1)) : w).join(" ");
 }
@@ -1402,7 +1523,7 @@ function gkLernen(c){
       <div class="sentence-box"><b>Der</b> kleine <b>Junge</b> spielt mit dem <b>Ball</b>.</div>
       <p>Groß: <b>Der</b> (Satzanfang), <b>Junge</b> und <b>Ball</b> (Nomen).</p></div>
     <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("gkThemes", GK_THEMEN, store.grossklein.thema, key=>{ store.grossklein.thema=key; gkIdx=0; save(); gkLernen(c); });
+  themeCards("gkThemes", GK_THEMEN, store.thema, key=>{ store.thema=key; gkIdx=0; save(); gkLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function gkUeben(c){
@@ -1449,7 +1570,7 @@ function gkSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function gkWorksheetHTML(){
-  const thema=GK_THEMEN[store.grossklein.thema];
+  const thema=GK_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.woerter.join(" ")}</div>
@@ -1484,9 +1605,25 @@ const DD_THEMEN = {
     {satz:"___ Wasser ist tief.", loesung:"das"},
     {satz:"Opa weiß, ___ Rotfedern klein sind.", loesung:"dass"},
     {satz:"___ Angelzeug liegt bereit.", loesung:"das"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {satz:"___ Netz ist hoch.", loesung:"das"},
+    {satz:"Ich hoffe, ___ ich gewinne.", loesung:"dass"},
+    {satz:"Der Trainer sagt, ___ ich üben soll.", loesung:"dass"},
+    {satz:"___ Match beginnt gleich.", loesung:"das"},
+    {satz:"Ich weiß, ___ Tennis Spaß macht.", loesung:"dass"},
+    {satz:"___ schnelle Spiel gefällt mir.", loesung:"das"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {satz:"___ Tor ist leer.", loesung:"das"},
+    {satz:"Ich hoffe, ___ wir gewinnen.", loesung:"dass"},
+    {satz:"Der Trainer sagt, ___ wir kämpfen sollen.", loesung:"dass"},
+    {satz:"___ Spiel beginnt gleich.", loesung:"das"},
+    {satz:"Ich glaube, ___ der Stürmer trifft.", loesung:"dass"},
+    {satz:"___ runde Tor steht dort.", loesung:"das"}
   ]}
 };
-function ddSaetze(){ return DD_THEMEN[store.dassdas.thema].saetze; }
+function ddSaetze(){ return DD_THEMEN[store.thema].saetze; }
 const KRIT_DD = [
   "Habe ich die Ersatzprobe (dieses/welches) benutzt?",
   "Habe ich „das“ (Artikel/Fürwort) erkannt?",
@@ -1506,7 +1643,7 @@ function ddLernen(c){
     <div class="card"><h3>Der Trick 🪄</h3>
       <div class="hint">Kannst du <b>dieses</b>, <b>jenes</b> oder <b>welches</b> einsetzen? → <b>das</b>.<br>Wenn nicht → <b>dass</b>.</div></div>
     <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("ddThemes", DD_THEMEN, store.dassdas.thema, key=>{ store.dassdas.thema=key; ddIdx=0; save(); ddLernen(c); });
+  themeCards("ddThemes", DD_THEMEN, store.thema, key=>{ store.thema=key; ddIdx=0; save(); ddLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function ddUeben(c){
@@ -1548,7 +1685,7 @@ function ddSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function ddWorksheetHTML(){
-  const thema=DD_THEMEN[store.dassdas.thema];
+  const thema=DD_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${s.satz}</div>
@@ -1582,9 +1719,25 @@ const WA_THEMEN = {
     {woerter:["Der","Wurm","zappelt","am","Haken."], ziel:1, art:"nomen"},
     {woerter:["Der","Junge","fängt","einen","Zander."], ziel:2, art:"verb"},
     {woerter:["Die","glänzenden","Fische","springen."], ziel:1, art:"adjektiv"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","schnelle","Ball","fliegt."], ziel:2, art:"nomen"},
+    {woerter:["Die","junge","Spielerin","gewinnt."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Junge","schlägt","stark."], ziel:2, art:"verb"},
+    {woerter:["Ein","neuer","Schläger","liegt","dort."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Trainer","lobt","das","Kind."], ziel:2, art:"verb"},
+    {woerter:["Das","gelbe","Netz","hängt","hoch."], ziel:2, art:"nomen"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","starke","Stürmer","schießt."], ziel:2, art:"nomen"},
+    {woerter:["Die","gute","Mannschaft","gewinnt."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Torwart","hält","sicher."], ziel:2, art:"verb"},
+    {woerter:["Ein","schnelles","Tor","fällt","gleich."], ziel:1, art:"adjektiv"},
+    {woerter:["Der","Junge","schießt","den","Ball."], ziel:2, art:"verb"},
+    {woerter:["Das","runde","Tor","steht","dort."], ziel:2, art:"nomen"}
   ]}
 };
-function waSaetze(){ return WA_THEMEN[store.wortarten.thema].saetze; }
+function waSaetze(){ return WA_THEMEN[store.thema].saetze; }
 const WA_LABEL = {nomen:"Nomen (Namenwort)", verb:"Verb (Tun-Wort)", adjektiv:"Adjektiv (Wie-Wort)"};
 const KRIT_WA = [
   "Habe ich Nomen (Namenwörter) erkannt?",
@@ -1605,7 +1758,7 @@ function waLernen(c){
       🌈 <b>Adjektiv</b> (Wie-Wort): wie etwas ist – <i>schnell, groß</i></div></div>
     <div class="card"><div class="hint">💡 Frag dich: Kann ich der/die/das davorsetzen? → Nomen. Was tut man? → Verb. Wie ist es? → Adjektiv.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("waThemes", WA_THEMEN, store.wortarten.thema, key=>{ store.wortarten.thema=key; waIdx=0; save(); waLernen(c); });
+  themeCards("waThemes", WA_THEMEN, store.thema, key=>{ store.thema=key; waIdx=0; save(); waLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function waUeben(c){
@@ -1655,7 +1808,7 @@ function waSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function waWorksheetHTML(){
-  const thema=WA_THEMEN[store.wortarten.thema];
+  const thema=WA_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>{
     const wort=s.woerter[s.ziel].replace(/[.,!?]$/,"");
     return `
@@ -1693,9 +1846,25 @@ const FAELLE_THEMEN = {
     {woerter:["Das","ist","die","Rute","des","Anglers."], ziel:[4,5], fall:"gen", frage:"Wessen Rute ist das?"},
     {woerter:["Der","Hecht","schwimmt","im","See."], ziel:[0,1], fall:"nom", frage:"Wer oder was schwimmt?"},
     {woerter:["Ich","sehe","den","Zander."], ziel:[2,3], fall:"akk", frage:"Wen oder was sehe ich?"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", saetze:[
+    {woerter:["Der","Spieler","schlägt","den","Ball."], ziel:[0,1], fall:"nom", frage:"Wer schlägt den Ball?"},
+    {woerter:["Ich","sehe","den","Ball."], ziel:[2,3], fall:"akk", frage:"Wen oder was sehe ich?"},
+    {woerter:["Der","Trainer","gibt","dem","Kind","den","Schläger."], ziel:[3,4], fall:"dat", frage:"Wem gibt der Trainer den Schläger?"},
+    {woerter:["Das","ist","der","Schläger","des","Spielers."], ziel:[4,5], fall:"gen", frage:"Wessen Schläger ist das?"},
+    {woerter:["Die","Spielerin","gewinnt."], ziel:[0,1], fall:"nom", frage:"Wer gewinnt?"},
+    {woerter:["Ich","hole","den","Ball."], ziel:[2,3], fall:"akk", frage:"Wen oder was hole ich?"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", saetze:[
+    {woerter:["Der","Stürmer","schießt","das","Tor."], ziel:[0,1], fall:"nom", frage:"Wer schießt das Tor?"},
+    {woerter:["Ich","sehe","das","Tor."], ziel:[2,3], fall:"akk", frage:"Wen oder was sehe ich?"},
+    {woerter:["Der","Junge","gibt","dem","Torwart","den","Ball."], ziel:[3,4], fall:"dat", frage:"Wem gibt der Junge den Ball?"},
+    {woerter:["Das","ist","der","Ball","des","Stürmers."], ziel:[4,5], fall:"gen", frage:"Wessen Ball ist das?"},
+    {woerter:["Die","Mannschaft","jubelt."], ziel:[0,1], fall:"nom", frage:"Wer jubelt?"},
+    {woerter:["Ich","hole","den","Ball."], ziel:[2,3], fall:"akk", frage:"Wen oder was hole ich?"}
   ]}
 };
-function faelleSaetze(){ return FAELLE_THEMEN[store.faelle.thema].saetze; }
+function faelleSaetze(){ return FAELLE_THEMEN[store.thema].saetze; }
 const FALL_LABEL = {nom:"Nominativ", gen:"Genitiv", dat:"Dativ", akk:"Akkusativ"};
 const FALL_FRAGE = {nom:"Wer oder was?", gen:"Wessen?", dat:"Wem?", akk:"Wen oder was?"};
 const KRIT_FAELLE = [
@@ -1720,7 +1889,7 @@ function faelleLernen(c){
       </div></div>
     <div class="card"><div class="hint">💡 Stelle die passende Frage – die Antwort zeigt dir den Fall.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("faelleThemes", FAELLE_THEMEN, store.faelle.thema, key=>{ store.faelle.thema=key; faelleIdx=0; save(); faelleLernen(c); });
+  themeCards("faelleThemes", FAELLE_THEMEN, store.thema, key=>{ store.thema=key; faelleIdx=0; save(); faelleLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function faelleUeben(c){
@@ -1769,7 +1938,7 @@ function faelleSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function faelleWorksheetHTML(){
-  const thema=FAELLE_THEMEN[store.faelle.thema];
+  const thema=FAELLE_THEMEN[store.thema];
   const lines=thema.saetze.map((s,i)=>{
     const phrase=s.ziel.map(j=>s.woerter[j]).join(" ").replace(/[.,!?]$/,"");
     return `
@@ -1811,9 +1980,29 @@ const DOPPEL_THEMEN = {
     {richtig:"paddeln", falsch:"padeln"},
     {richtig:"Wasser", falsch:"Waser"},
     {richtig:"Sonne", falsch:"Sone"}
+  ]},
+  tennis:{ name:"Tennis", emoji:"🎾", woerter:[
+    {richtig:"Ball", falsch:"Bal"},
+    {richtig:"schnell", falsch:"schnel"},
+    {richtig:"Treffer", falsch:"Trefer"},
+    {richtig:"rennen", falsch:"renen"},
+    {richtig:"Gewinner", falsch:"Gewiner"},
+    {richtig:"Matte", falsch:"Mate"},
+    {richtig:"Sonne", falsch:"Sone"},
+    {richtig:"Wetter", falsch:"Weter"}
+  ]},
+  fussball:{ name:"Fußball", emoji:"⚽", woerter:[
+    {richtig:"Ball", falsch:"Bal"},
+    {richtig:"Treffer", falsch:"Trefer"},
+    {richtig:"rennen", falsch:"renen"},
+    {richtig:"schnell", falsch:"schnel"},
+    {richtig:"Mannschaft", falsch:"Manschaft"},
+    {richtig:"Pfiff", falsch:"Pfif"},
+    {richtig:"Gewinner", falsch:"Gewiner"},
+    {richtig:"Wetter", falsch:"Weter"}
   ]}
 };
-function doppelWoerter(){ return DOPPEL_THEMEN[store.doppel.thema].woerter; }
+function doppelWoerter(){ return DOPPEL_THEMEN[store.thema].woerter; }
 const KRIT_DOPPEL = [
   "Habe ich auf den kurzen Selbstlaut gehört?",
   "Habe ich den doppelten Mitlaut erkannt?",
@@ -1832,7 +2021,7 @@ function doppelLernen(c){
       <div class="example-box">So<b>nn</b>e · Ba<b>ll</b> · Wa<b>ss</b>er · Mu<b>tt</b>er</div></div>
     <div class="card"><div class="hint">💡 Sprich das Wort langsam: Ist der Selbstlaut <b>kurz</b>? → oft doppelter Mitlaut.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("doppelThemes", DOPPEL_THEMEN, store.doppel.thema, key=>{ store.doppel.thema=key; doppelIdx=0; save(); doppelLernen(c); });
+  themeCards("doppelThemes", DOPPEL_THEMEN, store.thema, key=>{ store.thema=key; doppelIdx=0; save(); doppelLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function doppelUeben(c){
@@ -1878,7 +2067,7 @@ function doppelSheet(c){
   c.querySelector("#toBlume").onclick=()=>goSection("blume");
 }
 function doppelWorksheetHTML(){
-  const thema=DOPPEL_THEMEN[store.doppel.thema];
+  const thema=DOPPEL_THEMEN[store.thema];
   const lines=thema.woerter.map((w,i)=>`
     <div class="ws-step">
       <div class="lead">${i+1}. ${w.richtig}</div>
@@ -2019,18 +2208,19 @@ const MODULES = {
 let store = {
   name:"",
   lastModule:"vorgang",
-  level:3,   // Klassenstufe: 3, 4 oder 0 (= alle)
+  level:3,        // Klassenstufe: 3, 4 oder 0 (= alle)
+  thema:"alltag", // globales Thema für alle Satz-Übungen
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
-  subjekt:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  praedikat:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  satzglieder:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  rede:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  zeit:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  grossklein:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  dassdas:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  wortarten:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  faelle:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  doppel:{ thema:"alltag", self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  subjekt:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  praedikat:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  satzglieder:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  rede:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  zeit:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  grossklein:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  dassdas:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  wortarten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  faelle:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  doppel:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -2040,51 +2230,15 @@ function load(){
     if(!d) return;
     if(typeof d.name==="string") store.name=d.name;
     if([0,3,4].includes(d.level)) store.level=d.level;
+    if(d.thema && THEMEN.some(t=>t.id===d.thema)) store.thema=d.thema;
     if(d.lastModule && MODULES[d.lastModule]) store.lastModule=d.lastModule;
     if(d.vorgang){
       if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
-    if(d.subjekt){
-      if(SUBJ_THEMEN[d.subjekt.thema]) store.subjekt.thema=d.subjekt.thema;
-      if(d.subjekt.self) mergeSelf(store.subjekt.self, d.subjekt.self);
-    }
-    if(d.praedikat){
-      if(PRAED_THEMEN[d.praedikat.thema]) store.praedikat.thema=d.praedikat.thema;
-      if(d.praedikat.self) mergeSelf(store.praedikat.self, d.praedikat.self);
-    }
-    if(d.satzglieder){
-      if(SATZGLIED_THEMEN[d.satzglieder.thema]) store.satzglieder.thema=d.satzglieder.thema;
-      if(d.satzglieder.self) mergeSelf(store.satzglieder.self, d.satzglieder.self);
-    }
-    if(d.rede){
-      if(REDE_THEMEN[d.rede.thema]) store.rede.thema=d.rede.thema;
-      if(d.rede.self) mergeSelf(store.rede.self, d.rede.self);
-    }
-    if(d.zeit){
-      if(ZEIT_THEMEN[d.zeit.thema]) store.zeit.thema=d.zeit.thema;
-      if(d.zeit.self) mergeSelf(store.zeit.self, d.zeit.self);
-    }
-    if(d.grossklein){
-      if(GK_THEMEN[d.grossklein.thema]) store.grossklein.thema=d.grossklein.thema;
-      if(d.grossklein.self) mergeSelf(store.grossklein.self, d.grossklein.self);
-    }
-    if(d.dassdas){
-      if(DD_THEMEN[d.dassdas.thema]) store.dassdas.thema=d.dassdas.thema;
-      if(d.dassdas.self) mergeSelf(store.dassdas.self, d.dassdas.self);
-    }
-    if(d.wortarten){
-      if(WA_THEMEN[d.wortarten.thema]) store.wortarten.thema=d.wortarten.thema;
-      if(d.wortarten.self) mergeSelf(store.wortarten.self, d.wortarten.self);
-    }
-    if(d.faelle){
-      if(FAELLE_THEMEN[d.faelle.thema]) store.faelle.thema=d.faelle.thema;
-      if(d.faelle.self) mergeSelf(store.faelle.self, d.faelle.self);
-    }
-    if(d.doppel){
-      if(DOPPEL_THEMEN[d.doppel.thema]) store.doppel.thema=d.doppel.thema;
-      if(d.doppel.self) mergeSelf(store.doppel.self, d.doppel.self);
-    }
+    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel"].forEach(m=>{
+      if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
+    });
   }catch(e){}
 }
 // Übernimmt gespeicherte Werte, ohne die Größe der Zielarrays zu sprengen
@@ -2112,6 +2266,20 @@ function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
     b.classList.toggle("active", parseInt(b.dataset.level,10)===store.level);
     b.onclick=()=>{ store.level=parseInt(b.dataset.level,10); save(); buildLevelRow(); buildModuleChooser(); };
+  });
+}
+// Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
+function resetAllIdx(){
+  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=0;
+}
+function buildThemeRow(){
+  const row=$("themeRow"); row.innerHTML="";
+  THEMEN.forEach(t=>{
+    const b=document.createElement("button");
+    b.className="level-btn"+(t.id===store.thema?" active":"");
+    b.innerHTML=`${t.emoji} ${t.name}`;
+    b.onclick=()=>{ store.thema=t.id; resetAllIdx(); save(); buildThemeRow(); };
+    row.appendChild(b);
   });
 }
 function buildModuleChooser(){
@@ -2172,6 +2340,7 @@ function navItem(icon,label,onclick,active){
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
   load();
+  buildThemeRow();
   buildLevelRow();
   buildModuleChooser();
   const ni=$("nameInput");
