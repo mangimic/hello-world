@@ -1,29 +1,22 @@
 /* ============================================================
    Service Worker für die Lern-App (PWA)
-   Ermöglicht das Laden der App ohne Internet (offline).
+   Strategie:
+   - HTML/Seiten: NETWORK-FIRST -> immer die neueste Version laden,
+     offline als Rückfall aus dem Cache. (verhindert veraltete Inhalte)
+   - Übrige Dateien (manifest, icon): CACHE-FIRST (schnell & offline).
    Der Fortschritt selbst liegt im localStorage (nicht hier).
    ============================================================ */
 
-// Version des Caches – bei Änderungen hochzählen, damit Geräte neu laden.
-const CACHE_NAME = "vb-app-v1";
+// Version bei jeder Änderung hochzählen -> alte Caches werden entfernt.
+const CACHE_NAME = "lern-app-v3";
 
-// Dateien, die für den Offline-Betrieb gespeichert werden.
-const ASSETS = [
-  "./",
-  "./index.html",
-  "./manifest.json",
-  "./icon.svg"
-];
+const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
-// Installation: alle wichtigen Dateien in den Cache legen.
 self.addEventListener("install", (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
-  );
-  self.skipWaiting(); // sofort aktiv werden
+  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  self.skipWaiting(); // neue Version sofort übernehmen
 });
 
-// Aktivierung: alte Caches aufräumen.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -33,23 +26,37 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Anfragen zuerst aus dem Cache bedienen (schnell & offline-fähig),
-// bei Bedarf aus dem Netz nachladen und ergänzen.
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
-  event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request)
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const accept = req.headers.get("accept") || "";
+  const isHTML = req.mode === "navigate" || accept.includes("text/html");
+
+  if (isHTML) {
+    // NETWORK-FIRST: neueste Seite laden, Cache aktualisieren, offline zurückfallen
+    event.respondWith(
+      fetch(req)
         .then((resp) => {
-          // Kopie im Cache ablegen (nur gültige Antworten)
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put("./index.html", copy));
+          return resp;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match("./index.html")))
+    );
+  } else {
+    // CACHE-FIRST für statische Dateien
+    event.respondWith(
+      caches.match(req).then((cached) =>
+        cached ||
+        fetch(req).then((resp) => {
           if (resp && resp.status === 200 && resp.type === "basic") {
             const copy = resp.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            caches.open(CACHE_NAME).then((c) => c.put(req, copy));
           }
           return resp;
         })
-        .catch(() => cached); // offline & nicht im Cache -> nichts
-    })
-  );
+      )
+    );
+  }
 });
