@@ -55,4 +55,4 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 - Weitere Rezepte/Abläufe als Arbeitsblatt
 - Weitere Lesetexte für den Kompass-Bereich
 - Foto des fertigen Arbeitsblatts anhängen und mit der Blume verknüpfen
-- 🔊 Vorlese-/Audio-Hilfe (war eingebaut, wieder entfernt – bei Bedarf zurückholbar)
+- ~~🔊 Vorlese-/Audio-Hilfe~~ → **wieder aktiv seit v1.23** (überall, inkl. Lese-/Anhör-Bestätigung)

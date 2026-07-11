@@ -219,6 +219,85 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Blatt zeigt Klassen-Abzeichen", ws.includes("Klasse 4"));
   check("Blatt nutzt Stufen-Wörter (K4 schwer)", ws.includes("Hahn") || ws.includes("Schwester"));
 
+  // ---------- 8pre) v1.23: kleine Blume, Vorlesen, Lese-Gate, See-Spiel ----------
+  section("Kleine Ergebnis-Blume");
+  await fresh(); await setLevel(4); await openMod("Subjekte", "Üben");
+  let gp = 0;
+  while (gp++ < 25) {
+    if (await page.locator("#runAgain").count()) break;
+    const idxs = await page.evaluate(() => subjSaetze()[subjIdx].subj);
+    for (const i of idxs) await page.locator("#sbox .word").nth(i).click();
+    await page.locator("#checkBtn").click(); await page.waitForTimeout(20);
+    await page.locator("#nextBtn").click(); await page.waitForTimeout(25);
+  }
+  await closeOverlay();
+  const potW = await page.locator(".result-pot svg").first().evaluate(el => el.getBoundingClientRect().width);
+  check("Blume in Auswertung ≤ 100px", potW <= 100, Math.round(potW) + "px");
+
+  section("Vorlesen & Lese-Bestätigung");
+  await fresh(); await setLevel(3); await openMod("Subjekte", null);
+  check("Vorlesen-Knöpfe auf Erklär-Seite", (await page.locator(".speak-btn").count()) > 0);
+  check("CTA gesperrt vor Bestätigung", await page.locator("#toUeben").isDisabled());
+  await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(80);
+  check("CTA frei nach Bestätigung", !(await page.locator("#toUeben").isDisabled()));
+  await page.locator("#toUeben").click(); await page.waitForTimeout(90);
+  check("Übung erreichbar nach Gate", (await page.locator("#sbox").count()) > 0);
+
+  section("See-Abenteuer");
+  await fresh(); await setLevel(3);
+  await openMod("See-Abenteuer", null);
+  check("Spielfeld mit See", (await page.locator("#spielFeld").count()) > 0);
+  check("Steuerkreuz (4 Richtungen)", (await page.locator("#spielPad button").count()) === 4);
+  const b0 = await page.evaluate(() => spiel.x);
+  await page.locator('#spielPad button[data-d="right"]').click(); await page.waitForTimeout(70);
+  check("D-Pad bewegt die Figur", (await page.evaluate(() => spiel.x)) > b0);
+  check("See blockiert Durchlaufen", await page.evaluate(() => { spiel.x = 60; spiel.y = 118;
+    for (let k = 0; k < 20; k++) spielMove(14, 0); return !spielImSee(spiel.x, spiel.y); }));
+  for (let i = 0; i < 5; i++) {
+    await page.evaluate(i => { const sp = SPIEL_SPOTS[i]; spiel.x = sp.x - 20; spiel.y = sp.y; spielMove(14, 0); }, i);
+    await page.waitForTimeout(110);
+    if ((await page.evaluate(() => spiel.aktiv)) < 0) continue;
+    const richtig = await page.evaluate(() => spiel.frage.w.richtig);
+    const so = page.locator(".spiel-opt"); const t0 = (await so.nth(0).textContent()).trim();
+    await (t0 === richtig ? so.nth(0) : so.nth(1)).click(); await page.waitForTimeout(1050);
+  }
+  const sres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  const sm = sres.match(/Auf Anhieb richtig:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Spiel: 5 Fische → volle Auswertung", sm[1] === "5" && sm[2] === "5", sm[1] + "/" + sm[2]);
+
+  // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
+  section("Vorgangsbeschreibung interaktiv");
+  await fresh(); await setLevel(3);
+  await openMod("Vorgang", "Üben");
+  check("4 Unter-Tabs (Grundlagen/Ordnen/Satzanfänge/Zutaten)", (await page.locator(".chip[data-vt]").count()) === 4);
+  // Ordnen: komplett richtig lösen
+  await page.locator('.chip[data-vt="ordnen"]').click(); await page.waitForTimeout(110);
+  check("Ordnen: Schritte-Pfad-Visualisierung", (await page.locator("#vgHost svg").count()) > 0);
+  let gg = 0;
+  while (gg++ < 10) {
+    if (await page.locator("#runAgain").count()) break;
+    const pos = await page.evaluate(() => { const exp = vgOrd.next; let pos = 0;
+      for (const i of vgOrd.order) { if (i >= vgOrd.next) { if (i === exp) return pos; pos++; } } return -1; });
+    await page.locator("#ordList button:not([disabled])").nth(pos).click(); await page.waitForTimeout(60);
+  }
+  let vres = (await page.locator("#vgHost").textContent()).replace(/\s+/g, " ");
+  let vm = vres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Ordnen: volle Auswertung", vm[1] === vm[2] && +vm[1] > 0, vm[1] + "/" + vm[2]);
+  // Satzanfänge: Gate + eine richtige Antwort
+  await page.locator('.chip[data-vt="anfang"]').click(); await page.waitForTimeout(110);
+  await page.locator("#anfNext").click(); await page.waitForTimeout(60);
+  check("Satzanfänge: ohne Antwort blockiert", /zuerst/i.test(await page.locator("#anffb").textContent()));
+  const btns = page.locator("#anfOpts button"); const nb = await btns.count();
+  for (let k = 0; k < nb; k++) { if ((await btns.nth(k).textContent()).trim() === "Zuerst") { await btns.nth(k).click(); break; } }
+  await page.waitForTimeout(60);
+  check("Satzanfänge: richtige Antwort erkannt", /Richtig/.test(await page.locator("#anffb").textContent()));
+  // Zutaten: alle echten einpacken -> perfekt
+  await page.locator('.chip[data-vt="zutaten"]').click(); await page.waitForTimeout(110);
+  const picks = await page.evaluate(() => vgZut.karten.map((k, i) => k.echt ? i : -1).filter(i => i >= 0));
+  for (const i of picks) { await page.locator("#zutGrid button").nth(i).click(); await page.waitForTimeout(30); }
+  await page.locator("#zutCheck").click(); await page.waitForTimeout(110);
+  check("Zutaten-Check: perfektes Ergebnis erkannt", /Perfekt/.test(await page.locator("#zutfb").textContent()));
+
   // ---------- 8b) Kinder-Illustrationen ----------
   section("Kinder-Illustrationen");
   await fresh();
