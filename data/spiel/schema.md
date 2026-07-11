@@ -48,7 +48,7 @@ schwarzwald-tourismus.info, blinker.de).
 |---|---|---|
 | `gegner` | Liste | Match-Gegner: `id`, `name`, `emoji`, `staerke` (1–3; Stärke 3 = nur schwere Wörter), `spruch` (Vorstellung) – rotiert über die Matches |
 | `fakten` | Liste | Tennis-Wissen („Wusstest du?"): `begriff` + `text` – kindgerecht, recherchiert (srf.ch/kids, klexikon.zum.de, tennis.de, tennisfinale.com) |
-| `mental` | Liste | die 12 Mentaltrainer-Karten (Kinder-Mentaltraining): `id`, `titel`, `emoji` und die 5 Bausteine `trainieren` (⭐), `mission` (🎯), `mut` (💬), `punkt` (🎾), `schluss` (🏆) |
+| `mental` | Liste | die 12 Mutmacher-Karten (in der App heißt der Mentaltrainer kindgerecht „Mutmacher“): `id`, `titel`, `emoji` und die 5 Bausteine `trainieren` (⭐), `mission` (🎯), `mut` (💬), `punkt` (🎾), `schluss` (🏆) |
 
 Pflicht-Situationen in `mental`: `training`, `match`, `fehler`, `fehlerserie`,
 `nervositaet`, `fuehrung`, `rueckstand`, `tiebreak`, `aufschlag`, `return`,
