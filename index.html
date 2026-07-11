@@ -355,8 +355,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.25.0";
+const APP_VERSION = "1.26.0";
 const RELEASE_NOTES = [
+  {v:"1.26.0", datum:"11.07.2026", punkte:[
+    "Neuer <b>Daten-Bereich</b> fürs Spiel: Fische, Welt, Angelplätze und Bilder liegen jetzt in eigenen Datendateien (data/spiel) – Inhalte lassen sich ändern, ohne den App-Code anzufassen",
+    "Eigene <b>Fotos</b> einfach in data/spiel/bilder legen – das Einbett-Werkzeug verkleinert sie und baut sie offline-fähig ein",
+    "Nach jedem Fang gibt es jetzt <b>Sachwissen</b> zum Fisch („Wusstest du?“)"]},
   {v:"1.25.0", datum:"10.07.2026", punkte:[
     "🎣 See-Abenteuer: <b>Lösungshinweise bleiben stehen</b> – weiter geht es erst mit dem Weiter-Knopf",
     "<b>Naturgetreue Fisch-Bilder</b>: Rotfeder, Zander und Hecht sind jetzt als Illustration zu sehen, wenn sie anbeißen",
@@ -3994,12 +3998,26 @@ function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
    herangezogen: Rotfeder (1) · Zander (2) · Hecht (3).
    ============================================================ */
 let spiel=null;
-const SPIEL_W=340, SPIEL_H=230;
-const SPIEL_SEE={cx:170, cy:118, rx:96, ry:58};
-const SPIEL_SPOTS=[{x:60,y:118},{x:170,y:44},{x:280,y:118},{x:110,y:186},{x:230,y:186}];
-const SPIEL_FISCHE={1:{name:"eine Rotfeder",kurz:"Rotfeder",hinweis:"",gr:14},
-  2:{name:"ein ZANDER",kurz:"Zander",hinweis:"Er ist stark – du brauchst 2 richtige Antworten!",gr:19},
-  3:{name:"ein RIESIGER HECHT",kurz:"Hecht",hinweis:"Der Riese braucht 3 richtige Antworten!",gr:25}};
+
+/* SPIEL-DATEN:ANFANG (generiert aus data/spiel – nicht von Hand ändern) */
+const SPIEL_DATEN = {"fische":[{"id":"rotfeder","name":"Rotfeder","anrede":"eine Rotfeder","fragen":1,"steigerung":["leicht"],"hinweis":"","info":"Die Rotfeder erkennst du an ihren roten Flossen. Sie frisst am liebsten Wasserpflanzen.","symbolGroesse":14,"bild":"bilder/rotfeder.jpg","zeichnung":"Rotfeder"},{"id":"zander","name":"Zander","anrede":"ein ZANDER","fragen":2,"steigerung":["leicht","schwer"],"hinweis":"Er ist stark – du brauchst 2 richtige Antworten!","info":"Der Zander jagt in der Dämmerung. Seine Rückenflosse hat stachlige Strahlen.","symbolGroesse":19,"bild":"bilder/zander.jpg","zeichnung":"Zander"},{"id":"hecht","name":"Hecht","anrede":"ein RIESIGER HECHT","fragen":3,"steigerung":["leicht","schwer","schwer"],"hinweis":"Der Riese braucht 3 richtige Antworten!","info":"Der Hecht lauert zwischen Wasserpflanzen und schnappt blitzschnell zu – er kann über einen Meter lang werden!","symbolGroesse":25,"bild":"bilder/hecht.jpg","zeichnung":"Hecht"}],"welten":[{"id":"see","name":"See-Abenteuer","emoji":"🎣","feld":{"breite":340,"hoehe":230},"wasser":{"form":"ellipse","cx":170,"cy":118,"rx":96,"ry":58},"start":{"x":34,"y":60},"spots":[{"x":60,"y":118},{"x":170,"y":44},{"x":280,"y":118},{"x":110,"y":186},{"x":230,"y":186}],"besatz":["rotfeder","rotfeder","zander","zander","hecht"],"deko":[{"emoji":"🌳","x":18,"y":30,"groesse":16},{"emoji":"🌳","x":308,"y":34,"groesse":16},{"emoji":"🌼","x":304,"y":214,"groesse":16},{"emoji":"🌾","x":30,"y":214,"groesse":14},{"emoji":"🐟","x":150,"y":132,"groesse":13},{"emoji":"🐟","x":204,"y":106,"groesse":11}]}],"bilder":{}};
+/* SPIEL-DATEN:ENDE */
+
+/* Repository: einzige Zugriffsschicht auf die Spiel-Daten.
+   Inhalte pflegt man in data/spiel/*.json (+ Fotos in data/spiel/bilder),
+   dann: node tools/spiel-daten-einbetten.js  (siehe data/spiel/schema.md) */
+const SpielRepo={
+  welt(){ return SPIEL_DATEN.welten[0]; },
+  fisch(id){ return SPIEL_DATEN.fische.find(f=>f.id===id); },
+  bild(id){ return (SPIEL_DATEN.bilder||{})[id]||null; }
+};
+const SPIEL_WELT=()=>SpielRepo.welt();
+let SPIEL_W=340, SPIEL_H=230, SPIEL_SEE={cx:170,cy:118,rx:96,ry:58}, SPIEL_SPOTS=[];
+function spielDatenLaden(){
+  const w=SpielRepo.welt(); if(!w) return;
+  SPIEL_W=w.feld.breite; SPIEL_H=w.feld.hoehe;
+  SPIEL_SEE=w.wasser; SPIEL_SPOTS=w.spots;
+}
 function spielT(ms){ return window.__SPIEL_SCHNELL__ ? Math.max(15, ms/12) : ms; }
 /* Frage aus dem amtlichen Grundwortschatz – mit Steigerung:
    leichte Wörter (Klasse 1/2) für den Einstieg, schwere (Klasse 3/4)
@@ -4062,10 +4080,13 @@ function spielFischBild(art, w){
   </svg>`;
 }
 function spielInit(){
-  const sizes=vgShuffle([1,1,2,2,3]);
-  spiel={ x:34, y:60, size:sizes, done:[false,false,false,false,false],
+  spielDatenLaden();
+  const w=SpielRepo.welt();
+  const fids=vgShuffle(w.besatz.slice());
+  spiel={ x:w.start.x, y:w.start.y, fids:fids, done:fids.map(()=>false),
     aktiv:-1, stage:0, frage:null, busy:false, timer:null };
-  runReset("spiel"); runGet("spiel", sizes.reduce((a,b)=>a+b,0)); // 9 Fragen gesamt
+  const gesamt=fids.reduce((a,id)=>a+SpielRepo.fisch(id).fragen,0);
+  runReset("spiel"); runGet("spiel", gesamt);
 }
 function spielStop(){ if(spiel && spiel.timer){ clearInterval(spiel.timer); spiel.timer=null; } }
 function spielImSee(x,y){
@@ -4160,8 +4181,8 @@ function spielZiehen(i, fertig, cb){
   spiel.busy=true; spielStop();
   const bob=$("spielBobber"), line=$("spielLine");
   if(!bob){ spiel.busy=false; cb&&cb(); return; }
-  const f=SPIEL_FISCHE[spiel.size[i]];
-  bob.textContent="🐟"; bob.setAttribute("font-size", f.gr);
+  const f=SpielRepo.fisch(spiel.fids[i]);
+  bob.textContent="🐟"; bob.setAttribute("font-size", f.symbolGroesse||16);
   const x0=parseFloat(bob.getAttribute("x")), y0=parseFloat(bob.getAttribute("y"));
   const frac=fertig?0.94:0.38;
   const tx=x0+(spiel.x-x0)*frac, ty=y0+(spiel.y-y0)*frac;
@@ -4190,15 +4211,19 @@ function spielFragBox(){
   const box=$("spielQ"); if(!box) return;
   const i=spiel.aktiv, q=spiel.frage;
   if(i<0 || !q){ box.innerHTML=""; return; }
-  const f=SPIEL_FISCHE[spiel.size[i]];
+  const f=SpielRepo.fisch(spiel.fids[i]);
   const kopf = spiel.stage===0
-    ? `🎣 <b>${f.name}</b> beißt an! ${f.hinweis}`
-    : `💪 Der <b>${f.kurz}</b> wehrt sich – Frage ${spiel.stage+1} von ${spiel.size[i]}!`;
+    ? `🎣 <b>${f.anrede}</b> beißt an! ${f.hinweis}`
+    : `💪 Der <b>${f.name}</b> wehrt sich – Frage ${spiel.stage+1} von ${f.fragen}!`;
   const stufe = q.schwer ? "🔥 schwere Frage" : "🌱 leichte Frage";
+  const foto=SpielRepo.bild(f.id);
+  const bild = foto
+    ? `<img src="${foto}" alt="${f.name}" style="max-width:170px; width:70%; border-radius:10px; border:2px solid #cfe0f5;">`
+    : spielFischBild(f.zeichnung, 120);
   const richtigLinks=Math.random()<0.5;
   const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
-    <div style="text-align:center;">${spielFischBild(f.kurz, 120)}</div>
+    <div style="text-align:center;">${bild}</div>
     <div class="hint">${kopf}<br><span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
     <div style="display:flex; gap:8px; margin-top:8px;">
       <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
@@ -4219,9 +4244,9 @@ function spielFragBox(){
     weiter.id="spielWeiter"; weiter.disabled=true;
     if(correct){
       runCorrect("spiel", qIdx);
-      const fertig = spiel.stage+1 >= spiel.size[i];
+      const fertig = spiel.stage+1 >= f.fragen;
       if(fertig){
-        d.innerHTML=`🐟 <b>Gefangen – ${f.kurz}!</b> „${q.w.richtig}“ war richtig.<br>💡 ${q.tipp}`;
+        d.innerHTML=`🐟 <b>Gefangen – ${f.name}!</b> „${q.w.richtig}“ war richtig.<br>💡 ${q.tipp}<br>🧐 Wusstest du? ${f.info}`;
         weiter.textContent="Weiter angeln 🎉";
         fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
         spielZiehen(i, true, ()=>{ spielKorb(); weiter.disabled=false; });
@@ -4229,15 +4254,15 @@ function spielFragBox(){
       }else{
         spiel.stage++;
         d.innerHTML=`Richtig! Du ziehst ihn näher heran … 💪<br>💡 ${q.tipp}`;
-        weiter.textContent=`Weiter – Frage ${spiel.stage+1} von ${spiel.size[i]}`;
+        weiter.textContent=`Weiter – Frage ${spiel.stage+1} von ${f.fragen}`;
         fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
         spielZiehen(i, false, ()=>{ weiter.disabled=false; });
         weiter.onclick=()=>{ if(weiter.disabled) return;
-          spiel.frage=spielFrage(true); spielFragBox(); };
+          spiel.frage=spielFrage(f.steigerung[spiel.stage]==="schwer"); spielFragBox(); };
       }
     }else{
       runWrong("spiel", qIdx);
-      d.innerHTML=`Oh – richtig wäre <b>„${q.w.richtig}“</b> gewesen!<br>💡 ${q.tipp}<br>Der ${f.kurz} ist noch dran – gleich kommt die nächste Frage.`;
+      d.innerHTML=`Oh – richtig wäre <b>„${q.w.richtig}“</b> gewesen!<br>💡 ${q.tipp}<br>Der ${f.name} ist noch dran – gleich kommt die nächste Frage.`;
       weiter.textContent="🎣 Nächster Versuch";
       weiter.disabled=false;
       fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
@@ -4265,9 +4290,7 @@ function spielSVG(){
     <rect width="${SPIEL_W}" height="${SPIEL_H}" rx="14" fill="#bfe0a8"/>
     <ellipse cx="${S.cx}" cy="${S.cy}" rx="${S.rx}" ry="${S.ry}" fill="#8ec4ee" stroke="#4a7fd6" stroke-width="3"/>
     <ellipse cx="${S.cx-24}" cy="${S.cy-14}" rx="26" ry="9" fill="#b3d9f5"/>
-    <text x="150" y="132" font-size="13">🐟</text><text x="204" y="106" font-size="11">🐟</text>
-    <text x="18" y="30" font-size="16">🌳</text><text x="308" y="34" font-size="16">🌳</text>
-    <text x="304" y="214" font-size="16">🌼</text><text x="30" y="214" font-size="14">🌾</text>
+    ${(SpielRepo.welt().deko||[]).map(d2=>`<text x="${d2.x}" y="${d2.y}" font-size="${d2.groesse||14}">${d2.emoji}</text>`).join("")}
     ${spots}
     ${aktivLine}
     <text id="spielFigur" x="${spiel.x}" y="${spiel.y+7}" font-size="21" text-anchor="middle">🧒</text>

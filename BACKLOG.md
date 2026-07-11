@@ -51,6 +51,12 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
   richtig/falsch-Format): lautentsprechende Modellwörter, Endungen -en/-el/-er,
   Funktionswörter. Idee: später als **Abschreib-/Diktat-Modus** nutzen.
 
+## Daten-Bereich des Spiels (seit v1.26)
+Inhalte des See-Abenteuers liegen in `data/spiel/` (fische.json, welten.json,
+bilder/) – Modell und Arbeitsablauf: `data/spiel/schema.md`.
+Einbetten: `node tools/spiel-daten-einbetten.js` (validiert, verkleinert
+Fotos, hält die App offline-fähig als Einzeldatei).
+
 ## Ideen für später
 - Weitere Rezepte/Abläufe als Arbeitsblatt
 - Weitere Lesetexte für den Kompass-Bereich

@@ -249,7 +249,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   await openMod("See-Abenteuer", null);
   check("Spielfeld mit See", (await page.locator("#spielFeld").count()) > 0);
   check("Steuerkreuz (4 Richtungen)", (await page.locator("#spielPad button").count()) === 4);
-  check("Fisch-Größen 1,1,2,2,3 verteilt", await page.evaluate(() => spiel.size.slice().sort().join(",") === "1,1,2,2,3"));
+  check("Daten-Bereich eingebettet (SPIEL_DATEN + Repo)", await page.evaluate(() =>
+    typeof SPIEL_DATEN === "object" && SPIEL_DATEN.fische.length >= 3 && !!SpielRepo.welt() && SpielRepo.welt().spots.length === 5));
+  check("Besatz aus dem Datenmodell (1,1,2,2,3 Fragen)", await page.evaluate(() =>
+    spiel.fids.map(id => SpielRepo.fisch(id).fragen).sort().join(",") === "1,1,2,2,3"));
   const b0 = await page.evaluate(() => spiel.x);
   await page.locator('#spielPad button[data-d="right"]').click(); await page.waitForTimeout(70);
   check("D-Pad bewegt die Figur", (await page.evaluate(() => spiel.x)) > b0);
@@ -263,7 +266,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     return Math.abs(+l.getAttribute("x1") - spiel.x) < 2 && Math.abs(+l.getAttribute("y1") - spiel.y) < 2; }));
   // Alle 5 Fische fangen (1-3 Fragen je Größe, Weiter-Knopf, Steigerung, Bild)
   async function fange(spot) {
-    const size = await page.evaluate(() => spiel.size[spiel.aktiv]);
+    const size = await page.evaluate(() => SpielRepo.fisch(spiel.fids[spiel.aktiv]).fragen);
     for (let st = 0; st < size; st++) {
       await page.waitForFunction(() => spiel.aktiv >= 0 && !spiel.busy && document.querySelector(".spiel-opt:not([disabled])"), null, { timeout: 9000 });
       if (st === 0) check2first = check2first || true;

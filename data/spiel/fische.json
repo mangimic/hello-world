@@ -1,0 +1,42 @@
+{
+  "version": 1,
+  "kommentar": "Fischarten des See-Abenteuers. Die Fragen selbst kommen aus dem Grundwortschatz (inkl. eigener Wortlisten aus dem Elternbereich).",
+  "fische": [
+    {
+      "id": "rotfeder",
+      "name": "Rotfeder",
+      "anrede": "eine Rotfeder",
+      "fragen": 1,
+      "steigerung": ["leicht"],
+      "hinweis": "",
+      "info": "Die Rotfeder erkennst du an ihren roten Flossen. Sie frisst am liebsten Wasserpflanzen.",
+      "symbolGroesse": 14,
+      "bild": "bilder/rotfeder.jpg",
+      "zeichnung": "Rotfeder"
+    },
+    {
+      "id": "zander",
+      "name": "Zander",
+      "anrede": "ein ZANDER",
+      "fragen": 2,
+      "steigerung": ["leicht", "schwer"],
+      "hinweis": "Er ist stark – du brauchst 2 richtige Antworten!",
+      "info": "Der Zander jagt in der Dämmerung. Seine Rückenflosse hat stachlige Strahlen.",
+      "symbolGroesse": 19,
+      "bild": "bilder/zander.jpg",
+      "zeichnung": "Zander"
+    },
+    {
+      "id": "hecht",
+      "name": "Hecht",
+      "anrede": "ein RIESIGER HECHT",
+      "fragen": 3,
+      "steigerung": ["leicht", "schwer", "schwer"],
+      "hinweis": "Der Riese braucht 3 richtige Antworten!",
+      "info": "Der Hecht lauert zwischen Wasserpflanzen und schnappt blitzschnell zu – er kann über einen Meter lang werden!",
+      "symbolGroesse": 25,
+      "bild": "bilder/hecht.jpg",
+      "zeichnung": "Hecht"
+    }
+  ]
+}
