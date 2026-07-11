@@ -20,6 +20,7 @@ function fail(msg) { console.error("❌ " + msg); process.exit(1); }
 const fische = JSON.parse(fs.readFileSync(path.join(DATA, "fische.json"), "utf8"));
 const welten = JSON.parse(fs.readFileSync(path.join(DATA, "welten.json"), "utf8"));
 const tennis = JSON.parse(fs.readFileSync(path.join(DATA, "tennis.json"), "utf8"));
+const fussball = JSON.parse(fs.readFileSync(path.join(DATA, "fussball.json"), "utf8"));
 
 // ---------- Validierung ----------
 const ids = new Set();
@@ -47,29 +48,33 @@ for (const w of welten.welten) {
   if (w.hintergrund && !fs.existsSync(path.join(DATA, w.hintergrund)))
     fail(w.id + ": hintergrund-Datei fehlt: " + w.hintergrund);
 }
-// Tennis: Gegner, Fun Facts und die 12 Mentaltrainer-Situationen
-const MENTAL_PFLICHT = ["training", "match", "fehler", "fehlerserie", "nervositaet",
-  "fuehrung", "rueckstand", "tiebreak", "aufschlag", "return", "seitenwechsel", "lob"];
-const gids = new Set();
-for (const g of tennis.gegner) {
-  if (gids.has(g.id)) fail("Gegner-id doppelt: " + g.id);
-  gids.add(g.id);
-  if (!(g.staerke >= 1 && g.staerke <= 3)) fail(g.id + ": staerke muss 1–3 sein");
-  if (!g.name || !g.emoji || !g.spruch) fail(g.id + ": name/emoji/spruch fehlt");
+// Match-Spiele (Tennis/Fußball): Gegner, Fun Facts und die 12 Mentaltrainer-Situationen
+function pruefeMatchSpiel(name, daten, mentalPflicht) {
+  const gids = new Set();
+  for (const g of daten.gegner) {
+    if (gids.has(g.id)) fail(name + ": Gegner-id doppelt: " + g.id);
+    gids.add(g.id);
+    if (!(g.staerke >= 1 && g.staerke <= 3)) fail(name + "/" + g.id + ": staerke muss 1–3 sein");
+    if (!g.name || !g.emoji || !g.spruch) fail(name + "/" + g.id + ": name/emoji/spruch fehlt");
+  }
+  if (daten.gegner.length < 3) fail(name + ": mindestens 3 Gegner nötig");
+  if (!Array.isArray(daten.fakten) || daten.fakten.length < 5) fail(name + ": mindestens 5 Fun Facts nötig");
+  daten.fakten.forEach((f, i) => { if (!f.begriff || !f.text) fail(name + ": Fakt " + i + " braucht begriff+text"); });
+  for (const id of mentalPflicht) {
+    const m = daten.mental.find(x => x.id === id);
+    if (!m) fail(name + ": Mentaltrainer-Situation fehlt: " + id);
+    for (const feld of ["titel", "emoji", "trainieren", "mission", "mut", "punkt", "schluss"])
+      if (!m[feld]) fail(name + "/" + id + ": Feld fehlt: " + feld);
+    const woerter = [m.trainieren, m.mission, m.mut, m.punkt, m.schluss].join(" ").split(/\s+/).length;
+    if (woerter > 150) fail(name + "/" + id + ": zu lang (" + woerter + " Wörter, max. 150)");
+  }
+  console.log("✅ " + name + " gültig · " + daten.gegner.length + " Gegner · " + daten.fakten.length + " Fun Facts · " + daten.mental.length + " Mentaltrainer-Karten");
 }
-if (tennis.gegner.length < 3) fail("tennis: mindestens 3 Gegner nötig");
-if (!Array.isArray(tennis.fakten) || tennis.fakten.length < 5) fail("tennis: mindestens 5 Fun Facts nötig");
-tennis.fakten.forEach((f, i) => { if (!f.begriff || !f.text) fail("tennis: Fakt " + i + " braucht begriff+text"); });
-for (const id of MENTAL_PFLICHT) {
-  const m = tennis.mental.find(x => x.id === id);
-  if (!m) fail("tennis: Mentaltrainer-Situation fehlt: " + id);
-  for (const feld of ["titel", "emoji", "trainieren", "mission", "mut", "punkt", "schluss"])
-    if (!m[feld]) fail("tennis/" + id + ": Feld fehlt: " + feld);
-  const woerter = [m.trainieren, m.mission, m.mut, m.punkt, m.schluss].join(" ").split(/\s+/).length;
-  if (woerter > 150) fail("tennis/" + id + ": zu lang (" + woerter + " Wörter, max. 150)");
-}
+pruefeMatchSpiel("tennis", tennis, ["training", "match", "fehler", "fehlerserie", "nervositaet",
+  "fuehrung", "rueckstand", "tiebreak", "aufschlag", "return", "seitenwechsel", "lob"]);
+pruefeMatchSpiel("fussball", fussball, ["training", "match", "fehler", "fehlerserie", "nervositaet",
+  "fuehrung", "rueckstand", "elfmeter", "torschuss", "abwehr", "halbzeit", "lob"]);
 console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + welten.welten[0].spots.length + " Spots · Besatz-Pool: " + welten.welten[0].besatz.length + " Fische (pro Runde wird je Spot ein Fisch gezogen)");
-console.log("✅ Tennis gültig · " + tennis.gegner.length + " Gegner · " + tennis.fakten.length + " Fun Facts · " + tennis.mental.length + " Mentaltrainer-Karten");
 
 // ---------- Bilder einbetten (optional, verkleinert über Chromium) ----------
 (async () => {
@@ -108,7 +113,10 @@ console.log("✅ Tennis gültig · " + tennis.gegner.length + " Gegner · " + te
   }
 
   // ---------- In index.html einsetzen ----------
-  const daten = { fische: fische.fische, welten: welten.welten, tennis: { gegner: tennis.gegner, fakten: tennis.fakten, mental: tennis.mental }, bilder: bilder };
+  const daten = { fische: fische.fische, welten: welten.welten,
+    tennis: { gegner: tennis.gegner, fakten: tennis.fakten, mental: tennis.mental },
+    fussball: { gegner: fussball.gegner, fakten: fussball.fakten, mental: fussball.mental },
+    bilder: bilder };
   const block = MARK_A + "\nconst SPIEL_DATEN = " + JSON.stringify(daten) + ";\n" + MARK_B;
   let html = fs.readFileSync(INDEX, "utf8");
   const a = html.indexOf(MARK_A), bEnd = html.indexOf(MARK_B);
