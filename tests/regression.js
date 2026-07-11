@@ -349,7 +349,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.waitForFunction(() => { const w = document.getElementById("tennisWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
   await page.waitForTimeout(1600);
   const fbT = await page.locator("#tennisfb").textContent();
-  check("Fehler: Lösung + Mentaltrainer bleiben stehen", fbT.includes("richtig wäre") && fbT.includes("Mentaltrainer"));
+  check("Fehler: Lösung + Mutmacher bleiben stehen", fbT.includes("richtig wäre") && fbT.includes("Mutmacher"));
   check("Fehler = Punkt für den Gegner", await page.evaluate(() => tennis.ihm === 1 && tennis.mir === 0));
   await page.locator("#tennisWeiter").click(); await page.waitForTimeout(100);
   // Match durchspielen: ab jetzt immer richtig antworten
@@ -372,7 +372,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     if (ph === "spielende") {
       seitenwechsel++;
       if (seitenwechsel === 1) { const txt = await page.locator("#tennisHost").textContent();
-        check("Seitenwechsel: Tennis-Wissen + Mentaltrainer", txt.includes("Tennis-Wissen") && txt.includes("Mentaltrainer")); }
+        check("Seitenwechsel: Tennis-Wissen + Mutmacher", txt.includes("Tennis-Wissen") && txt.includes("Mutmacher")); }
       await page.locator("#tennisWeiter").click(); await page.waitForTimeout(90); continue;
     }
     if (ph === "ende") break;
@@ -387,7 +387,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   const tm = tres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
   check("Tennis: Auswertung mit Ball-Bilanz", tm[1] === String(bilanzT.wins) && tm[2] === String(bilanzT.balls),
     tm[1] + "/" + tm[2] + " (erwartet " + bilanzT.wins + "/" + bilanzT.balls + ")");
-  await page.locator("#bottomNav >> text=Mental").first().click(); await page.waitForTimeout(140);
+  await page.locator("#bottomNav >> text=Mutmacher").first().click(); await page.waitForTimeout(140);
   check("Mental-Tab: alle 12 Karten zum Nachlesen", (await page.locator("#moduleContent .mental-card").count()) === 12);
 
   // ---------- 7c) Fußball-Match (Grundwortschatz + Mentaltrainer) ----------
@@ -412,7 +412,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.waitForFunction(() => { const w = document.getElementById("fbWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
   await page.waitForTimeout(1600);
   const fbF = await page.locator("#fbfb").textContent();
-  check("Fehlschuss: Lösung + Mentaltrainer bleiben stehen", fbF.includes("richtig wäre") && fbF.includes("Mentaltrainer"));
+  check("Fehlschuss: Lösung + Mutmacher bleiben stehen", fbF.includes("richtig wäre") && fbF.includes("Mutmacher"));
   check("Fehlschuss = Konter-Tor für den Gegner", await page.evaluate(() => fussball.ihm === 1 && fussball.mir === 0));
   await page.locator("#fbWeiter").click(); await page.waitForTimeout(100);
   // Match durchspielen: ab jetzt immer richtig antworten
@@ -434,7 +434,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     }
     if (ph === "halbzeit") {
       const txt = await page.locator("#fbHost").textContent();
-      check("Halbzeit: Fußball-Wissen + Mentaltrainer", txt.includes("Fußball-Wissen") && txt.includes("Mentaltrainer"));
+      check("Halbzeit: Fußball-Wissen + Mutmacher", txt.includes("Fußball-Wissen") && txt.includes("Mutmacher"));
       await page.locator("#fbWeiter").click(); await page.waitForTimeout(90); continue;
     }
     if (ph === "ende") break;
@@ -449,7 +449,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   const fbm = fres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
   check("Fußball: Auswertung mit Ball-Bilanz", fbm[1] === String(bilanzF.wins) && fbm[2] === String(bilanzF.balls),
     fbm[1] + "/" + fbm[2] + " (erwartet " + bilanzF.wins + "/" + bilanzF.balls + ")");
-  await page.locator("#bottomNav >> text=Mental").first().click(); await page.waitForTimeout(140);
+  await page.locator("#bottomNav >> text=Mutmacher").first().click(); await page.waitForTimeout(140);
   check("Mental-Tab: alle 12 Fußball-Karten", (await page.locator("#moduleContent .mental-card").count()) === 12);
 
   // ---------- 7d) Elternbereich: Spiele an/aus + Time-Boxing ----------

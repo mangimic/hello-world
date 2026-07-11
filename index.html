@@ -368,8 +368,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.29.0";
+const APP_VERSION = "1.30.0";
 const RELEASE_NOTES = [
+  {v:"1.30.0", datum:"11.07.2026", punkte:[
+    "🦁 Der Mentaltrainer heißt jetzt kindgerecht „Mutmacher“ – überall in Tennis- und Fußball-Match, auf allen Karten und im eigenen Tab „Mutmacher“.",
+  ]},
   {v:"1.29.0", datum:"11.07.2026", punkte:[
     "⚽ Neues Spiel „Fußball-Match“: 2 Halbzeiten mit je 5 Torchancen – richtiges Grundwortschatz-Wort = Tor, falsches = Konter! Bei Gleichstand entscheidet ein Elfmeter. Mit eigenem Fußball-Mentaltrainer (12 Karten) und recherchiertem Fußball-Wissen.",
     "⏰ Time-Boxing: Die tägliche Lernzeit ist jetzt begrenzt (Standard 20 Minuten, im Elternbereich einstellbar von 10–60 Minuten oder aus). Ist die Zeit um, kommt ein freundlicher Stopp-Bildschirm – Eltern können den Tag jederzeit wieder freigeben.",
@@ -4484,7 +4487,7 @@ function tennisMental(id){ return (SpielRepo.tennis().mental||[]).find(m=>m.id==
 function tennisMentalHTML(id){
   const m=tennisMental(id); if(!m) return "";
   return `<div class="mental-card" data-mental="${m.id}">
-    <div class="mental-kopf">🧠 Mentaltrainer · ${m.emoji} ${m.titel}</div>
+    <div class="mental-kopf">🦁 Mutmacher · ${m.emoji} ${m.titel}</div>
     <p>⭐ <b>Heute trainieren wir:</b><br>${m.trainieren}</p>
     <p>🎯 <b>Deine Mission:</b><br>${m.mission}</p>
     <p>💬 <b>Dein Mut-Satz:</b><br>„${m.mut}“</p>
@@ -4494,7 +4497,7 @@ function tennisMentalHTML(id){
 }
 function tennisMentalKompakt(id){
   const m=tennisMental(id); if(!m) return "";
-  return `<div class="feedback tip">🧠 <b>Mentaltrainer:</b> „${m.mut}“ – ${m.punkt}</div>`;
+  return `<div class="feedback tip">🦁 <b>Mutmacher:</b> „${m.mut}“ – ${m.punkt}</div>`;
 }
 function tennisMentalText(id){
   const m=tennisMental(id); if(!m) return "";
@@ -4707,7 +4710,7 @@ function tennisMentalSeite(c){
   const M=SpielRepo.tennis().mental||[];
   c.innerHTML=`
     <div class="card">
-      <h2 style="margin:0 0 6px;">🧠 Dein Tennis-Mentaltrainer</h2>
+      <h2 style="margin:0 0 6px;">🦁 Dein Tennis-Mutmacher</h2>
       <p class="muted">So sprichst du mit dir selbst wie ein Profi: kurze Sätze, kleine Rituale, viel Mut.
         Such dir die Situation aus, die zu dir passt – du kannst dir jede Karte auch vorlesen lassen.</p>
       <div class="hint">Dein Ritual vor jedem Punkt: <b>tief einatmen · Schläger locker halten · Ziel überlegen · „Los geht's!“</b><br>
@@ -4731,7 +4734,7 @@ function fbMental(id){ return (SpielRepo.fussball().mental||[]).find(m=>m.id===i
 function fbMentalHTML(id){
   const m=fbMental(id); if(!m) return "";
   return `<div class="mental-card" data-mental="${m.id}">
-    <div class="mental-kopf">🧠 Mentaltrainer · ${m.emoji} ${m.titel}</div>
+    <div class="mental-kopf">🦁 Mutmacher · ${m.emoji} ${m.titel}</div>
     <p>⭐ <b>Heute trainieren wir:</b><br>${m.trainieren}</p>
     <p>🎯 <b>Deine Mission:</b><br>${m.mission}</p>
     <p>💬 <b>Dein Mut-Satz:</b><br>„${m.mut}“</p>
@@ -4741,7 +4744,7 @@ function fbMentalHTML(id){
 }
 function fbMentalKompakt(id){
   const m=fbMental(id); if(!m) return "";
-  return `<div class="feedback tip">🧠 <b>Mentaltrainer:</b> „${m.mut}“ – ${m.punkt}</div>`;
+  return `<div class="feedback tip">🦁 <b>Mutmacher:</b> „${m.mut}“ – ${m.punkt}</div>`;
 }
 function fbMentalText(id){
   const m=fbMental(id); if(!m) return "";
@@ -4948,7 +4951,7 @@ function fbMentalSeite(c){
   const M=SpielRepo.fussball().mental||[];
   c.innerHTML=`
     <div class="card">
-      <h2 style="margin:0 0 6px;">🧠 Dein Fußball-Mentaltrainer</h2>
+      <h2 style="margin:0 0 6px;">🦁 Dein Fußball-Mutmacher</h2>
       <p class="muted">So sprichst du mit dir selbst wie ein Profi: kurze Sätze, kleine Rituale, viel Mut.
         Such dir die Situation aus, die zu dir passt – du kannst dir jede Karte auch vorlesen lassen.</p>
       <div class="hint">Dein Ritual vor jedem Ball: <b>tief einatmen · locker hüpfen · Ziel überlegen · „Los geht's!“</b><br>
@@ -5379,14 +5382,14 @@ const MODULES = {
     id:"tennis", name:"Tennis-Match", emoji:"🎾",
     sections:[
       {id:"match",  icon:"🎾", label:"Match",  render:tennisRender},
-      {id:"mental", icon:"🧠", label:"Mental", render:tennisMentalSeite}
+      {id:"mental", icon:"🦁", label:"Mutmacher", render:tennisMentalSeite}
     ]
   },
   fussball:{
     id:"fussball", name:"Fußball-Match", emoji:"⚽",
     sections:[
       {id:"match",  icon:"⚽", label:"Match",  render:fbRender},
-      {id:"mental", icon:"🧠", label:"Mental", render:fbMentalSeite}
+      {id:"mental", icon:"🦁", label:"Mutmacher", render:fbMentalSeite}
     ]
   }
 };
