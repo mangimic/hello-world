@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "kommentar": "Fischarten des See-Abenteuers. Die Fragen selbst kommen aus dem Grundwortschatz (inkl. eigener Wortlisten aus dem Elternbereich).",
+  "version": 2,
+  "kommentar": "Fischarten des See-Abenteuers – nur Süßwasserfische aus heimischen Schwarzwald-Gewässern (Titisee, Schluchsee, Angelteiche, Schwarzwaldbäche). Recherche-Quellen: hochschwarzwald.de, schwarzwald-tourismus.info, blinker.de. Die Fragen selbst kommen aus dem Grundwortschatz (inkl. eigener Wortlisten aus dem Elternbereich).",
   "fische": [
     {
       "id": "rotfeder",
@@ -9,10 +9,46 @@
       "fragen": 1,
       "steigerung": ["leicht"],
       "hinweis": "",
-      "info": "Die Rotfeder erkennst du an ihren roten Flossen. Sie frisst am liebsten Wasserpflanzen.",
+      "info": "Die Rotfeder erkennst du an ihren roten Flossen. Sie frisst am liebsten Wasserpflanzen und lebt auch im Titisee.",
       "symbolGroesse": 14,
       "bild": "bilder/rotfeder.jpg",
       "zeichnung": "Rotfeder"
+    },
+    {
+      "id": "barsch",
+      "name": "Flussbarsch",
+      "anrede": "ein Flussbarsch",
+      "fragen": 1,
+      "steigerung": ["leicht"],
+      "hinweis": "",
+      "info": "Der Barsch trägt dunkle Querstreifen und eine stachelige Rückenflosse. Er schwimmt im Titisee und im Schluchsee.",
+      "symbolGroesse": 15,
+      "bild": "bilder/barsch.jpg",
+      "zeichnung": "Barsch"
+    },
+    {
+      "id": "bachforelle",
+      "name": "Bachforelle",
+      "anrede": "eine BACHFORELLE",
+      "fragen": 2,
+      "steigerung": ["leicht", "schwer"],
+      "hinweis": "Sie ist flink – du brauchst 2 richtige Antworten!",
+      "info": "Die Bachforelle ist DER Fisch der Schwarzwaldbäche. Du erkennst sie an leuchtend roten Tupfen mit hellem Rand.",
+      "symbolGroesse": 17,
+      "bild": "bilder/bachforelle.jpg",
+      "zeichnung": "Bachforelle"
+    },
+    {
+      "id": "schleie",
+      "name": "Schleie",
+      "anrede": "eine SCHLEIE",
+      "fragen": 2,
+      "steigerung": ["leicht", "schwer"],
+      "hinweis": "Sie ist glitschig – du brauchst 2 richtige Antworten!",
+      "info": "Die Schleie fühlt sich glitschig an, weil eine Schleimschicht ihre Haut schützt. Sie gründelt am Boden ruhiger Teiche.",
+      "symbolGroesse": 17,
+      "bild": "bilder/schleie.jpg",
+      "zeichnung": "Schleie"
     },
     {
       "id": "zander",
@@ -21,10 +57,34 @@
       "fragen": 2,
       "steigerung": ["leicht", "schwer"],
       "hinweis": "Er ist stark – du brauchst 2 richtige Antworten!",
-      "info": "Der Zander jagt in der Dämmerung. Seine Rückenflosse hat stachlige Strahlen.",
+      "info": "Der Zander jagt in der Dämmerung – im Schluchsee ist er der Star unter den Anglern. Seine Rückenflosse hat stachlige Strahlen.",
       "symbolGroesse": 19,
       "bild": "bilder/zander.jpg",
       "zeichnung": "Zander"
+    },
+    {
+      "id": "aal",
+      "name": "Aal",
+      "anrede": "ein AAL",
+      "fragen": 2,
+      "steigerung": ["schwer", "schwer"],
+      "hinweis": "Er schlängelt sich – du brauchst 2 richtige Antworten!",
+      "info": "Der Aal sieht aus wie eine Schlange. Zum Laichen wandert er tausende Kilometer weit – bis in die Sargassosee im Atlantik!",
+      "symbolGroesse": 18,
+      "bild": "bilder/aal.jpg",
+      "zeichnung": "Aal"
+    },
+    {
+      "id": "karpfen",
+      "name": "Karpfen",
+      "anrede": "ein DICKER KARPFEN",
+      "fragen": 2,
+      "steigerung": ["schwer", "schwer"],
+      "hinweis": "Der Brocken ist schwer – du brauchst 2 richtige Antworten!",
+      "info": "Der Karpfen hat vier Barteln am Maul. Damit ertastet er sein Futter am Grund – er kann über 20 Kilo schwer werden.",
+      "symbolGroesse": 21,
+      "bild": "bilder/karpfen.jpg",
+      "zeichnung": "Karpfen"
     },
     {
       "id": "hecht",
