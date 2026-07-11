@@ -210,6 +210,10 @@ button.chip.on{background:var(--primary); color:#fff;}
   background:var(--soft); border-radius:999px; padding:2px 8px;}
 .lvl-row{margin:4px 0 2px;}
 
+/* Kinder-Illustrationen auf den Erklär-Seiten */
+.illu{text-align:center; margin:2px 0 8px;}
+.illu svg{width:min(230px,72%); height:auto; display:inline-block;}
+
 /* Zurück-Button + Elternbereich */
 .back-btn{background:none; border:none; color:var(--primary-dark); font-size:16px; font-weight:800;
   padding:6px 2px 2px; margin:0 0 4px; min-height:auto; cursor:pointer; text-align:left;}
@@ -329,8 +333,10 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.20.0";
+const APP_VERSION = "1.21.0";
 const RELEASE_NOTES = [
+  {v:"1.21.0", datum:"10.07.2026", punkte:[
+    "<b>Kindgerechte Skizzen-Illustrationen</b> auf allen 13 Erklär-Seiten – z. B. Lupe für das Subjekt, Zeitstrahl für die Zeitformen, Buchstaben-Zwillinge für doppelte Mitlaute"]},
   {v:"1.20.0", datum:"10.07.2026", punkte:[
     "Neuer Bereich <b>„Was ist neu?“</b> mit allen Änderungen",
     "<b>Versionsnummern</b> eingeführt – sichtbar unten auf der Startseite"]},
@@ -374,6 +380,138 @@ const RELEASE_NOTES = [
     "Druckbare Arbeitsblätter, Blumentopf-Selbstcheck, sofortiges Feedback",
     "Installierbar als App (PWA), funktioniert offline"]}
 ];
+
+/* ============================================================
+   KINDER-ILLUSTRATIONEN (Skizzen-Stil)
+   Kleine handgemalte SVG-Szenen für die Erklär-Seiten.
+   Gleiche Formsprache wie der Blumentopf: einfache Formen,
+   weiche Farben, runde Striche, freundliche Gesichter.
+   ============================================================ */
+function illuFace(x,y,r,fill){ return `
+  <circle cx="${x}" cy="${y}" r="${r}" fill="${fill||"#ffd9a8"}" stroke="#c98d4b" stroke-width="1.6"/>
+  <circle cx="${x-r*0.35}" cy="${y-r*0.15}" r="1.6" fill="#333"/>
+  <circle cx="${x+r*0.35}" cy="${y-r*0.15}" r="1.6" fill="#333"/>
+  <path d="M ${x-r*0.4} ${y+r*0.3} Q ${x} ${y+r*0.65} ${x+r*0.4} ${y+r*0.3}" stroke="#333" stroke-width="1.6" fill="none" stroke-linecap="round"/>`; }
+function illuCard(x,y,w,h,fill,stroke,text,tsize){ return `
+  <rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="${fill}" stroke="${stroke}" stroke-width="2" transform="rotate(-2 ${x+w/2} ${y+h/2})"/>
+  <text x="${x+w/2}" y="${y+h/2+ (tsize||13)*0.35}" font-size="${tsize||13}" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif" transform="rotate(-2 ${x+w/2} ${y+h/2})">${text}</text>`; }
+const ILLU = {
+  subjekt: () => `
+    ${illuFace(38,42,15)}
+    <rect x="26" y="57" width="24" height="26" rx="8" fill="#7ea8e0" stroke="#4a7fd6" stroke-width="1.6"/>
+    <circle cx="98" cy="52" r="21" fill="#eaf2ff" stroke="#4a7fd6" stroke-width="4"/>
+    <line x1="113" y1="68" x2="132" y2="88" stroke="#4a7fd6" stroke-width="7" stroke-linecap="round"/>
+    ${illuCard(78,42,42,20,"#dcecff","#4a7fd6","Wer?",13)}
+    ${illuCard(134,30,60,22,"#fff3c9","#e0b23e","der Hund",10.5)}
+    <text x="152" y="80" font-size="20" font-family="system-ui">🐕</text>`,
+  praedikat: () => `
+    ${illuFace(120,30,13)}
+    <line x1="120" y1="43" x2="118" y2="66" stroke="#c98d4b" stroke-width="5" stroke-linecap="round"/>
+    <line x1="118" y1="66" x2="100" y2="86" stroke="#c98d4b" stroke-width="5" stroke-linecap="round"/>
+    <line x1="118" y1="66" x2="136" y2="84" stroke="#c98d4b" stroke-width="5" stroke-linecap="round"/>
+    <line x1="119" y1="50" x2="100" y2="58" stroke="#c98d4b" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="119" y1="50" x2="139" y2="44" stroke="#c98d4b" stroke-width="4.5" stroke-linecap="round"/>
+    <line x1="70" y1="45" x2="88" y2="45" stroke="#e46a5a" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="62" y1="56" x2="84" y2="56" stroke="#e46a5a" stroke-width="3.5" stroke-linecap="round"/>
+    <line x1="70" y1="67" x2="90" y2="67" stroke="#e46a5a" stroke-width="3.5" stroke-linecap="round"/>
+    ${illuCard(140,60,54,22,"#ffe0da","#e46a5a","rennt!",13)}`,
+  satzglieder: () => `
+    <path d="M30 40 h38 a8 8 0 0 1 8 8 v0 a8 8 0 0 0 8 8 a8 8 0 0 0 8-8 v0 a8 8 0 0 1 8-8 h6 v40 h-76 z" fill="#a8c8f0" stroke="#4a7fd6" stroke-width="2.5" stroke-linejoin="round"/>
+    <path d="M108 40 h60 v40 h-60 z" fill="#f4b1a6" stroke="#e46a5a" stroke-width="2.5" stroke-linejoin="round"/>
+    <text x="66" y="66" font-size="12" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">Wer?</text>
+    <text x="138" y="66" font-size="12" font-weight="bold" text-anchor="middle" fill="#8c3327" font-family="system-ui,sans-serif">tut was?</text>
+    <text x="94" y="30" font-size="17" text-anchor="middle" font-family="system-ui">🧩</text>`,
+  rede: () => `
+    ${illuFace(38,66,15)}
+    <path d="M62 20 h96 a10 10 0 0 1 10 10 v22 a10 10 0 0 1 -10 10 h-66 l-16 16 v-16 h-14 a10 10 0 0 1 -10-10 v-22 a10 10 0 0 1 10-10 z" fill="#fff" stroke="#8f6ad1" stroke-width="2.5"/>
+    <text x="78" y="52" font-size="20" font-weight="bold" fill="#8f6ad1" font-family="system-ui,sans-serif">„</text>
+    <text x="142" y="46" font-size="20" font-weight="bold" fill="#8f6ad1" font-family="system-ui,sans-serif">“</text>
+    <text x="112" y="48" font-size="12" font-weight="bold" text-anchor="middle" fill="#5b4394" font-family="system-ui,sans-serif">Hallo!</text>`,
+  zeit: () => `
+    <line x1="20" y1="78" x2="180" y2="78" stroke="#4a7fd6" stroke-width="3.5" stroke-linecap="round"/>
+    <path d="M180 78 l-9 -5 v10 z" fill="#4a7fd6"/>
+    <circle cx="50" cy="50" r="12" fill="#cfd8ea" stroke="#8a97b5" stroke-width="2"/>
+    <path d="M52 41 a10 10 0 1 0 8 14 a8 8 0 0 1 -8 -14" fill="#8a97b5"/>
+    <circle cx="104" cy="46" r="13" fill="#ffd94d" stroke="#e0b23e" stroke-width="2"/>
+    ${[0,45,90,135,180,225,270,315].map(a=>`<line x1="${104+Math.cos(a*Math.PI/180)*17}" y1="${46+Math.sin(a*Math.PI/180)*17}" x2="${104+Math.cos(a*Math.PI/180)*21}" y2="${46+Math.sin(a*Math.PI/180)*21}" stroke="#e0b23e" stroke-width="2.5" stroke-linecap="round"/>`).join("")}
+    <text x="158" y="55" font-size="20" text-anchor="middle" font-family="system-ui">🌅</text>
+    <text x="50" y="98" font-size="10.5" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">früher</text>
+    <text x="104" y="98" font-size="10.5" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">jetzt</text>
+    <text x="158" y="98" font-size="10.5" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">später</text>`,
+  grossklein: () => `
+    <path d="M52 24 l6 -8 l6 8 l9 -5 l1 10 l10 1 l-5 9 l8 6 l-8 6 l5 9 l-10 1 l-1 10 l-9 -5 l-6 8 l-6 -8 l-9 5 l-1 -10 l-10 -1 l5 -9 l-8 -6 l8 -6 l-5 -9 l10 -1 l1 -10 z" fill="#ffd94d" stroke="#e0b23e" stroke-width="2" transform="translate(8,4) scale(0.62)"/>
+    <text x="62" y="76" font-size="52" font-weight="bold" text-anchor="middle" fill="#4a7fd6" font-family="system-ui,sans-serif">N</text>
+    <path d="M44 30 l7 10 l11 -14 l11 14 l7 -10 l-3 16 h-30 z" fill="#ffd94d" stroke="#e0b23e" stroke-width="2" stroke-linejoin="round"/>
+    <text x="128" y="76" font-size="34" font-weight="bold" text-anchor="middle" fill="#9db3d4" font-family="system-ui,sans-serif">v</text>
+    <text x="163" y="76" font-size="34" font-weight="bold" text-anchor="middle" fill="#9db3d4" font-family="system-ui,sans-serif">a</text>
+    <text x="146" y="94" font-size="10.5" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">klein</text>
+    <text x="62" y="94" font-size="10.5" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">Nomen groß 👑</text>`,
+  dassdas: () => `
+    <rect x="94" y="34" width="7" height="58" rx="3" fill="#c98d4b" stroke="#9a6633" stroke-width="1.5"/>
+    <path d="M60 34 h34 v18 h-34 l-10 -9 z" fill="#a8d8b9" stroke="#3f9d54" stroke-width="2"/>
+    <text x="72" y="47" font-size="12" font-weight="bold" text-anchor="middle" fill="#206030" font-family="system-ui,sans-serif">das</text>
+    <path d="M101 56 h36 l10 9 l-10 9 h-36 z" fill="#f4b1a6" stroke="#e46a5a" stroke-width="2"/>
+    <text x="122" y="69" font-size="12" font-weight="bold" text-anchor="middle" fill="#8c3327" font-family="system-ui,sans-serif">dass</text>
+    <ellipse cx="97" cy="96" rx="26" ry="5" fill="#d6e4cf"/>
+    <text x="97" y="24" font-size="16" text-anchor="middle" font-family="system-ui">🤔</text>`,
+  wortarten: () => `
+    <rect x="18" y="40" width="50" height="44" rx="8" fill="#dcecff" stroke="#4a7fd6" stroke-width="2.2"/>
+    <text x="43" y="66" font-size="18" text-anchor="middle" font-family="system-ui">🏠</text>
+    <text x="43" y="80" font-size="9.5" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">Nomen</text>
+    <rect x="75" y="40" width="50" height="44" rx="8" fill="#ffe9d6" stroke="#f0872f" stroke-width="2.2"/>
+    <text x="100" y="66" font-size="18" text-anchor="middle" font-family="system-ui">🏃</text>
+    <text x="100" y="80" font-size="9.5" font-weight="bold" text-anchor="middle" fill="#8c4a12" font-family="system-ui,sans-serif">Verb</text>
+    <rect x="132" y="40" width="50" height="44" rx="8" fill="#e9ddf7" stroke="#8f6ad1" stroke-width="2.2"/>
+    <text x="157" y="66" font-size="18" text-anchor="middle" font-family="system-ui">🌈</text>
+    <text x="157" y="80" font-size="9.5" font-weight="bold" text-anchor="middle" fill="#5b4394" font-family="system-ui,sans-serif">Adjektiv</text>
+    <text x="100" y="28" font-size="12" font-weight="bold" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">Wörter sortieren</text>`,
+  faelle: () => `
+    ${[0,1,2,3].map(i=>`
+      <rect x="${20+i*42}" y="38" width="34" height="48" rx="6" fill="${["#dcecff","#e9f7e4","#fff3c9","#ffe0da"][i]}" stroke="${["#4a7fd6","#3f9d54","#e0b23e","#e46a5a"][i]}" stroke-width="2.2" transform="rotate(${i%2? "2":"-2"} ${37+i*42} 62)"/>
+      <text x="${37+i*42}" y="60" font-size="16" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif" transform="rotate(${i%2? "2":"-2"} ${37+i*42} 62)">${i+1}</text>
+      <text x="${37+i*42}" y="76" font-size="8.5" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif" transform="rotate(${i%2? "2":"-2"} ${37+i*42} 62)">${["Wer?","Wessen?","Wem?","Wen?"][i]}</text>`).join("")}
+    <text x="100" y="26" font-size="12" font-weight="bold" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">4 Frage-Karten</text>`,
+  doppel: () => `
+    ${["S","o","n","n","e"].map((ch,i)=>`
+      <rect x="${28+i*30}" y="42" width="26" height="30" rx="6" fill="${i===2||i===3?"#ffd94d":"#dcecff"}" stroke="${i===2||i===3?"#e0b23e":"#4a7fd6"}" stroke-width="2" transform="rotate(${i%2?"2.5":"-2.5"} ${41+i*30} 57)"/>
+      <text x="${41+i*30}" y="64" font-size="17" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif" transform="rotate(${i%2?"2.5":"-2.5"} ${41+i*30} 57)">${ch}</text>`).join("")}
+    <path d="M 101 38 Q 116 26 131 38" stroke="#e0b23e" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <text x="116" y="22" font-size="10.5" font-weight="bold" text-anchor="middle" fill="#8c6a12" font-family="system-ui,sans-serif">Zwillinge!</text>
+    <path d="M 64 82 Q 71 90 78 82" stroke="#e46a5a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <text x="71" y="102" font-size="10" text-anchor="middle" fill="#8c3327" font-family="system-ui,sans-serif">kurzes o</text>`,
+  gws: () => `
+    <path d="M50 58 h100 v34 a6 6 0 0 1 -6 6 h-88 a6 6 0 0 1 -6 -6 z" fill="#c98d4b" stroke="#9a6633" stroke-width="2.5"/>
+    <path d="M50 58 a50 22 0 0 1 100 0 z" fill="#d9a869" stroke="#9a6633" stroke-width="2.5"/>
+    <rect x="93" y="52" width="14" height="14" rx="3" fill="#ffd94d" stroke="#e0b23e" stroke-width="2"/>
+    <text x="66" y="40" font-size="15" font-family="system-ui" transform="rotate(-12 66 40)">🅰️</text>
+    <text x="126" y="34" font-size="15" font-family="system-ui" transform="rotate(10 126 34)">🅱️</text>
+    <text x="98" y="24" font-size="14" font-family="system-ui">✨</text>
+    <text x="100" y="84" font-size="11" font-weight="bold" text-anchor="middle" fill="#fff" font-family="system-ui,sans-serif">Wort-Schatz</text>`,
+  vorgang: () => `
+    ${[0,1,2].map(i=>`
+      <circle cx="${40+i*60}" cy="52" r="17" fill="${["#dcecff","#e9f7e4","#fff3c9"][i]}" stroke="${["#4a7fd6","#3f9d54","#e0b23e"][i]}" stroke-width="2.5"/>
+      <text x="${40+i*60}" y="58" font-size="16" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">${i+1}</text>`).join("")}
+    <line x1="60" y1="52" x2="76" y2="52" stroke="#5b6b86" stroke-width="3" stroke-linecap="round"/>
+    <path d="M76 52 l-6 -4 v8 z" fill="#5b6b86"/>
+    <line x1="120" y1="52" x2="136" y2="52" stroke="#5b6b86" stroke-width="3" stroke-linecap="round"/>
+    <path d="M136 52 l-6 -4 v8 z" fill="#5b6b86"/>
+    <text x="100" y="92" font-size="11" font-weight="bold" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">Schritt für Schritt ✏️</text>`,
+  kompass: () => `
+    <circle cx="100" cy="56" r="34" fill="#eaf2ff" stroke="#4a7fd6" stroke-width="3"/>
+    <circle cx="100" cy="56" r="27" fill="#fff" stroke="#9db3d4" stroke-width="1.5"/>
+    <path d="M100 34 l7 22 l-7 22 l-7 -22 z" fill="#e46a5a"/>
+    <path d="M100 34 l7 22 h-14 z" fill="#f4b1a6"/>
+    <circle cx="100" cy="56" r="4" fill="#2b4a80"/>
+    <text x="100" y="18" font-size="11" font-weight="bold" text-anchor="middle" fill="#2b4a80" font-family="system-ui,sans-serif">N</text>
+    <text x="150" y="60" font-size="11" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">O</text>
+    <text x="100" y="103" font-size="11" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">S</text>
+    <text x="50" y="60" font-size="11" text-anchor="middle" fill="#5b6b86" font-family="system-ui,sans-serif">W</text>`
+};
+function illu(name){
+  const inner = ILLU[name] ? ILLU[name]() : "";
+  if(!inner) return "";
+  return `<div class="illu"><svg viewBox="0 0 200 110" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">${inner}</svg></div>`;
+}
 
 // Globale Themen (gelten für alle Satz-Übungen). Neues Thema = hier + in jedem *_THEMEN ergänzen.
 const THEMEN = [
@@ -901,6 +1039,7 @@ function vgBasics(c){
       </div></div>` : "";
   c.innerHTML = `
     <div class="card"><h2>📖 Grundlagen</h2>
+      ${illu("vorgang")}
       <p class="muted">Thema: <b>${r.name}</b>. Lies kurz mit, danach schreibst du auf Papier.</p></div>
     <div class="card"><h3>1) Verschiedene Satzanfänge</h3>
       <p>Beginne nicht jeden Satz gleich:</p>
@@ -1142,6 +1281,7 @@ function sjLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="subjThemes"></div></div>
     <div class="card"><h2>📖 Was ist das Subjekt?</h2>
+      ${illu("subjekt")}
       <p>Das <b>Subjekt</b> ist die Person oder Sache, <b>über die</b> im Satz etwas gesagt wird.
       In jedem Satz gibt es ein Subjekt.</p></div>
     <div class="card"><h3>Die Zauberfrage 🪄</h3>
@@ -1392,6 +1532,7 @@ function pjLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="praedThemes"></div></div>
     <div class="card"><h2>📖 Was ist das Prädikat?</h2>
+      ${illu("praedikat")}
       <p>Das <b>Prädikat</b> ist die <b>Satzaussage</b>. Es sagt, <b>was passiert</b> oder
       <b>was jemand tut</b>. Das Prädikat ist das <b>Tun-Wort</b> (Verb).</p></div>
     <div class="card"><h3>Die Frage 🪄</h3>
@@ -1578,6 +1719,7 @@ function sgLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="sgThemes"></div></div>
     <div class="card"><h2>📖 Subjekt + Prädikat</h2>
+      ${illu("satzglieder")}
       <p>Jeder Satz hat einen <b>Satzkern</b>: das <b>Subjekt</b> und das <b>Prädikat</b>.</p></div>
     <div class="card"><h3>Beispiel</h3>
       <div class="sentence-box"><span class="word sel">Der</span> <span class="word sel">Junge</span> <span class="word selp">spielt</span> mit dem Ball.</div>
@@ -1766,6 +1908,7 @@ function redeLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="redeThemes"></div></div>
     <div class="card"><h2>📖 Die wörtliche Rede</h2>
+      ${illu("rede")}
       <p>Was jemand <b>genau sagt</b>, kommt in <b>Anführungszeichen</b> „ … “.
       Davor steht der <b>Begleitsatz</b> mit einem <b>Doppelpunkt</b>.</p></div>
     <div class="card"><h3>Beispiel</h3>
@@ -1914,6 +2057,7 @@ function zeitLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="zeitThemes"></div></div>
     <div class="card"><h2>📖 Die vier Zeitformen</h2>
+      ${illu("zeit")}
       <div class="example-box">
         🟩 <b>Präsens</b> (jetzt): <i>ich spiele</i><br>
         🟦 <b>Präteritum</b> (früher): <i>ich spielte</i><br>
@@ -2057,6 +2201,7 @@ function gkLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="gkThemes"></div></div>
     <div class="card"><h2>📖 Groß oder klein?</h2>
+      ${illu("grossklein")}
       <p>Groß schreibt man:</p>
       <div class="example-box">🔠 das <b>erste Wort</b> im Satz<br>🔠 alle <b>Nomen</b> (Namenwörter: der/die/das davor)</div>
       <p class="muted">Alle anderen Wörter (Tun-Wörter, Wie-Wörter …) schreibt man klein.</p></div>
@@ -2191,6 +2336,7 @@ function ddLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="ddThemes"></div></div>
     <div class="card"><h2>📖 das oder dass?</h2>
+      ${illu("dassdas")}
       <p><b>das</b> (ein s) ist ein <b>Artikel</b> oder <b>Fürwort</b>: <i>das Boot</i>.<br>
       <b>dass</b> (zwei s) ist ein <b>Bindewort</b>: <i>Ich hoffe, dass …</i></p></div>
     <div class="card"><h3>Der Trick 🪄</h3>
@@ -2350,6 +2496,7 @@ function waLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="waThemes"></div></div>
     <div class="card"><h2>📖 Wortarten</h2>
+      ${illu("wortarten")}
       <div class="example-box">🏷️ <b>Nomen</b> (Namenwort): der/die/das davor – <i>der Hund</i><br>
       ⚡ <b>Verb</b> (Tun-Wort): was man tut – <i>rennen, spielen</i><br>
       🌈 <b>Adjektiv</b> (Wie-Wort): wie etwas ist – <i>schnell, groß</i></div></div>
@@ -2488,6 +2635,7 @@ function faelleLernen(c){
       <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
       <div class="choice-grid" id="faelleThemes"></div></div>
     <div class="card"><h2>📖 Die vier Fälle</h2>
+      ${illu("faelle")}
       <div class="example-box">
         1. <b>Nominativ</b> – Wer oder was? <i>der Hund</i><br>
         2. <b>Genitiv</b> – Wessen? <i>des Hundes</i><br>
@@ -2634,6 +2782,7 @@ function doppelLernen(c){
       <p class="muted">Mit welchen Wörtern möchtest du üben?</p>
       <div class="choice-grid" id="doppelThemes"></div></div>
     <div class="card"><h2>📖 Doppelte Mitlaute</h2>
+      ${illu("doppel")}
       <p>Nach einem <b>kurz gesprochenen Selbstlaut</b> folgt oft ein <b>doppelter Mitlaut</b>.</p>
       <div class="example-box">So<b>nn</b>e · Ba<b>ll</b> · Wa<b>ss</b>er · Mu<b>tt</b>er</div></div>
     <div class="card"><div class="hint">💡 Sprich das Wort langsam: Ist der Selbstlaut <b>kurz</b>? → oft doppelter Mitlaut.</div>
@@ -2967,6 +3116,7 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
 function komInfo(c){
   c.innerHTML = `
     <div class="card"><h2>🧭 Kompass 4 – Deutsch</h2>
+      ${illu("kompass")}
       <p>Der Kompass-4-Test prüft, was du in Deutsch kannst. Hier übst du genau diese Bereiche.</p></div>
     <div class="card"><h3>Das wird geprüft</h3>
       <div class="example-box">
@@ -3420,6 +3570,7 @@ function gwsInfo(c){
   }).join("");
   c.innerHTML=`
     <div class="card"><h2>📚 Grundwortschatz üben</h2>
+      ${illu("gws")}
       <p>Hier übst du <b>${total} Wörter</b> aus dem <b>amtlichen Grundwortschatz</b> für
       Baden-Württemberg (Kultusministerium, 2020) – geordnet nach Regeln.</p>
       <p class="muted">Jede Gruppe hat Stufen: Erst kommen die <b>leichten</b> Wörter (Klasse 1/2),
