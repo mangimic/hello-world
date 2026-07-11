@@ -219,6 +219,19 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Blatt zeigt Klassen-Abzeichen", ws.includes("Klasse 4"));
   check("Blatt nutzt Stufen-Wörter (K4 schwer)", ws.includes("Hahn") || ws.includes("Schwester"));
 
+  // ---------- 8b) Kinder-Illustrationen ----------
+  section("Kinder-Illustrationen");
+  await fresh();
+  check("alle Illustrationen rendern SVG", await page.evaluate(() => Object.keys(ILLU).every(k => illu(k).includes("<svg"))));
+  await setLevel(0);
+  for (const mod of ["Subjekte", "Kompass", "Grundwortschatz"]) {
+    await openMod(mod, null);
+    check(mod + ": Illustration auf Erklär-Seite", (await page.locator(".illu svg").count()) > 0);
+    await page.locator("#backBtn").click(); await page.waitForTimeout(80);
+  }
+  await openMod("Vorgang", "Üben");
+  check("Vorgangsbeschreibung: Illustration sichtbar", (await page.locator(".illu svg").count()) > 0);
+
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
   await fresh();
