@@ -250,14 +250,21 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Spielfeld mit See", (await page.locator("#spielFeld").count()) > 0);
   check("Steuerkreuz (4 Richtungen)", (await page.locator("#spielPad button").count()) === 4);
   check("Daten-Bereich eingebettet (SPIEL_DATEN + Repo)", await page.evaluate(() =>
-    typeof SPIEL_DATEN === "object" && SPIEL_DATEN.fische.length >= 3 && !!SpielRepo.welt() && SpielRepo.welt().spots.length === 5));
-  check("Besatz aus dem Datenmodell (1,1,2,2,3 Fragen)", await page.evaluate(() =>
-    spiel.fids.map(id => SpielRepo.fisch(id).fragen).sort().join(",") === "1,1,2,2,3"));
+    typeof SPIEL_DATEN === "object" && SPIEL_DATEN.fische.length >= 8 && !!SpielRepo.welt() && SpielRepo.welt().spots.length === 5));
+  check("Nur Schwarzwald-Süßwasserfische im Datenmodell", await page.evaluate(() => {
+    const soll = ["rotfeder", "barsch", "bachforelle", "schleie", "zander", "aal", "karpfen", "hecht"];
+    return soll.every(id => SPIEL_DATEN.fische.some(f => f.id === id)); }));
+  check("Foto-Hintergrund (echter See) eingebettet + im Feld", await page.evaluate(() =>
+    (SpielRepo.bild("welt:see") || "").startsWith("data:image/") && !!document.querySelector("#spielFeld image")));
+  check("Besatz: je Spot ein Fisch aus dem Pool gezogen", await page.evaluate(() =>
+    spiel.fids.length === SpielRepo.welt().spots.length &&
+    spiel.fids.every(id => { const f = SpielRepo.fisch(id); return f && f.fragen >= 1 && f.fragen <= 3; })));
+  const gesamtSoll = await page.evaluate(() => spiel.fids.reduce((a, id) => a + SpielRepo.fisch(id).fragen, 0));
   const b0 = await page.evaluate(() => spiel.x);
   await page.locator('#spielPad button[data-d="right"]').click(); await page.waitForTimeout(70);
   check("D-Pad bewegt die Figur", (await page.evaluate(() => spiel.x)) > b0);
-  check("See blockiert Durchlaufen", await page.evaluate(() => { spiel.x = 60; spiel.y = 70; // fern der Angelplätze
-    for (let k = 0; k < 20; k++) spielMove(14, 0); return !spielImSee(spiel.x, spiel.y); }));
+  check("See blockiert Durchlaufen", await page.evaluate(() => { spiel.x = 30; spiel.y = 190; // fern der Angelplätze
+    for (let k = 0; k < 20; k++) spielMove(14, 0); return !spielImSee(spiel.x, spiel.y) && spiel.x < 100; }));
   // Angelplatz antippen -> automatisch hinlaufen -> Einwurf -> Frage
   await page.locator('[data-spot="2"]').click();
   const angekommen = await page.waitForFunction(() => spiel.aktiv === 2, null, { timeout: 9000 }).then(() => true).catch(() => false);
@@ -303,7 +310,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.waitForTimeout(300);
   const sres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
   const sm = sres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
-  check("Spiel: 5 Fische, 9 Fragen → Auswertung", sm[1] === "9" && sm[2] === "9", sm[1] + "/" + sm[2]);
+  check("Spiel: 5 Fische, alle Fragen gelöst → Auswertung",
+    sm[1] === String(gesamtSoll) && sm[2] === String(gesamtSoll), sm[1] + "/" + sm[2] + " (erwartet " + gesamtSoll + ")");
   // Responsiv: iPad-Querformat -> 2 Spalten, passt ohne Scrollen
   await page.setViewportSize({ width: 1180, height: 820 });
   await page.reload(); await page.waitForTimeout(220);

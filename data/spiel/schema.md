@@ -25,22 +25,29 @@ Die App selbst bleibt eine einzige Offline-Datei: Das Werkzeug
 | `info` | string | Sachwissen nach dem Fang („Wusstest du?") |
 | `symbolGroesse` | px | Größe des Fisch-Symbols beim Heranziehen |
 | `bild` | Pfad, optional | Foto in `bilder/`; fehlt es, greift die SVG-`zeichnung` |
-| `zeichnung` | `Rotfeder`\|`Zander`\|`Hecht` | eingebaute Illustration als Fallback |
+| `zeichnung` | `Rotfeder`\|`Barsch`\|`Bachforelle`\|`Schleie`\|`Zander`\|`Aal`\|`Karpfen`\|`Hecht` | eingebaute Illustration als Fallback |
+
+Die Fischliste enthält **nur Süßwasserfische aus heimischen
+Schwarzwald-Gewässern** (Titisee, Schluchsee, Angelteiche,
+Schwarzwaldbäche) – belegt durch Recherche (hochschwarzwald.de,
+schwarzwald-tourismus.info, blinker.de).
 
 ### welten.json
 | Feld | Typ | Bedeutung |
 |---|---|---|
 | `feld` | breite/hoehe | Spielfeld-Koordinatensystem |
-| `wasser` | ellipse cx/cy/rx/ry | begehbar ist nur das Land drumherum |
+| `hintergrund` | Pfad, optional | Foto in `bilder/` als Spielfeld-Hintergrund (wird auf max. 900 px verkleinert eingebettet); ohne Foto zeichnet die App die grüne Wiese |
+| `wasser` | ellipse cx/cy/rx/ry | begehbar ist nur das Land drumherum; bei Foto-Hintergrund auf die Wasserfläche im Bild abstimmen |
 | `start` | x/y | Startposition der Figur (muss an Land liegen) |
 | `spots` | Liste x/y | Angelplätze (an Land, direkt antippbar) |
-| `besatz` | Liste von Fisch-`id`s | welche Fische in dieser Runde warten – Reihenfolge wird pro Runde gemischt; Summe der `fragen` = Fragen pro Runde |
+| `besatz` | Liste von Fisch-`id`s | Fisch-Pool der Welt – pro Runde wird gemischt und je Spot **ein** Fisch gezogen; so kommen über mehrere Runden alle Arten dran |
 | `deko` | emoji/x/y/groesse | Schmuck-Elemente auf dem Feld |
 
 ## Regeln (werden vom Werkzeug geprüft)
 - Fisch-`id`s eindeutig; `fragen` = Länge von `steigerung` (max. 3).
 - Jeder `besatz`-Eintrag verweist auf eine existierende Fisch-`id`;
-  Anzahl `besatz` = Anzahl `spots`.
+  Anzahl `besatz` ≥ Anzahl `spots`.
+- `hintergrund` muss (falls angegeben) als Datei existieren.
 - `start` und alle `spots` liegen an Land (außerhalb des Wassers).
 - Bilder: JPG/PNG; werden auf max. 640 px Breite verkleinert und als
   Daten-URI eingebettet (App bleibt offline-fähig). Nur eigene oder
