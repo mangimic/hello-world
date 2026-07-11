@@ -219,6 +219,39 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Blatt zeigt Klassen-Abzeichen", ws.includes("Klasse 4"));
   check("Blatt nutzt Stufen-Wörter (K4 schwer)", ws.includes("Hahn") || ws.includes("Schwester"));
 
+  // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
+  section("Vorgangsbeschreibung interaktiv");
+  await fresh(); await setLevel(3);
+  await openMod("Vorgang", "Üben");
+  check("4 Unter-Tabs (Grundlagen/Ordnen/Satzanfänge/Zutaten)", (await page.locator(".chip[data-vt]").count()) === 4);
+  // Ordnen: komplett richtig lösen
+  await page.locator('.chip[data-vt="ordnen"]').click(); await page.waitForTimeout(110);
+  check("Ordnen: Schritte-Pfad-Visualisierung", (await page.locator("#vgHost svg").count()) > 0);
+  let gg = 0;
+  while (gg++ < 10) {
+    if (await page.locator("#runAgain").count()) break;
+    const pos = await page.evaluate(() => { const exp = vgOrd.next; let pos = 0;
+      for (const i of vgOrd.order) { if (i >= vgOrd.next) { if (i === exp) return pos; pos++; } } return -1; });
+    await page.locator("#ordList button:not([disabled])").nth(pos).click(); await page.waitForTimeout(60);
+  }
+  let vres = (await page.locator("#vgHost").textContent()).replace(/\s+/g, " ");
+  let vm = vres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Ordnen: volle Auswertung", vm[1] === vm[2] && +vm[1] > 0, vm[1] + "/" + vm[2]);
+  // Satzanfänge: Gate + eine richtige Antwort
+  await page.locator('.chip[data-vt="anfang"]').click(); await page.waitForTimeout(110);
+  await page.locator("#anfNext").click(); await page.waitForTimeout(60);
+  check("Satzanfänge: ohne Antwort blockiert", /zuerst/i.test(await page.locator("#anffb").textContent()));
+  const btns = page.locator("#anfOpts button"); const nb = await btns.count();
+  for (let k = 0; k < nb; k++) { if ((await btns.nth(k).textContent()).trim() === "Zuerst") { await btns.nth(k).click(); break; } }
+  await page.waitForTimeout(60);
+  check("Satzanfänge: richtige Antwort erkannt", /Richtig/.test(await page.locator("#anffb").textContent()));
+  // Zutaten: alle echten einpacken -> perfekt
+  await page.locator('.chip[data-vt="zutaten"]').click(); await page.waitForTimeout(110);
+  const picks = await page.evaluate(() => vgZut.karten.map((k, i) => k.echt ? i : -1).filter(i => i >= 0));
+  for (const i of picks) { await page.locator("#zutGrid button").nth(i).click(); await page.waitForTimeout(30); }
+  await page.locator("#zutCheck").click(); await page.waitForTimeout(110);
+  check("Zutaten-Check: perfektes Ergebnis erkannt", /Perfekt/.test(await page.locator("#zutfb").textContent()));
+
   // ---------- 8b) Kinder-Illustrationen ----------
   section("Kinder-Illustrationen");
   await fresh();
