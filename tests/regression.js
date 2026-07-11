@@ -390,6 +390,104 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.locator("#bottomNav >> text=Mental").first().click(); await page.waitForTimeout(140);
   check("Mental-Tab: alle 12 Karten zum Nachlesen", (await page.locator("#moduleContent .mental-card").count()) === 12);
 
+  // ---------- 7c) Fußball-Match (Grundwortschatz + Mentaltrainer) ----------
+  section("Fußball-Match");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await openMod("Fußball-Match", null);
+  check("Fußball-Daten eingebettet (Gegner/Fakten/Mental)", await page.evaluate(() =>
+    SpielRepo.fussball().gegner.length >= 3 && SpielRepo.fussball().fakten.length >= 5 && SpielRepo.fussball().mental.length === 12));
+  check("Alle 12 Fußball-Mentalsituationen (inkl. Elfmeter/Abwehr)", await page.evaluate(() =>
+    ["training", "match", "fehler", "fehlerserie", "nervositaet", "fuehrung", "rueckstand",
+     "elfmeter", "torschuss", "abwehr", "halbzeit", "lob"].every(id => !!fbMental(id))));
+  check("Intro: Mentaltrainer-Karte + Lese-Bestätigung", await page.evaluate(() =>
+    !!document.querySelector("#fbHost .mental-card") && document.getElementById("fbStart").disabled === true));
+  await page.locator("#fbHost .gate-row >> text=Habe ich gelesen").click();
+  await page.locator("#fbStart").click(); await page.waitForTimeout(150);
+  check("Fußballplatz mit Tor sichtbar", (await page.locator("#fbFeld").count()) > 0 && (await page.locator("#fbKeeper").count()) > 0);
+  // Erster Ball absichtlich falsch: Konter-Tor + Mentaltrainer bleibt stehen
+  const falschF = await page.evaluate(() => fussball.frage.w.falsch);
+  const foT = page.locator(".fb-opt"); const fT = (await foT.nth(0).textContent()).trim();
+  await (fT === falschF ? foT.nth(0) : foT.nth(1)).click();
+  await page.waitForFunction(() => { const w = document.getElementById("fbWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
+  await page.waitForTimeout(1600);
+  const fbF = await page.locator("#fbfb").textContent();
+  check("Fehlschuss: Lösung + Mentaltrainer bleiben stehen", fbF.includes("richtig wäre") && fbF.includes("Mentaltrainer"));
+  check("Fehlschuss = Konter-Tor für den Gegner", await page.evaluate(() => fussball.ihm === 1 && fussball.mir === 0));
+  await page.locator("#fbWeiter").click(); await page.waitForTimeout(100);
+  // Match durchspielen: ab jetzt immer richtig antworten
+  async function fbBall() {
+    await page.waitForFunction(() => fussball && (fussball.phase === "ball" || fussball.phase === "elfmeter") && document.querySelector(".fb-opt:not([disabled])"), null, { timeout: 9000 });
+    const richtig = await page.evaluate(() => fussball.frage.w.richtig);
+    const o = page.locator(".fb-opt"); const t0 = (await o.nth(0).textContent()).trim();
+    await (t0 === richtig ? o.nth(0) : o.nth(1)).click();
+    await page.waitForFunction(() => { const w = document.getElementById("fbWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
+    await page.locator("#fbWeiter").click();
+    await page.waitForTimeout(70);
+  }
+  let fbSchwer = false;
+  for (let guard = 0; guard < 30; guard++) {
+    const ph = await page.evaluate(() => fussball.phase);
+    if (ph === "ball" || ph === "elfmeter") {
+      fbSchwer = fbSchwer || await page.evaluate(() => fussball.frage.schwer && fussball.halbzeit >= 2);
+      await fbBall(); continue;
+    }
+    if (ph === "halbzeit") {
+      const txt = await page.locator("#fbHost").textContent();
+      check("Halbzeit: Fußball-Wissen + Mentaltrainer", txt.includes("Fußball-Wissen") && txt.includes("Mentaltrainer"));
+      await page.locator("#fbWeiter").click(); await page.waitForTimeout(90); continue;
+    }
+    if (ph === "ende") break;
+    await page.waitForTimeout(120);
+  }
+  check("Steigerung: 2. Halbzeit mit schweren Wörtern", fbSchwer);
+  check("Matchende: Lob vom Mentaltrainer", await page.evaluate(() =>
+    fussball.phase === "ende" && !!document.querySelector('#fbHost .mental-card[data-mental="lob"]')));
+  const bilanzF = await page.evaluate(() => ({ balls: fussball.balls, wins: fussball.wins }));
+  await page.locator("#fbWeiter").click(); await page.waitForTimeout(150);
+  const fres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  const fbm = fres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Fußball: Auswertung mit Ball-Bilanz", fbm[1] === String(bilanzF.wins) && fbm[2] === String(bilanzF.balls),
+    fbm[1] + "/" + fbm[2] + " (erwartet " + bilanzF.wins + "/" + bilanzF.balls + ")");
+  await page.locator("#bottomNav >> text=Mental").first().click(); await page.waitForTimeout(140);
+  check("Mental-Tab: alle 12 Fußball-Karten", (await page.locator("#moduleContent .mental-card").count()) === 12);
+
+  // ---------- 7d) Elternbereich: Spiele an/aus + Time-Boxing ----------
+  section("Elternbereich: Spiele & Zeit");
+  await fresh(); await setLevel(3);
+  check("Standard: 3 Spiele auf der Startseite", await page.evaluate(() =>
+    ["See-Abenteuer", "Tennis-Match", "Fußball-Match"].every(n => document.querySelector("#moduleChooser").textContent.includes(n))));
+  check("Standard-Limit 20 Minuten", await page.evaluate(() => store.zeitLimit === 20));
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
+  check("Tab „Spiele & Zeit“ vorhanden", (await page.locator(".seg[data-spiel]").count()) === 6 && (await page.locator(".seg[data-zeit]").count()) === 7);
+  // Tennis deaktivieren -> verschwindet von der Startseite
+  await page.locator('.seg[data-spiel="tennis"][data-an="0"]').click(); await page.waitForTimeout(100);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Deaktiviertes Spiel verschwindet", !(await page.locator("#moduleChooser").textContent()).includes("Tennis-Match")
+    && (await page.locator("#moduleChooser").textContent()).includes("See-Abenteuer"));
+  // wieder aktivieren
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
+  await page.locator('.seg[data-spiel="tennis"][data-an="1"]').click(); await page.waitForTimeout(100);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Wieder aktiviert: Spiel ist zurück", (await page.locator("#moduleChooser").textContent()).includes("Tennis-Match"));
+  // Time-Boxing: Zeit aufgebraucht -> Sperr-Bildschirm, Übungen blockiert
+  await page.evaluate(() => { store.zeit = { tag: heuteKey(), sek: store.zeitLimit * 60 }; save(); goHome(); });
+  await page.waitForTimeout(120);
+  check("Zeit um → freundlicher Stopp-Bildschirm", (await page.locator("#zeitSperre").count()) === 1
+    && (await page.locator("#zeitSperre").textContent()).includes("Lernzeit"));
+  check("Startseite zeigt Zeit-Hinweis", (await page.locator("#zeitInfo").textContent()).includes("Lernzeit"));
+  // Eltern: über den Sperr-Bildschirm in den Elternbereich, Limit ändern + freigeben
+  await page.locator("#zeitEltern").click(); await page.waitForTimeout(150);
+  check("Sperre führt in den Elternbereich", (await page.locator(".seg[data-zeit]").count()) === 7);
+  await page.locator('.seg[data-zeit="30"]').click(); await page.waitForTimeout(100);
+  check("Limit einstellbar (30 Min gespeichert)", await page.evaluate(() => store.zeitLimit === 30));
+  await page.locator("#zeitFrei").click(); await page.waitForTimeout(100);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Heute freigegeben: Sperre weg, Übungen erreichbar", (await page.locator("#zeitSperre").count()) === 0
+    && await page.evaluate(() => { openModule("subjekt"); return activeModuleId === "subjekt"; }));
+
   // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
   section("Vorgangsbeschreibung interaktiv");
   await fresh(); await setLevel(3);

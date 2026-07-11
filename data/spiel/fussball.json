@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "kommentar": "Fußball-Match: Gegner, Fußball-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Gleiche Mentaltrainer-Regeln wie beim Tennis: kurze Sätze, Kinderbilder, Rituale, kein Gewinn-Druck. Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de, owayo.de.",
+  "gegner": [
+    {
+      "id": "torwand",
+      "name": "Die Torwand",
+      "emoji": "🥅",
+      "staerke": 1,
+      "spruch": "Die Torwand hat zwei Löcher – perfekt zum Üben deiner Schüsse!"
+    },
+    {
+      "id": "paul",
+      "name": "Kicker-Krake Paul",
+      "emoji": "🐙",
+      "staerke": 2,
+      "spruch": "Paul hat acht Arme im Tor. Ziel genau in die Ecken!"
+    },
+    {
+      "id": "robo",
+      "name": "Robo-Keeper 3000",
+      "emoji": "🤖",
+      "staerke": 3,
+      "spruch": "Der Robo-Keeper hält fast alles. Zeig ihm deine mutigsten Schüsse!"
+    }
+  ],
+  "fakten": [
+    { "begriff": "Spieldauer", "text": "Ein Profi-Spiel dauert 2 × 45 Minuten. Kinder spielen kürzer – in der F-Jugend zum Beispiel 2 × 25 Minuten." },
+    { "begriff": "Elfmeter", "text": "Der Elfmeter heißt so, weil der Punkt genau elf Meter vom Tor entfernt ist. Bei Kindern liegt er oft nur 8 oder 9 Meter weit weg." },
+    { "begriff": "Torwart", "text": "Nur der Torwart darf den Ball mit den Händen halten – und auch nur in seinem eigenen Strafraum." },
+    { "begriff": "Elfmeter-Regel", "text": "Beim Elfmeter muss der Torwart mit mindestens einem Fuß auf der Torlinie bleiben, bis geschossen wird." },
+    { "begriff": "Mannschaft", "text": "Eine Fußball-Mannschaft hat elf Spieler auf dem Platz – zehn Feldspieler und einen Torwart." },
+    { "begriff": "Abseits", "text": "Abseits heißt: Beim Abspiel steht ein Stürmer näher am Tor als der Ball und der vorletzte Gegner. In der eigenen Hälfte gibt es kein Abseits." },
+    { "begriff": "Anstoß", "text": "Jedes Spiel und jede Halbzeit beginnt mit dem Anstoß am Mittelpunkt – und nach jedem Tor gibt es wieder einen." },
+    { "begriff": "Weltmeisterschaft", "text": "Die Fußball-Weltmeisterschaft gibt es nur alle vier Jahre – Deutschland hat sie schon viermal gewonnen." }
+  ],
+  "mental": [
+    {
+      "id": "training",
+      "titel": "Motivation vor dem Training",
+      "emoji": "🎒",
+      "trainieren": "Heute trainieren wir Mut. Der Löwe brüllt nicht leise – er traut sich. Genau so schießt du heute deine Bälle.",
+      "mission": "Schieß heute zehn Bälle richtig mutig aufs Tor. Mit vollem Schwung – auch wenn mal einer daneben geht.",
+      "mut": "Trau dich – der Ball darf fliegen!",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Mit jedem mutigen Schuss wirst du stärker. Fehlschüsse? Die gehören zum Lernen dazu. Viel Spaß beim Training, Felix!"
+    },
+    {
+      "id": "match",
+      "titel": "Motivation vor einem Match",
+      "emoji": "🌟",
+      "trainieren": "Heute zeigst du deinen Fußball. Deine Aufgabe ist nicht gewinnen – deine Aufgabe ist gut spielen.",
+      "mission": "Mach vor jedem Ball dein Ritual: tief einatmen, locker hüpfen, Ziel überlegen. Dann: Los geht's!",
+      "mut": "Ich bin bereit. Ich kämpfe um jeden Ball.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Egal wie es ausgeht: Wenn du mutig spielst und dabei lächelst, hast du heute schon gewonnen."
+    },
+    {
+      "id": "fehler",
+      "titel": "Nach einem Fehlschuss",
+      "emoji": "🙂",
+      "trainieren": "Jetzt üben wir das Abhaken. Jeder Profi verschießt mal – sogar Weltmeister bei der WM.",
+      "mission": "Hake den Fehlschuss ab wie ein Ninja: kurz nicken, umdrehen, fertig. Denk nicht mehr an den letzten Ball.",
+      "mut": "Fehler gehören zum Lernen.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Ein Fehlschuss macht dich nicht schlechter. Er zeigt nur: Du traust dich zu schießen. Weiter geht's!"
+    },
+    {
+      "id": "fehlerserie",
+      "titel": "Nach mehreren Fehlschüssen",
+      "emoji": "🔄",
+      "trainieren": "Wir drücken jetzt den Neustart-Knopf. Stell dir vor, du wischst die Fehlschüsse weg wie Matsch von den Schuhen.",
+      "mission": "Atme dreimal ganz tief. Schüttel Arme und Beine aus. Dann spiel den nächsten Ball einfach nur sicher und flach.",
+      "mut": "Jetzt zählt nur dieser Ball.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Jede Serie reißt irgendwann ab. Dein nächstes Tor kommt bestimmt – hol es dir."
+    },
+    {
+      "id": "nervositaet",
+      "titel": "Bei Nervosität",
+      "emoji": "🦅",
+      "trainieren": "Heute zähmen wir das Kribbeln im Bauch. Das Kribbeln heißt nur: Dein Körper ist bereit.",
+      "mission": "Mach den Adler: Stell dich groß hin, schau ruhig über den Platz und atme dreimal langsam ein und aus.",
+      "mut": "Ich bin bereit. Ich kann das.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Mutige Spieler haben auch Kribbeln – sie spielen einfach mit dem Kribbeln. Genau wie du."
+    },
+    {
+      "id": "fuehrung",
+      "titel": "Wenn du führst",
+      "emoji": "🚂",
+      "trainieren": "Du führst! Jetzt üben wir Dranbleiben – wie eine Lokomotive, die einfach ruhig weiterfährt.",
+      "mission": "Spiel genauso mutig weiter wie bisher. Kein Bummeln, kein Träumen: Jeder Angriff startet wieder bei null.",
+      "mut": "Ich bleibe wach. Nur dieser Ball zählt.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Führen fühlt sich gut an. Bleib freundlich zu dir und spiel dein Spiel weiter – Ball für Ball."
+    },
+    {
+      "id": "rueckstand",
+      "titel": "Wenn du zurückliegst",
+      "emoji": "🦸",
+      "trainieren": "Aufholen ist eine Superkraft. Superman richtet sich auf – genau das machst du jetzt.",
+      "mission": "Vergiss den Spielstand. Schieß einfach das nächste Tor. Nur dieses eine.",
+      "mut": "Ich kämpfe um jeden Ball.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Viele Spiele drehen sich, wenn einer mutig bleibt. Sei du dieser Eine – Tor für Tor."
+    },
+    {
+      "id": "elfmeter",
+      "titel": "Beim Elfmeter",
+      "emoji": "⚡",
+      "trainieren": "Jetzt kommt der spannendste Moment – und spannend heißt: Es macht Spaß!",
+      "mission": "Mach alles wie immer: einatmen, Anlauf überlegen, EINE Ecke aussuchen. Dann schieß genau dorthin.",
+      "mut": "Jetzt. Nur dieser Ball zählt.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Egal wohin der Ball fliegt: Wer beim Elfmeter mutig anläuft, ist schon ein Champion."
+    },
+    {
+      "id": "torschuss",
+      "titel": "Beim Torschuss",
+      "emoji": "🎯",
+      "trainieren": "Der Torschuss ist dein Moment – du entscheidest, wohin der Ball fliegt.",
+      "mission": "Schau kurz aufs Tor, such dir eine Ecke aus und schwing mutig durch. Der Tennismagnet zieht den Ball in die Ecke.",
+      "mut": "Mein Schuss. Mein Moment.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Ob Tor oder nicht – wer schießt, kann treffen. Der Löwe traut sich. Du auch."
+    },
+    {
+      "id": "abwehr",
+      "titel": "In der Abwehr",
+      "emoji": "🛡️",
+      "trainieren": "In der Abwehr bist du der Ninja: leise, wach und blitzschnell.",
+      "mission": "Bleib auf den Zehenspitzen, schau auf den Ball wie der Adler und bleib zwischen Ball und Tor.",
+      "mut": "Hier kommt keiner vorbei.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Jeder abgewehrte Ball ist wie ein halbes Tor. Bleib dran – das ist deine Stärke."
+    },
+    {
+      "id": "halbzeit",
+      "titel": "In der Halbzeitpause",
+      "emoji": "🔁",
+      "trainieren": "Die Halbzeit ist deine Boxenstopp-Pause – kurz auftanken wie ein Rennauto.",
+      "mission": "Trink einen Schluck, atme dreimal tief und such dir ein einziges Ding aus, das du gleich richtig gut machen willst.",
+      "mut": "Neue Halbzeit, neues Glück – ich bin bereit.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Alles, was vorher war, bleibt in der ersten Halbzeit. Jetzt wartet dein nächstes gutes Spiel."
+    },
+    {
+      "id": "lob",
+      "titel": "Lob nach dem Match",
+      "emoji": "🏆",
+      "trainieren": "Jetzt trainieren wir das Stolzsein – das gehört genauso zum Fußball wie das Toreschießen.",
+      "mission": "Nenn drei Dinge, die dir heute gut gelungen sind. Sag sie laut oder denk sie dir.",
+      "mut": "Ich habe gekämpft. Ich bin stolz auf mich.",
+      "punkt": "Kurz aufstampfen, lächeln: Das war stark.",
+      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Felix!"
+    }
+  ]
+}

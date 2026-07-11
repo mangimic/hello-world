@@ -54,6 +54,13 @@ Pflicht-Situationen in `mental`: `training`, `match`, `fehler`, `fehlerserie`,
 `nervositaet`, `fuehrung`, `rueckstand`, `tiebreak`, `aufschlag`, `return`,
 `seitenwechsel`, `lob`. Jede Karte: kurze Sätze, Kinderbilder (Löwe, Adler,
 Ninja, Superman, Tennismagnet), max. 150 Wörter, kein Gewinn-Druck.
+
+### fussball.json (Fußball-Match)
+Gleicher Aufbau wie `tennis.json` (Gegner mit `staerke` 1–3, `fakten`,
+12 `mental`-Karten). Sport-spezifische Pflicht-Situationen statt
+Tennis-Begriffen: `elfmeter`, `torschuss`, `abwehr`, `halbzeit`
+(ersetzen `tiebreak`, `aufschlag`, `return`, `seitenwechsel`).
+Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de.
 Fun Facts („Wusstest du?") gibt es bewusst **nur** zu Angel-Wissen
 (Fische) und Tennis-Wissen – die Übungswörter kommen überall aus dem
 Grundwortschatz.
