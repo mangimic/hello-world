@@ -210,6 +210,17 @@ button.chip.on{background:var(--primary); color:#fff;}
   background:var(--soft); border-radius:999px; padding:2px 8px;}
 .lvl-row{margin:4px 0 2px;}
 
+/* See-Abenteuer: responsiv (Hochformat gestapelt, iPad-Querformat nebeneinander) */
+.spiel-wrap{display:grid; gap:12px;}
+.spiel-feld svg{width:100%; height:auto; max-height:56vh; aspect-ratio:340/230; display:block; margin:0 auto; touch-action:manipulation;}
+#spielPad{display:grid; grid-template-columns:repeat(3,52px); gap:5px; justify-content:center; margin-top:10px;}
+#spielPad button{min-height:44px; font-size:18px; padding:0;}
+@media (min-width:820px){
+  .spiel-wrap{grid-template-columns:minmax(0,3fr) minmax(0,2fr); align-items:start;}
+  .spiel-feld svg{max-height:62vh;}
+  #spielPad{justify-content:start;}
+}
+
 /* Kompakte Blume in der Auswertung */
 .result-pot svg{width:84px; height:auto;}
 /* Vorlesen */
@@ -344,8 +355,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.23.0";
+const APP_VERSION = "1.24.0";
 const RELEASE_NOTES = [
+  {v:"1.24.0", datum:"10.07.2026", punkte:[
+    "🎣 See-Abenteuer rundum verbessert: <b>Angelplätze direkt antippen</b> – die Figur läuft von selbst um den See",
+    "<b>Einwurf-Animation</b> (Schwimmer fliegt in den See 💦), dann erscheint die Frage",
+    "Fische werden <b>Stück für Stück herangezogen</b> – Rotfeder (1 Frage) · Zander (2) · Hecht (3!)",
+    "<b>Responsives Layout</b>: passt jetzt auch aufs iPad im Querformat ohne Scrollen"]},
   {v:"1.23.0", datum:"10.07.2026", punkte:[
     "Neues Spiel <b>🎣 See-Abenteuer</b>: mit dem Steuerkreuz um den See laufen, an Angelplätzen Fragen lösen und Fische fangen",
     "<b>🔊 Vorlesen ist zurück</b> – überall als Alternative zum Selbst-Lesen (Texte, Beispiele, Fragen)",
@@ -3967,107 +3983,227 @@ function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
 
 /* ============================================================
    MODUL: SEE-ABENTEUER (interaktives Spiel)
-   Eine kleine Welt zum Herumlaufen: Steuerkreuz bewegt die
-   Spielfigur um den See. An jedem Angelplatz wartet eine
-   Rechtschreib-Frage – richtig beantwortet = Fisch gefangen!
+   Angelplätze direkt antippen – die Figur läuft von selbst um
+   den See (der See blockiert den Weg). Am Platz wirft sie die
+   Angel aus (Animation), dann kommt die Frage. Große Fische
+   brauchen 2–3 richtige Antworten und werden Stück für Stück
+   herangezogen: Rotfeder (1) · Zander (2) · Hecht (3).
    ============================================================ */
 let spiel=null;
 const SPIEL_W=340, SPIEL_H=230;
 const SPIEL_SEE={cx:170, cy:118, rx:96, ry:58};
-const SPIEL_SPOTS=[
-  {x:60,  y:118}, {x:170, y:44},
-  {x:280, y:118}, {x:110, y:186}, {x:230, y:186}
-];
+const SPIEL_SPOTS=[{x:60,y:118},{x:170,y:44},{x:280,y:118},{x:110,y:186},{x:230,y:186}];
+const SPIEL_FISCHE={1:{name:"eine Rotfeder",kurz:"Rotfeder",hinweis:"",gr:14},
+  2:{name:"ein ZANDER",kurz:"Zander",hinweis:"Er ist stark – du brauchst 2 richtige Antworten!",gr:19},
+  3:{name:"ein RIESIGER HECHT",kurz:"Hecht",hinweis:"Der Riese braucht 3 richtige Antworten!",gr:25}};
+function spielT(ms){ return window.__SPIEL_SCHNELL__ ? Math.max(15, ms/12) : ms; }
 function spielFrage(){
-  // zufällige Rechtschreib-Frage aus dem Grundwortschatz
   const k=GWS_KATEGORIEN[Math.floor(Math.random()*GWS_KATEGORIEN.length)];
   const e=gwsLists(k), all=e.leicht.concat(e.schwer);
   const w=all[Math.floor(Math.random()*all.length)];
   return {w:w, tipp:k.tipp};
 }
 function spielInit(){
-  spiel={ x:34, y:60, done:[false,false,false,false,false], aktiv:-1, frage:null };
-  runReset("spiel"); runGet("spiel", SPIEL_SPOTS.length);
+  const sizes=vgShuffle([1,1,2,2,3]);
+  spiel={ x:34, y:60, size:sizes, done:[false,false,false,false,false],
+    aktiv:-1, stage:0, frage:null, busy:false, timer:null };
+  runReset("spiel"); runGet("spiel", sizes.reduce((a,b)=>a+b,0)); // 9 Fragen gesamt
 }
+function spielStop(){ if(spiel && spiel.timer){ clearInterval(spiel.timer); spiel.timer=null; } }
 function spielImSee(x,y){
   const dx=(x-SPIEL_SEE.cx)/(SPIEL_SEE.rx+10), dy=(y-SPIEL_SEE.cy)/(SPIEL_SEE.ry+10);
   return dx*dx+dy*dy < 1;
 }
+function spielBobXY(i){ const sp=SPIEL_SPOTS[i], S=SPIEL_SEE;
+  return {x:sp.x+(S.cx-sp.x)*0.42, y:sp.y+(S.cy-sp.y)*0.42}; }
+function spielPos(){
+  const f=$("spielFigur"); if(f){ f.setAttribute("x",spiel.x); f.setAttribute("y",spiel.y+7); }
+  const l=$("spielLine"); if(l && l.style.display!=="none"){ l.setAttribute("x1",spiel.x); l.setAttribute("y1",spiel.y); }
+}
+// D-Pad: freie Bewegung (der See blockiert)
 function spielMove(dx,dy){
-  if(!spiel || spiel.aktiv>=0) return; // beim Angeln stehen bleiben
+  if(!spiel || spiel.busy || spiel.aktiv>=0) return;
   const nx=Math.max(16, Math.min(SPIEL_W-16, spiel.x+dx));
   const ny=Math.max(18, Math.min(SPIEL_H-14, spiel.y+dy));
   if(!spielImSee(nx,ny)){ spiel.x=nx; spiel.y=ny; }
   else if(!spielImSee(nx,spiel.y)){ spiel.x=nx; }
   else if(!spielImSee(spiel.x,ny)){ spiel.y=ny; }
-  // Angelplatz erreicht?
+  spielPos();
   SPIEL_SPOTS.forEach((sp,i)=>{
-    if(spiel.done[i] || spiel.aktiv>=0) return;
-    const d=Math.hypot(spiel.x-sp.x, spiel.y-sp.y);
-    if(d<24){ spiel.aktiv=i; spiel.frage=spielFrage(); }
+    if(spiel.done[i] || spiel.aktiv>=0 || spiel.busy) return;
+    if(Math.hypot(spiel.x-sp.x, spiel.y-sp.y)<24) spielWerfen(i);
   });
-  spielDraw();
 }
-function spielSVG(){
-  const spots=SPIEL_SPOTS.map((sp,i)=>{
-    const done=spiel.done[i];
-    return `<circle cx="${sp.x}" cy="${sp.y}" r="14" fill="${done?"#d9f0dd":"#fff3c9"}" stroke="${done?"#3f9d54":"#e0b23e"}" stroke-width="2.5"/>
-      <text x="${sp.x}" y="${sp.y+6}" font-size="15" text-anchor="middle">${done?"🐟":"🎣"}</text>`;
-  }).join("");
-  return `<svg id="spielFeld" viewBox="0 0 ${SPIEL_W} ${SPIEL_H}" style="width:100%; border-radius:14px; display:block; touch-action:none;" xmlns="http://www.w3.org/2000/svg">
-    <rect width="${SPIEL_W}" height="${SPIEL_H}" fill="#bfe0a8"/>
-    <ellipse cx="${SPIEL_SEE.cx}" cy="${SPIEL_SEE.cy}" rx="${SPIEL_SEE.rx}" ry="${SPIEL_SEE.ry}" fill="#8ec4ee" stroke="#4a7fd6" stroke-width="3"/>
-    <ellipse cx="${SPIEL_SEE.cx-24}" cy="${SPIEL_SEE.cy-14}" rx="26" ry="9" fill="#b3d9f5"/>
-    <text x="150" y="128" font-size="14">🐠</text><text x="200" y="108" font-size="12">🐟</text>
-    <text x="18" y="30" font-size="16">🌳</text><text x="308" y="34" font-size="16">🌳</text>
-    <text x="304" y="214" font-size="16">🌼</text><text x="32" y="214" font-size="14">🌾</text>
-    ${spots}
-    <text id="spielFigur" x="${spiel.x}" y="${spiel.y+7}" font-size="21" text-anchor="middle">🧒</text>
-  </svg>`;
+// Wegpunkte: schneidet die Gerade den See, geht es außen herum
+function spielWegpunkte(sx,sy,tx,ty){
+  const S=SPIEL_SEE, RX=S.rx+22, RY=S.ry+22;
+  const schneidet=(ax,ay,bx,by)=>{ for(let t=0;t<=1;t+=0.04){
+    if(spielImSee(ax+(bx-ax)*t, ay+(by-ay)*t)) return true; } return false; };
+  if(!schneidet(sx,sy,tx,ty)) return [[tx,ty]];
+  const a1=Math.atan2((sy-S.cy)/RY,(sx-S.cx)/RX), a2=Math.atan2((ty-S.cy)/RY,(tx-S.cx)/RX);
+  let d=a2-a1; while(d>Math.PI)d-=2*Math.PI; while(d<-Math.PI)d+=2*Math.PI;
+  const steps=Math.max(2, Math.ceil(Math.abs(d)/0.22));
+  const pts=[];
+  for(let k=0;k<=steps;k++){ const a=a1+d*k/steps;
+    pts.push([Math.max(16,Math.min(SPIEL_W-16, S.cx+Math.cos(a)*RX)),
+              Math.max(18,Math.min(SPIEL_H-14, S.cy+Math.sin(a)*RY))]); }
+  pts.push([tx,ty]);
+  return pts;
 }
-function spielDraw(){
-  const f=$("spielFigur");
-  if(f){ f.setAttribute("x", spiel.x); f.setAttribute("y", spiel.y+7); }
-  const host=$("spielHost");
-  if(!host) return;
-  if(spiel.aktiv>=0){ spielFragBox(host); }
+// Automatisch zum angetippten Angelplatz laufen
+function spielGehe(i){
+  if(!spiel || spiel.busy || spiel.aktiv>=0 || spiel.done[i]) return;
+  const sp=SPIEL_SPOTS[i];
+  const ziel={x:sp.x-(sp.x>SPIEL_SEE.cx?-20:20)*0 + (sp.x<SPIEL_SEE.cx?-20:20), y:sp.y};
+  const pts=spielWegpunkte(spiel.x, spiel.y, sp.x+(sp.x<SPIEL_SEE.cx?-19:19), sp.y);
+  spiel.busy=true; spielStop();
+  let pi=0;
+  spiel.timer=setInterval(()=>{
+    if(!spiel || !$("spielFigur")){ spielStop(); return; }
+    const step=window.__SPIEL_SCHNELL__?70:7;
+    const [tx,ty]=pts[pi];
+    const dx=tx-spiel.x, dy=ty-spiel.y, d=Math.hypot(dx,dy);
+    if(d<=step){ spiel.x=tx; spiel.y=ty; pi++;
+      if(pi>=pts.length){ spielStop(); spiel.busy=false; spielPos(); spielWerfen(i); return; }
+    } else { spiel.x+=dx/d*step; spiel.y+=dy/d*step; }
+    spielPos();
+  }, spielT(40));
+}
+// Angel auswerfen: Schwimmer fliegt in einem Bogen in den See
+function spielWerfen(i){
+  spiel.busy=true; spielStop();
+  const sp={x:spiel.x, y:spiel.y}, b=spielBobXY(i);
+  const line=$("spielLine"), bob=$("spielBobber");
+  if(!line || !bob){ spiel.busy=false; return; }
+  line.style.display="block"; bob.style.display="block"; bob.textContent="🪝";
+  line.setAttribute("x1",sp.x); line.setAttribute("y1",sp.y);
+  line.setAttribute("x2",sp.x); line.setAttribute("y2",sp.y);
+  const reduce=window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  let t=reduce?1:0;
+  spiel.timer=setInterval(()=>{
+    if(!spiel || !$("spielBobber")){ spielStop(); return; }
+    t=Math.min(1, t+0.09);
+    const px=sp.x+(b.x-sp.x)*t, py=sp.y+(b.y-sp.y)*t - Math.sin(t*Math.PI)*24;
+    bob.setAttribute("x",px); bob.setAttribute("y",py);
+    line.setAttribute("x2",px); line.setAttribute("y2",py);
+    if(t>=1){
+      spielStop();
+      bob.textContent="💦";
+      setTimeout(()=>{ if(!spiel) return;
+        const bb=$("spielBobber"); if(bb) bb.textContent="🔴";
+        spiel.busy=false; spiel.aktiv=i; spiel.stage=0; spiel.frage=spielFrage();
+        spielKorb(); spielFragBox();
+      }, spielT(380));
+    }
+  }, spielT(45));
+}
+// Fisch heranziehen: ein Stück (weitere Frage) oder ganz (gefangen)
+function spielZiehen(i, fertig){
+  spiel.busy=true; spielStop();
+  const bob=$("spielBobber"), line=$("spielLine");
+  if(!bob){ spiel.busy=false; return; }
+  const f=SPIEL_FISCHE[spiel.size[i]];
+  bob.textContent="🐟"; bob.setAttribute("font-size", f.gr);
+  const x0=parseFloat(bob.getAttribute("x")), y0=parseFloat(bob.getAttribute("y"));
+  const frac=fertig?0.94:0.38;
+  const tx=x0+(spiel.x-x0)*frac, ty=y0+(spiel.y-y0)*frac;
+  let t=0;
+  spiel.timer=setInterval(()=>{
+    if(!spiel || !$("spielBobber")){ spielStop(); return; }
+    t=Math.min(1, t+0.1);
+    const px=x0+(tx-x0)*t, py=y0+(ty-y0)*t - Math.sin(t*Math.PI)*6;
+    bob.setAttribute("x",px); bob.setAttribute("y",py);
+    if(line) { line.setAttribute("x2",px); line.setAttribute("y2",py); }
+    if(t>=1){
+      spielStop();
+      if(fertig){
+        spiel.done[i]=true; spiel.aktiv=-1; spiel.frage=null; spiel.busy=false;
+        setTimeout(()=>{ if(spiel) spielRefresh(); }, spielT(420));
+      }else{
+        spiel.busy=false; spiel.frage=spielFrage();
+        spielFragBox();
+      }
+    }
+  }, spielT(45));
+}
+function spielKorb(){
   const b=$("spielKorb");
   if(b) b.textContent="🧺 "+spiel.done.filter(Boolean).length+" / "+SPIEL_SPOTS.length;
-  // Feld neu zeichnen, wenn ein Fisch gefangen wurde (Spots ändern sich)
 }
-function spielFragBox(host){
+function spielFragBox(){
   const box=$("spielQ"); if(!box) return;
   const i=spiel.aktiv, q=spiel.frage;
   if(i<0 || !q){ box.innerHTML=""; return; }
+  const f=SPIEL_FISCHE[spiel.size[i]];
+  const kopf = spiel.stage===0
+    ? `🎣 <b>${f.name}</b> beißt an! ${f.hinweis}`
+    : `💪 Der <b>${f.kurz}</b> wehrt sich – Frage ${spiel.stage+1} von ${spiel.size[i]}!`;
   const richtigLinks=Math.random()<0.5;
   const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
-    <div class="hint">🎣 Ein Fisch beißt an! Welches Wort ist <b>richtig</b> geschrieben?</div>
+    <div class="hint">${kopf}<br>Welches Wort ist <b>richtig</b> geschrieben?</div>
     <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:19px;">${a}</button>
-      <button class="btn-secondary spiel-opt" data-w="${b2}" style="flex:1; font-size:19px;">${b2}</button>
+      <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
+      <button class="btn-secondary spiel-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
     </div>
     <div id="spielfb"></div>`;
-  addSpeakButtons(box);
   box.querySelectorAll(".spiel-opt").forEach(btn=>btn.onclick=()=>{
+    if(spiel.busy || spiel.aktiv!==i) return;
     const correct=btn.dataset.w===q.w.richtig;
+    const qIdx=i*3+spiel.stage;
     const fb=box.querySelector("#spielfb");
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
     if(correct){
-      runCorrect("spiel", i);
-      spiel.done[i]=true; spiel.aktiv=-1; spiel.frage=null;
-      d.innerHTML="🐟 <b>Gefangen!</b> „"+q.w.richtig+"“ ist richtig. "+q.tipp;
-      fb.innerHTML=""; fb.appendChild(d);
-      setTimeout(()=>{ spielRefresh(); }, 900);
+      runCorrect("spiel", qIdx);
+      const fertig = spiel.stage+1 >= spiel.size[i];
+      if(fertig){
+        d.innerHTML=`🐟 <b>Gefangen – ${f.kurz}!</b> „${q.w.richtig}“ war richtig. ${q.tipp}`;
+        fb.innerHTML=""; fb.appendChild(d);
+        spielZiehen(i, true);
+        spielKorbPlus();
+      }else{
+        spiel.stage++;
+        d.innerHTML=`Richtig! Du ziehst ihn näher heran … 💪 ${q.tipp}`;
+        fb.innerHTML=""; fb.appendChild(d);
+        spielZiehen(i, false);
+      }
     }else{
-      runWrong("spiel", i);
-      spiel.frage=spielFrage(); // neue Frage, der Fisch ist weg
-      d.innerHTML="Oh, der Fisch ist entwischt! 💨 "+q.tipp+" Gleich beißt der nächste an …";
+      runWrong("spiel", qIdx);
+      spiel.frage=spielFrage();
+      d.innerHTML=`Der ${f.kurz} zappelt sich frei von der Frage! 💨 ${q.tipp} Versuch es gleich nochmal …`;
       fb.innerHTML=""; fb.appendChild(d);
       focusFeedback(d,null);
-      setTimeout(()=>{ if(spiel && spiel.aktiv===i) spielFragBox(host); }, 1600);
+      setTimeout(()=>{ if(spiel && spiel.aktiv===i && !spiel.busy) spielFragBox(); }, spielT(1500));
     }
   });
+}
+function spielKorbPlus(){ setTimeout(()=>{ if(spiel) spielKorb(); }, spielT(500)); }
+function spielSVG(){
+  const S=SPIEL_SEE;
+  const spots=SPIEL_SPOTS.map((sp,i)=>{
+    const done=spiel.done[i];
+    const em = done ? "🐟" : "🎣";
+    return `<g data-spot="${i}" style="cursor:${done?"default":"pointer"};">
+      <circle cx="${sp.x}" cy="${sp.y}" r="17" fill="${done?"#d9f0dd":"#fff3c9"}" stroke="${done?"#3f9d54":"#e0b23e"}" stroke-width="2.5"/>
+      <text x="${sp.x}" y="${sp.y+6}" font-size="15" text-anchor="middle">${em}</text>
+    </g>`;
+  }).join("");
+  const aktivLine = spiel.aktiv>=0 ? (()=>{ const b=spielBobXY(spiel.aktiv);
+    return `<line id="spielLine" x1="${spiel.x}" y1="${spiel.y}" x2="${b.x}" y2="${b.y}" stroke="#5b4a3a" stroke-width="1.6"/>
+      <text id="spielBobber" x="${b.x}" y="${b.y}" font-size="12" text-anchor="middle">🔴</text>`; })()
+    : `<line id="spielLine" style="display:none;" x1="0" y1="0" x2="0" y2="0" stroke="#5b4a3a" stroke-width="1.6"/>
+       <text id="spielBobber" style="display:none;" x="0" y="0" font-size="12" text-anchor="middle">🔴</text>`;
+  return `<svg id="spielFeld" viewBox="0 0 ${SPIEL_W} ${SPIEL_H}" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${SPIEL_W}" height="${SPIEL_H}" rx="14" fill="#bfe0a8"/>
+    <ellipse cx="${S.cx}" cy="${S.cy}" rx="${S.rx}" ry="${S.ry}" fill="#8ec4ee" stroke="#4a7fd6" stroke-width="3"/>
+    <ellipse cx="${S.cx-24}" cy="${S.cy-14}" rx="26" ry="9" fill="#b3d9f5"/>
+    <text x="150" y="132" font-size="13">🐟</text><text x="204" y="106" font-size="11">🐟</text>
+    <text x="18" y="30" font-size="16">🌳</text><text x="308" y="34" font-size="16">🌳</text>
+    <text x="304" y="214" font-size="16">🌼</text><text x="30" y="214" font-size="14">🌾</text>
+    ${spots}
+    ${aktivLine}
+    <text id="spielFigur" x="${spiel.x}" y="${spiel.y+7}" font-size="21" text-anchor="middle">🧒</text>
+  </svg>`;
 }
 function spielRefresh(){
   if(activeModuleId==="spiel") spielRender($("moduleContent"));
@@ -4081,20 +4217,28 @@ function spielRender(c){
   }
   c.innerHTML=`
     <div class="card" id="spielHost">
-      <h2>🎣 See-Abenteuer</h2>
-      <p class="muted">Laufe mit dem Steuerkreuz <b>um den See</b> zu den Angelplätzen 🎣.
-      Beantworte die Frage richtig und fang den Fisch!</p>
-      <p style="text-align:right; font-weight:800; margin:0 0 6px;" id="spielKorb">🧺 ${gefangen} / ${SPIEL_SPOTS.length}</p>
-      ${spielSVG()}
-      <div id="spielQ" style="margin-top:10px;"></div>
-      <div style="display:grid; grid-template-columns:repeat(3,64px); gap:6px; justify-content:center; margin-top:12px;" id="spielPad">
-        <span></span><button class="btn-secondary" data-d="up" style="min-height:52px; font-size:22px;">⬆️</button><span></span>
-        <button class="btn-secondary" data-d="left" style="min-height:52px; font-size:22px;">⬅️</button>
-        <span></span>
-        <button class="btn-secondary" data-d="right" style="min-height:52px; font-size:22px;">➡️</button>
-        <span></span><button class="btn-secondary" data-d="down" style="min-height:52px; font-size:22px;">⬇️</button><span></span>
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+        <h2 style="margin:0;">🎣 See-Abenteuer</h2>
+        <span style="font-weight:800; white-space:nowrap;" id="spielKorb">🧺 ${gefangen} / ${SPIEL_SPOTS.length}</span>
+      </div>
+      <p class="muted" style="margin:6px 0 8px;">Tippe einen <b>Angelplatz 🎣</b> an – deine Figur läuft von selbst hin und wirft die Angel aus. Große Fische brauchen mehrere richtige Antworten!</p>
+      <div class="spiel-wrap">
+        <div class="spiel-feld">${spielSVG()}</div>
+        <div class="spiel-side">
+          <div id="spielQ"></div>
+          <div id="spielPad">
+            <span></span><button class="btn-secondary" data-d="up">⬆️</button><span></span>
+            <button class="btn-secondary" data-d="left">⬅️</button><span></span>
+            <button class="btn-secondary" data-d="right">➡️</button>
+            <span></span><button class="btn-secondary" data-d="down">⬇️</button><span></span>
+          </div>
+        </div>
       </div>
     </div>`;
+  // Angelplätze direkt anwählbar
+  c.querySelectorAll("[data-spot]").forEach(g=>{
+    g.addEventListener("click", ()=>spielGehe(parseInt(g.dataset.spot,10)));
+  });
   const DIR={up:[0,-14], down:[0,14], left:[-14,0], right:[14,0]};
   c.querySelectorAll("#spielPad button").forEach(b=>{
     let timer=null;
@@ -4102,9 +4246,8 @@ function spielRender(c){
     b.addEventListener("pointerdown", e=>{ e.preventDefault(); step(); timer=setInterval(step,140); });
     ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev, ()=>{ if(timer){clearInterval(timer); timer=null;} }));
   });
-  if(spiel.aktiv>=0) spielFragBox(c.querySelector("#spielHost"));
+  if(spiel.aktiv>=0) spielFragBox();
 }
-
 
 /* ============================================================
    ELTERNBEREICH: Grundwortschatz-Wörter verwalten

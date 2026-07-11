@@ -245,25 +245,55 @@ function section(t) { console.log("\n== " + t + " =="); }
 
   section("See-Abenteuer");
   await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
   await openMod("See-Abenteuer", null);
   check("Spielfeld mit See", (await page.locator("#spielFeld").count()) > 0);
   check("Steuerkreuz (4 Richtungen)", (await page.locator("#spielPad button").count()) === 4);
+  check("Fisch-Größen 1,1,2,2,3 verteilt", await page.evaluate(() => spiel.size.slice().sort().join(",") === "1,1,2,2,3"));
   const b0 = await page.evaluate(() => spiel.x);
   await page.locator('#spielPad button[data-d="right"]').click(); await page.waitForTimeout(70);
   check("D-Pad bewegt die Figur", (await page.evaluate(() => spiel.x)) > b0);
-  check("See blockiert Durchlaufen", await page.evaluate(() => { spiel.x = 60; spiel.y = 118;
+  check("See blockiert Durchlaufen", await page.evaluate(() => { spiel.x = 60; spiel.y = 70; // fern der Angelplätze
     for (let k = 0; k < 20; k++) spielMove(14, 0); return !spielImSee(spiel.x, spiel.y); }));
-  for (let i = 0; i < 5; i++) {
-    await page.evaluate(i => { const sp = SPIEL_SPOTS[i]; spiel.x = sp.x - 20; spiel.y = sp.y; spielMove(14, 0); }, i);
-    await page.waitForTimeout(110);
-    if ((await page.evaluate(() => spiel.aktiv)) < 0) continue;
-    const richtig = await page.evaluate(() => spiel.frage.w.richtig);
-    const so = page.locator(".spiel-opt"); const t0 = (await so.nth(0).textContent()).trim();
-    await (t0 === richtig ? so.nth(0) : so.nth(1)).click(); await page.waitForTimeout(1050);
+  // Angelplatz antippen -> automatisch hinlaufen -> Einwurf -> Frage
+  await page.locator('[data-spot="2"]').click();
+  const angekommen = await page.waitForFunction(() => spiel.aktiv === 2, null, { timeout: 9000 }).then(() => true).catch(() => false);
+  check("Spot antippen: hinlaufen + Einwurf + Frage", angekommen);
+  check("Schnur startet beim Angler", await page.evaluate(() => { const l = $("spielLine");
+    return Math.abs(+l.getAttribute("x1") - spiel.x) < 2 && Math.abs(+l.getAttribute("y1") - spiel.y) < 2; }));
+  // Alle 5 Fische fangen (1-3 Fragen je Größe, mit Heranziehen)
+  async function fange(spot) {
+    const size = await page.evaluate(() => spiel.size[spiel.aktiv]);
+    for (let st = 0; st < size; st++) {
+      await page.waitForFunction(() => spiel.aktiv >= 0 && !spiel.busy && document.querySelector(".spiel-opt"), null, { timeout: 9000 });
+      const richtig = await page.evaluate(() => spiel.frage.w.richtig);
+      const so = page.locator(".spiel-opt"); const t0 = (await so.nth(0).textContent()).trim();
+      await (t0 === richtig ? so.nth(0) : so.nth(1)).click();
+      await page.waitForTimeout(140);
+    }
+    await page.waitForFunction(sp => spiel.done[sp] === true, spot, { timeout: 9000 });
   }
+  await fange(2); await page.waitForTimeout(500);
+  for (const i of [0, 1, 3, 4]) {
+    await page.locator(`[data-spot="${i}"]`).click();
+    const got = await page.waitForFunction(i2 => spiel && spiel.aktiv === i2, i, { timeout: 9000 }).then(() => true).catch(() => false);
+    if (!got) { check("Spot " + i + " erreicht", false); continue; }
+    await fange(i); await page.waitForTimeout(500);
+  }
+  await page.waitForTimeout(400);
   const sres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
   const sm = sres.match(/Auf Anhieb richtig:\s*(\d+)\s*von\s*(\d+)/) || [];
-  check("Spiel: 5 Fische → volle Auswertung", sm[1] === "5" && sm[2] === "5", sm[1] + "/" + sm[2]);
+  check("Spiel: 5 Fische, 9 Fragen → volle Auswertung", sm[1] === "9" && sm[2] === "9", sm[1] + "/" + sm[2]);
+  // Responsiv: iPad-Querformat -> 2 Spalten, passt ohne Scrollen
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await page.reload(); await page.waitForTimeout(220);
+  await setLevel(3); await openMod("See-Abenteuer", null);
+  const fit = await page.evaluate(() => { const r = document.getElementById("spielHost").getBoundingClientRect();
+    return { ok: r.bottom <= window.innerHeight,
+      cols: getComputedStyle(document.querySelector(".spiel-wrap")).gridTemplateColumns.split(" ").length }; });
+  check("iPad quer: 2-Spalten-Layout", fit.cols === 2);
+  check("iPad quer: passt ohne Scrollen", fit.ok);
+  await page.setViewportSize({ width: 800, height: 1000 });
 
   // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
   section("Vorgangsbeschreibung interaktiv");
