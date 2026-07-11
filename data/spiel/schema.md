@@ -43,6 +43,21 @@ schwarzwald-tourismus.info, blinker.de).
 | `besatz` | Liste von Fisch-`id`s | Fisch-Pool der Welt – pro Runde wird gemischt und je Spot **ein** Fisch gezogen; so kommen über mehrere Runden alle Arten dran |
 | `deko` | emoji/x/y/groesse | Schmuck-Elemente auf dem Feld |
 
+### tennis.json (Tennis-Match)
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `gegner` | Liste | Match-Gegner: `id`, `name`, `emoji`, `staerke` (1–3; Stärke 3 = nur schwere Wörter), `spruch` (Vorstellung) – rotiert über die Matches |
+| `fakten` | Liste | Tennis-Wissen („Wusstest du?"): `begriff` + `text` – kindgerecht, recherchiert (srf.ch/kids, klexikon.zum.de, tennis.de, tennisfinale.com) |
+| `mental` | Liste | die 12 Mentaltrainer-Karten (Kinder-Mentaltraining): `id`, `titel`, `emoji` und die 5 Bausteine `trainieren` (⭐), `mission` (🎯), `mut` (💬), `punkt` (🎾), `schluss` (🏆) |
+
+Pflicht-Situationen in `mental`: `training`, `match`, `fehler`, `fehlerserie`,
+`nervositaet`, `fuehrung`, `rueckstand`, `tiebreak`, `aufschlag`, `return`,
+`seitenwechsel`, `lob`. Jede Karte: kurze Sätze, Kinderbilder (Löwe, Adler,
+Ninja, Superman, Tennismagnet), max. 150 Wörter, kein Gewinn-Druck.
+Fun Facts („Wusstest du?") gibt es bewusst **nur** zu Angel-Wissen
+(Fische) und Tennis-Wissen – die Übungswörter kommen überall aus dem
+Grundwortschatz.
+
 ## Regeln (werden vom Werkzeug geprüft)
 - Fisch-`id`s eindeutig; `fragen` = Länge von `steigerung` (max. 3).
 - Jeder `besatz`-Eintrag verweist auf eine existierende Fisch-`id`;
