@@ -210,6 +210,17 @@ button.chip.on{background:var(--primary); color:#fff;}
   background:var(--soft); border-radius:999px; padding:2px 8px;}
 .lvl-row{margin:4px 0 2px;}
 
+/* Kompakte Blume in der Auswertung */
+.result-pot svg{width:84px; height:auto;}
+/* Vorlesen */
+.speak-btn{background:#e4eefb; color:var(--primary-dark); border-radius:20px; padding:5px 12px;
+  font-size:13.5px; font-weight:700; min-height:auto; margin:0 0 8px; display:inline-block;}
+@media (hover:hover){ .speak-btn:hover{background:#d3e3f8;} }
+/* Gelesen/Angehört-Bestätigung */
+.gate-row{display:flex; gap:8px; margin-top:10px;}
+.gate-row button{flex:1;}
+.gate-row.done button{opacity:.55;}
+
 /* Kinder-Illustrationen auf den Erklär-Seiten */
 .illu{text-align:center; margin:2px 0 8px;}
 .illu svg{width:min(230px,72%); height:auto; display:inline-block;}
@@ -333,8 +344,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.22.0";
+const APP_VERSION = "1.23.0";
 const RELEASE_NOTES = [
+  {v:"1.23.0", datum:"10.07.2026", punkte:[
+    "Neues Spiel <b>🎣 See-Abenteuer</b>: mit dem Steuerkreuz um den See laufen, an Angelplätzen Fragen lösen und Fische fangen",
+    "<b>🔊 Vorlesen ist zurück</b> – überall als Alternative zum Selbst-Lesen (Texte, Beispiele, Fragen)",
+    "Erklär-Seiten müssen jetzt <b>gelesen oder angehört</b> und bestätigt werden, bevor es weitergeht",
+    "Bugfix: Die <b>Blume in der Auswertung</b> ist jetzt angenehm klein"]},
   {v:"1.22.0", datum:"10.07.2026", punkte:[
     "Vorgangsbeschreibung ist jetzt <b>interaktiv</b>: drei neue Übungs-Spiele im Üben-Bereich",
     "<b>🧩 Schritte ordnen</b>: die Sätze in die richtige Reihenfolge tippen – mit Schritte-Pfad, der sich füllt",
@@ -527,6 +543,65 @@ const THEMEN = [
 ];
 function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.name:"Alltag"; }
 
+/* ============================================================
+   VORLESEN (Web Speech API) – Alternative zum Selbst-Lesen.
+   Kleine 🔊-Knöpfe erscheinen automatisch an Text-/Beispiel-
+   und Satzboxen; Fragen in den Quiz-Engines haben eigene Knöpfe.
+   ============================================================ */
+function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
+function stopSpeak(){ if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
+function speak(text){
+  if(!speechOK() || !text) return;
+  try{
+    const sp=window.speechSynthesis;
+    sp.cancel();
+    const u=new SpeechSynthesisUtterance(String(text).replace(/\s+/g," ").trim().slice(0,600));
+    u.lang="de-DE"; u.rate=0.9; u.pitch=1;
+    const de=(sp.getVoices()||[]).find(v=>/^de/i.test(v.lang));
+    if(de) u.voice=de;
+    sp.speak(u);
+  }catch(e){}
+}
+if(speechOK()){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
+
+// Hängt automatisch 🔊-Knöpfe vor vorlesbare Boxen.
+function addSpeakButtons(root){
+  if(!speechOK() || !root) return;
+  root.querySelectorAll(".lesetext, .example-box, .sentence-box, .hint").forEach(function(box){
+    if(box.dataset.speakReady) return;
+    box.dataset.speakReady="1";
+    const btn=document.createElement("button");
+    btn.type="button"; btn.className="speak-btn"; btn.textContent="🔊 Vorlesen";
+    btn.addEventListener("click", function(e){ e.preventDefault(); speak(box.textContent||""); });
+    box.parentNode.insertBefore(btn, box);
+  });
+}
+
+/* „Gelesen oder angehört?" – die Erklärung muss bestätigt werden,
+   bevor der Weiter-Knopf freigeschaltet wird. */
+function readGate(host, btn, text){
+  if(!btn || !host) return;
+  btn.disabled=true; btn.classList.add("locked");
+  const row=document.createElement("div"); row.className="gate-row";
+  const hear=document.createElement("button"); hear.type="button"; hear.className="btn-secondary btn-small";
+  hear.textContent="🔊 Anhören";
+  const ok=document.createElement("button"); ok.type="button"; ok.className="btn-secondary btn-small";
+  ok.textContent="✓ Habe ich gelesen";
+  const unlock=()=>{ btn.disabled=false; btn.classList.remove("locked");
+    row.classList.add("done"); ok.disabled=true; ok.textContent="✓ Super!"; };
+  hear.onclick=()=>{ speak(text); unlock(); };
+  ok.onclick=unlock;
+  if(!speechOK()) hear.style.display="none";
+  row.appendChild(hear); row.appendChild(ok);
+  btn.parentNode.insertBefore(row, btn);
+}
+// Sammelt den vorlesbaren Text der ersten Karten einer Erklär-Seite
+function pageText(c){
+  let t="";
+  c.querySelectorAll(".card").forEach((card,i)=>{ if(i<3) t+=" "+card.textContent; });
+  return t.replace(/\s+/g," ").trim().slice(0,600);
+}
+
 /* Wählt die Sätze passend zur Klassenstufe:
    Klasse 3 -> Grundsätze (base), Klasse 4 -> schwerere Sätze (extra),
    Alle -> beide zusammen. Fällt zurück auf base, falls extra fehlt. */
@@ -706,7 +781,7 @@ function renderRunResult(host, key, onRepeat){
     <div class="card">
       <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
       ${isField?`<p style="text-align:center;margin:0 0 4px;">${fieldBadge(key)}</p>`:``}
-      <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
+      <div class="result-pot" style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
       <p style="text-align:center;font-size:20px;font-weight:800;margin:2px 0;">${titel}</p>
       <p style="text-align:center;" class="muted">${text}</p>
       <div class="example-box" style="margin-top:10px;">
@@ -1084,7 +1159,10 @@ function vgTabGrundlagen(c,r){
     c.querySelector("#nextEx").style.display = bs.length>1?"block":"none"; };
   c.querySelector("#showEx").onclick=showAt;
   c.querySelector("#nextEx").onclick=()=>{ idx=(idx+1)%bs.length; showAt(); };
-  c.querySelector("#toBlatt").onclick=()=>goSection("blatt");
+  const toBlatt=c.querySelector("#toBlatt");
+  toBlatt.onclick=()=>goSection("blatt");
+  addSpeakButtons(c);
+  readGate(toBlatt.parentNode, toBlatt, pageText(c));
 }
 
 /* ---- Gemeinsame Visualisierung: Schritte-Pfad (Kreise füllen sich) ---- */
@@ -3230,10 +3308,13 @@ function renderQuizPaged(host, items, getIdx, setIdx, state){
   let answered=false, wrongTries=0;
   host.innerHTML = `
     <p class="muted">Aufgabe ${i+1} von ${items.length}</p>
+    <button type="button" class="speak-btn" id="qspeak">🔊 Vorlesen</button>
     <p style="font-size:19px;"><b>${it.frage}</b></p>
     <div id="opts"></div>
     <div id="qfb"></div>
     <button class="btn-primary btn-small mt" id="qnext" style="width:100%;">Weiter</button>`;
+  const qs=host.querySelector("#qspeak");
+  if(qs){ if(speechOK()) qs.onclick=()=>speak(it.frage+". "+(it.optionen?it.optionen.join(". "):"")); else qs.style.display="none"; }
   const fb=host.querySelector("#qfb");
   const opts=host.querySelector("#opts");
   if(it.typ==="reveal"){
@@ -3304,7 +3385,7 @@ function renderQuizResult(host, items, getIdx, setIdx, state){
   else { stufe=1; titel="Es keimt! 🌱"; text="Ein Anfang ist gemacht – wiederhole die Aufgaben ruhig noch einmal."; }
   host.innerHTML = `
     <h3 style="text-align:center;margin:4px 0;">Deine Auswertung</h3>
-    <div style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
+    <div class="result-pot" style="text-align:center;margin:6px 0;">${potSVG(stufe)}</div>
     <p style="text-align:center;font-size:20px;font-weight:800;margin:2px 0;">${titel}</p>
     <p style="text-align:center;" class="muted">${text}</p>
     <div class="example-box" style="margin-top:10px;">
@@ -3828,6 +3909,7 @@ function renderSpellPaged(host, K, key){
   let answered=false;
   host.innerHTML=`
     <p class="muted">Wort ${i+1} von ${S.length}${ch.n>1?` · Paket ${ch.ci+1} von ${ch.n}`:``}</p>
+    <button type="button" class="speak-btn" id="gwsSpeak">🔊 Vorlesen</button>
     <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
     <div style="display:flex; gap:10px;">
       <button class="btn-secondary gws-opt" data-w="${a}" style="flex:1; font-size:22px;">${a}</button>
@@ -3835,6 +3917,8 @@ function renderSpellPaged(host, K, key){
     </div>
     <div id="gwsfb"></div>
     <button class="btn-primary btn-small mt" id="gwsNext" style="width:100%;">Weiter</button>`;
+  const gsp=host.querySelector("#gwsSpeak");
+  if(gsp){ if(speechOK()) gsp.onclick=()=>speak("Welches Wort ist richtig geschrieben? "+w.richtig.replace(/^(der|die|das) /,"")); else gsp.style.display="none"; }
   const fb=host.querySelector("#gwsfb");
   host.querySelectorAll(".gws-opt").forEach(btn=>btn.onclick=()=>{
     if(answered) return;
@@ -3880,6 +3964,147 @@ function gwsWorksheetHTML(){
     ${blocks}`;
 }
 function gwsFlower(c){ renderFlower(c, MODULES.gws.self, store.gws.self); }
+
+/* ============================================================
+   MODUL: SEE-ABENTEUER (interaktives Spiel)
+   Eine kleine Welt zum Herumlaufen: Steuerkreuz bewegt die
+   Spielfigur um den See. An jedem Angelplatz wartet eine
+   Rechtschreib-Frage – richtig beantwortet = Fisch gefangen!
+   ============================================================ */
+let spiel=null;
+const SPIEL_W=340, SPIEL_H=230;
+const SPIEL_SEE={cx:170, cy:118, rx:96, ry:58};
+const SPIEL_SPOTS=[
+  {x:60,  y:118}, {x:170, y:44},
+  {x:280, y:118}, {x:110, y:186}, {x:230, y:186}
+];
+function spielFrage(){
+  // zufällige Rechtschreib-Frage aus dem Grundwortschatz
+  const k=GWS_KATEGORIEN[Math.floor(Math.random()*GWS_KATEGORIEN.length)];
+  const e=gwsLists(k), all=e.leicht.concat(e.schwer);
+  const w=all[Math.floor(Math.random()*all.length)];
+  return {w:w, tipp:k.tipp};
+}
+function spielInit(){
+  spiel={ x:34, y:60, done:[false,false,false,false,false], aktiv:-1, frage:null };
+  runReset("spiel"); runGet("spiel", SPIEL_SPOTS.length);
+}
+function spielImSee(x,y){
+  const dx=(x-SPIEL_SEE.cx)/(SPIEL_SEE.rx+10), dy=(y-SPIEL_SEE.cy)/(SPIEL_SEE.ry+10);
+  return dx*dx+dy*dy < 1;
+}
+function spielMove(dx,dy){
+  if(!spiel || spiel.aktiv>=0) return; // beim Angeln stehen bleiben
+  const nx=Math.max(16, Math.min(SPIEL_W-16, spiel.x+dx));
+  const ny=Math.max(18, Math.min(SPIEL_H-14, spiel.y+dy));
+  if(!spielImSee(nx,ny)){ spiel.x=nx; spiel.y=ny; }
+  else if(!spielImSee(nx,spiel.y)){ spiel.x=nx; }
+  else if(!spielImSee(spiel.x,ny)){ spiel.y=ny; }
+  // Angelplatz erreicht?
+  SPIEL_SPOTS.forEach((sp,i)=>{
+    if(spiel.done[i] || spiel.aktiv>=0) return;
+    const d=Math.hypot(spiel.x-sp.x, spiel.y-sp.y);
+    if(d<24){ spiel.aktiv=i; spiel.frage=spielFrage(); }
+  });
+  spielDraw();
+}
+function spielSVG(){
+  const spots=SPIEL_SPOTS.map((sp,i)=>{
+    const done=spiel.done[i];
+    return `<circle cx="${sp.x}" cy="${sp.y}" r="14" fill="${done?"#d9f0dd":"#fff3c9"}" stroke="${done?"#3f9d54":"#e0b23e"}" stroke-width="2.5"/>
+      <text x="${sp.x}" y="${sp.y+6}" font-size="15" text-anchor="middle">${done?"🐟":"🎣"}</text>`;
+  }).join("");
+  return `<svg id="spielFeld" viewBox="0 0 ${SPIEL_W} ${SPIEL_H}" style="width:100%; border-radius:14px; display:block; touch-action:none;" xmlns="http://www.w3.org/2000/svg">
+    <rect width="${SPIEL_W}" height="${SPIEL_H}" fill="#bfe0a8"/>
+    <ellipse cx="${SPIEL_SEE.cx}" cy="${SPIEL_SEE.cy}" rx="${SPIEL_SEE.rx}" ry="${SPIEL_SEE.ry}" fill="#8ec4ee" stroke="#4a7fd6" stroke-width="3"/>
+    <ellipse cx="${SPIEL_SEE.cx-24}" cy="${SPIEL_SEE.cy-14}" rx="26" ry="9" fill="#b3d9f5"/>
+    <text x="150" y="128" font-size="14">🐠</text><text x="200" y="108" font-size="12">🐟</text>
+    <text x="18" y="30" font-size="16">🌳</text><text x="308" y="34" font-size="16">🌳</text>
+    <text x="304" y="214" font-size="16">🌼</text><text x="32" y="214" font-size="14">🌾</text>
+    ${spots}
+    <text id="spielFigur" x="${spiel.x}" y="${spiel.y+7}" font-size="21" text-anchor="middle">🧒</text>
+  </svg>`;
+}
+function spielDraw(){
+  const f=$("spielFigur");
+  if(f){ f.setAttribute("x", spiel.x); f.setAttribute("y", spiel.y+7); }
+  const host=$("spielHost");
+  if(!host) return;
+  if(spiel.aktiv>=0){ spielFragBox(host); }
+  const b=$("spielKorb");
+  if(b) b.textContent="🧺 "+spiel.done.filter(Boolean).length+" / "+SPIEL_SPOTS.length;
+  // Feld neu zeichnen, wenn ein Fisch gefangen wurde (Spots ändern sich)
+}
+function spielFragBox(host){
+  const box=$("spielQ"); if(!box) return;
+  const i=spiel.aktiv, q=spiel.frage;
+  if(i<0 || !q){ box.innerHTML=""; return; }
+  const richtigLinks=Math.random()<0.5;
+  const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
+  box.innerHTML=`
+    <div class="hint">🎣 Ein Fisch beißt an! Welches Wort ist <b>richtig</b> geschrieben?</div>
+    <div style="display:flex; gap:8px; margin-top:8px;">
+      <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:19px;">${a}</button>
+      <button class="btn-secondary spiel-opt" data-w="${b2}" style="flex:1; font-size:19px;">${b2}</button>
+    </div>
+    <div id="spielfb"></div>`;
+  addSpeakButtons(box);
+  box.querySelectorAll(".spiel-opt").forEach(btn=>btn.onclick=()=>{
+    const correct=btn.dataset.w===q.w.richtig;
+    const fb=box.querySelector("#spielfb");
+    const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    if(correct){
+      runCorrect("spiel", i);
+      spiel.done[i]=true; spiel.aktiv=-1; spiel.frage=null;
+      d.innerHTML="🐟 <b>Gefangen!</b> „"+q.w.richtig+"“ ist richtig. "+q.tipp;
+      fb.innerHTML=""; fb.appendChild(d);
+      setTimeout(()=>{ spielRefresh(); }, 900);
+    }else{
+      runWrong("spiel", i);
+      spiel.frage=spielFrage(); // neue Frage, der Fisch ist weg
+      d.innerHTML="Oh, der Fisch ist entwischt! 💨 "+q.tipp+" Gleich beißt der nächste an …";
+      fb.innerHTML=""; fb.appendChild(d);
+      focusFeedback(d,null);
+      setTimeout(()=>{ if(spiel && spiel.aktiv===i) spielFragBox(host); }, 1600);
+    }
+  });
+}
+function spielRefresh(){
+  if(activeModuleId==="spiel") spielRender($("moduleContent"));
+}
+function spielRender(c){
+  if(!spiel) spielInit();
+  const gefangen=spiel.done.filter(Boolean).length;
+  if(gefangen>=SPIEL_SPOTS.length){
+    c.innerHTML=`<div class="card" id="spielHost"></div>`;
+    return renderRunResult(c.querySelector("#spielHost"), "spiel", ()=>{ spielInit(); spielRender(c); });
+  }
+  c.innerHTML=`
+    <div class="card" id="spielHost">
+      <h2>🎣 See-Abenteuer</h2>
+      <p class="muted">Laufe mit dem Steuerkreuz <b>um den See</b> zu den Angelplätzen 🎣.
+      Beantworte die Frage richtig und fang den Fisch!</p>
+      <p style="text-align:right; font-weight:800; margin:0 0 6px;" id="spielKorb">🧺 ${gefangen} / ${SPIEL_SPOTS.length}</p>
+      ${spielSVG()}
+      <div id="spielQ" style="margin-top:10px;"></div>
+      <div style="display:grid; grid-template-columns:repeat(3,64px); gap:6px; justify-content:center; margin-top:12px;" id="spielPad">
+        <span></span><button class="btn-secondary" data-d="up" style="min-height:52px; font-size:22px;">⬆️</button><span></span>
+        <button class="btn-secondary" data-d="left" style="min-height:52px; font-size:22px;">⬅️</button>
+        <span></span>
+        <button class="btn-secondary" data-d="right" style="min-height:52px; font-size:22px;">➡️</button>
+        <span></span><button class="btn-secondary" data-d="down" style="min-height:52px; font-size:22px;">⬇️</button><span></span>
+      </div>
+    </div>`;
+  const DIR={up:[0,-14], down:[0,14], left:[-14,0], right:[14,0]};
+  c.querySelectorAll("#spielPad button").forEach(b=>{
+    let timer=null;
+    const step=()=>spielMove(...DIR[b.dataset.d]);
+    b.addEventListener("pointerdown", e=>{ e.preventDefault(); step(); timer=setInterval(step,140); });
+    ["pointerup","pointerleave","pointercancel"].forEach(ev=>b.addEventListener(ev, ()=>{ if(timer){clearInterval(timer); timer=null;} }));
+  });
+  if(spiel.aktiv>=0) spielFragBox(c.querySelector("#spielHost"));
+}
+
 
 /* ============================================================
    ELTERNBEREICH: Grundwortschatz-Wörter verwalten
@@ -4232,6 +4457,12 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:gwsFlower}
     ],
     self:{ groups:[{title:"Grundwortschatz", fragen:KRIT_GWS}], form:KRIT_GWS_FORM }
+  },
+  spiel:{
+    id:"spiel", name:"See-Abenteuer", emoji:"🎣",
+    sections:[
+      {id:"spiel", icon:"🎣", label:"Spiel", render:spielRender}
+    ]
   }
 };
 
@@ -4324,7 +4555,7 @@ let activeSectionId = null;
 // Welche Lernfelder gehören zu welcher Klassenstufe (mehrere möglich)
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
-  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4]
+  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -4335,7 +4566,7 @@ function buildLevelRow(){
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
   subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=gwsCatIdx=gwsIdx=0;
-  vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null;
+  vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null;
   scoreRuns={};
 }
 function buildThemeRow(){
@@ -4370,11 +4601,12 @@ function openModule(id){
   save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
   gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; gwsCatIdx=0; gwsIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
-  vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null;
+  vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null;
   scoreRuns={};
   goSection(MODULES[id].sections[0].id);
 }
 function goHome(){
+  stopSpeak();
   activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-home").classList.add("active");
@@ -4383,12 +4615,20 @@ function goHome(){
   window.scrollTo(0,0);
 }
 function goSection(secId){
+  stopSpeak();
   const m=MODULES[activeModuleId];
   const sec=m.sections.find(s=>s.id===secId) || m.sections[0];
   activeSectionId=sec.id;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
-  sec.render($("moduleContent"));
+  const mc=$("moduleContent");
+  sec.render(mc);
+  addSpeakButtons(mc);
+  // Erklär-Seiten: erst „gelesen/angehört" bestätigen, dann weiter
+  if(sec.id==="lernen" || sec.id==="info"){
+    const cta=mc.querySelector("#toUeben, #toLesen");
+    if(cta) readGate(cta.parentNode, cta, pageText(mc));
+  }
   renderNav();
   window.scrollTo(0,0);
 }
