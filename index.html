@@ -355,8 +355,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.24.0";
+const APP_VERSION = "1.25.0";
 const RELEASE_NOTES = [
+  {v:"1.25.0", datum:"10.07.2026", punkte:[
+    "🎣 See-Abenteuer: <b>Lösungshinweise bleiben stehen</b> – weiter geht es erst mit dem Weiter-Knopf",
+    "<b>Naturgetreue Fisch-Bilder</b>: Rotfeder, Zander und Hecht sind jetzt als Illustration zu sehen, wenn sie anbeißen",
+    "<b>Echte Steigerung</b>: erste Frage mit leichten Grundwortschatz-Wörtern (Klasse 1/2), Folgefragen großer Fische mit schweren (Klasse 3/4) – mit 🌱/🔥-Anzeige"]},
   {v:"1.24.0", datum:"10.07.2026", punkte:[
     "🎣 See-Abenteuer rundum verbessert: <b>Angelplätze direkt antippen</b> – die Figur läuft von selbst um den See",
     "<b>Einwurf-Animation</b> (Schwimmer fliegt in den See 💦), dann erscheint die Frage",
@@ -3997,11 +4001,65 @@ const SPIEL_FISCHE={1:{name:"eine Rotfeder",kurz:"Rotfeder",hinweis:"",gr:14},
   2:{name:"ein ZANDER",kurz:"Zander",hinweis:"Er ist stark – du brauchst 2 richtige Antworten!",gr:19},
   3:{name:"ein RIESIGER HECHT",kurz:"Hecht",hinweis:"Der Riese braucht 3 richtige Antworten!",gr:25}};
 function spielT(ms){ return window.__SPIEL_SCHNELL__ ? Math.max(15, ms/12) : ms; }
-function spielFrage(){
+/* Frage aus dem amtlichen Grundwortschatz – mit Steigerung:
+   leichte Wörter (Klasse 1/2) für den Einstieg, schwere (Klasse 3/4)
+   für die weiteren Fragen großer Fische. */
+function spielFrage(schwer){
   const k=GWS_KATEGORIEN[Math.floor(Math.random()*GWS_KATEGORIEN.length)];
-  const e=gwsLists(k), all=e.leicht.concat(e.schwer);
-  const w=all[Math.floor(Math.random()*all.length)];
-  return {w:w, tipp:k.tipp};
+  const e=gwsLists(k);
+  const pool = schwer ? (e.schwer.length?e.schwer:e.leicht) : (e.leicht.length?e.leicht:e.schwer);
+  const w=pool[Math.floor(Math.random()*pool.length)];
+  return {w:w, tipp:k.tipp, schwer:!!schwer};
+}
+// Naturgetreue Fisch-Illustrationen (Körperform + Färbung der echten Arten)
+function spielFischBild(art, w){
+  w=w||130;
+  if(art==="Rotfeder") return `
+  <svg viewBox="0 0 200 90" style="width:${w}px;height:auto;" xmlns="http://www.w3.org/2000/svg" aria-label="Rotfeder">
+    <defs><linearGradient id="rfK" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8d9ba8"/><stop offset="0.45" stop-color="#c9d4da"/><stop offset="1" stop-color="#f2f5f6"/>
+    </linearGradient></defs>
+    <path d="M28 46 Q60 14 105 16 Q150 20 170 44 Q150 66 105 70 Q60 74 28 46 Z" fill="url(#rfK)" stroke="#6e7d8a" stroke-width="2"/>
+    <path d="M170 44 L196 24 L190 44 L196 64 Z" fill="#d94f3d" stroke="#a83527" stroke-width="1.5"/>
+    <path d="M92 17 Q104 2 122 8 L112 19 Z" fill="#d94f3d" stroke="#a83527" stroke-width="1.5"/>
+    <path d="M96 68 Q104 84 120 82 L110 66 Z" fill="#d94f3d" stroke="#a83527" stroke-width="1.5"/>
+    <path d="M66 62 Q70 76 84 76 L78 60 Z" fill="#e06552" stroke="#a83527" stroke-width="1.2"/>
+    <path d="M60 40 Q74 46 62 56 Q54 48 60 40 Z" fill="#b8c6cf" stroke="#6e7d8a" stroke-width="1.2"/>
+    <circle cx="47" cy="40" r="6" fill="#fff"/><circle cx="47" cy="40" r="3.2" fill="#1c2833"/>
+    <circle cx="48.2" cy="38.8" r="1.1" fill="#fff"/>
+    <path d="M30 46 Q34 50 40 51" stroke="#6e7d8a" stroke-width="1.6" fill="none"/>
+  </svg>`;
+  if(art==="Zander") return `
+  <svg viewBox="0 0 230 90" style="width:${w}px;height:auto;" xmlns="http://www.w3.org/2000/svg" aria-label="Zander">
+    <defs><linearGradient id="zaK" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a8060"/><stop offset="0.5" stop-color="#c8c39a"/><stop offset="1" stop-color="#efe9cf"/>
+    </linearGradient></defs>
+    <path d="M18 46 Q55 20 115 20 Q175 22 200 44 Q175 64 115 66 Q55 68 18 46 Z" fill="url(#zaK)" stroke="#5d6247" stroke-width="2"/>
+    ${[70,92,114,136,158].map(x=>`<path d="M${x} 24 Q${x+4} 42 ${x} 60" stroke="#6b6f52" stroke-width="5" fill="none" opacity="0.35"/>`).join("")}
+    <path d="M200 44 L226 26 L220 44 L226 62 Z" fill="#8a8f6c" stroke="#5d6247" stroke-width="1.5"/>
+    <path d="M78 22 L84 4 L92 20 L100 5 L108 20 L116 6 L122 21 Z" fill="#9aa07c" stroke="#5d6247" stroke-width="1.5"/>
+    <path d="M132 21 Q146 8 162 14 L152 23 Z" fill="#9aa07c" stroke="#5d6247" stroke-width="1.5"/>
+    <path d="M104 64 Q112 80 128 78 L118 62 Z" fill="#9aa07c" stroke="#5d6247" stroke-width="1.5"/>
+    <path d="M52 42 Q66 48 54 58 Q46 50 52 42 Z" fill="#b6b28a" stroke="#5d6247" stroke-width="1.2"/>
+    <circle cx="38" cy="38" r="6.5" fill="#e8f0f2"/><circle cx="38" cy="38" r="3.4" fill="#1c2833"/>
+    <circle cx="39.4" cy="36.6" r="1.1" fill="#fff"/>
+    <path d="M18 46 Q26 52 36 53" stroke="#5d6247" stroke-width="1.6" fill="none"/>
+  </svg>`;
+  return `
+  <svg viewBox="0 0 260 80" style="width:${Math.round(w*1.25)}px;height:auto;" xmlns="http://www.w3.org/2000/svg" aria-label="Hecht">
+    <defs><linearGradient id="heK" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#3f5a33"/><stop offset="0.5" stop-color="#7d9b58"/><stop offset="1" stop-color="#e6ecc8"/>
+    </linearGradient></defs>
+    <path d="M6 42 Q20 30 44 30 L60 26 Q140 18 200 26 Q228 30 234 40 Q228 52 200 56 Q140 64 60 56 L44 52 Q20 52 6 42 Z" fill="url(#heK)" stroke="#2f4426" stroke-width="2"/>
+    ${[70,90,110,130,150,170].map((x,i)=>`<ellipse cx="${x}" cy="${34+(i%2)*12}" rx="5" ry="2.6" fill="#dfe8b8" opacity="0.85"/>`).join("")}
+    <path d="M234 40 L258 22 L252 40 L258 58 Z" fill="#5c7a42" stroke="#2f4426" stroke-width="1.5"/>
+    <path d="M196 26 Q206 12 222 16 L214 27 Z" fill="#5c7a42" stroke="#2f4426" stroke-width="1.5"/>
+    <path d="M196 55 Q206 70 222 66 L214 54 Z" fill="#5c7a42" stroke="#2f4426" stroke-width="1.5"/>
+    <path d="M96 56 Q104 70 118 68 L110 54 Z" fill="#6b8a4e" stroke="#2f4426" stroke-width="1.2"/>
+    <path d="M6 42 L30 38 M6 42 L30 46" stroke="#2f4426" stroke-width="2" fill="none"/>
+    <circle cx="42" cy="34" r="5.5" fill="#f3e9c8"/><circle cx="42" cy="34" r="3" fill="#1c2833"/>
+    <circle cx="43.2" cy="32.8" r="1" fill="#fff"/>
+  </svg>`;
 }
 function spielInit(){
   const sizes=vgShuffle([1,1,2,2,3]);
@@ -4091,17 +4149,17 @@ function spielWerfen(i){
       bob.textContent="💦";
       setTimeout(()=>{ if(!spiel) return;
         const bb=$("spielBobber"); if(bb) bb.textContent="🔴";
-        spiel.busy=false; spiel.aktiv=i; spiel.stage=0; spiel.frage=spielFrage();
+        spiel.busy=false; spiel.aktiv=i; spiel.stage=0; spiel.frage=spielFrage(false);
         spielKorb(); spielFragBox();
       }, spielT(380));
     }
   }, spielT(45));
 }
 // Fisch heranziehen: ein Stück (weitere Frage) oder ganz (gefangen)
-function spielZiehen(i, fertig){
+function spielZiehen(i, fertig, cb){
   spiel.busy=true; spielStop();
   const bob=$("spielBobber"), line=$("spielLine");
-  if(!bob){ spiel.busy=false; return; }
+  if(!bob){ spiel.busy=false; cb&&cb(); return; }
   const f=SPIEL_FISCHE[spiel.size[i]];
   bob.textContent="🐟"; bob.setAttribute("font-size", f.gr);
   const x0=parseFloat(bob.getAttribute("x")), y0=parseFloat(bob.getAttribute("y"));
@@ -4117,12 +4175,10 @@ function spielZiehen(i, fertig){
     if(t>=1){
       spielStop();
       if(fertig){
-        spiel.done[i]=true; spiel.aktiv=-1; spiel.frage=null; spiel.busy=false;
-        setTimeout(()=>{ if(spiel) spielRefresh(); }, spielT(420));
-      }else{
-        spiel.busy=false; spiel.frage=spielFrage();
-        spielFragBox();
+        spiel.done[i]=true; spiel.aktiv=-1; spiel.frage=null;
       }
+      spiel.busy=false;
+      cb&&cb();
     }
   }, spielT(45));
 }
@@ -4138,10 +4194,12 @@ function spielFragBox(){
   const kopf = spiel.stage===0
     ? `🎣 <b>${f.name}</b> beißt an! ${f.hinweis}`
     : `💪 Der <b>${f.kurz}</b> wehrt sich – Frage ${spiel.stage+1} von ${spiel.size[i]}!`;
+  const stufe = q.schwer ? "🔥 schwere Frage" : "🌱 leichte Frage";
   const richtigLinks=Math.random()<0.5;
   const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
-    <div class="hint">${kopf}<br>Welches Wort ist <b>richtig</b> geschrieben?</div>
+    <div style="text-align:center;">${spielFischBild(f.kurz, 120)}</div>
+    <div class="hint">${kopf}<br><span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
     <div style="display:flex; gap:8px; margin-top:8px;">
       <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
       <button class="btn-secondary spiel-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
@@ -4151,33 +4209,43 @@ function spielFragBox(){
     if(spiel.busy || spiel.aktiv!==i) return;
     const correct=btn.dataset.w===q.w.richtig;
     const qIdx=i*3+spiel.stage;
+    box.querySelectorAll(".spiel-opt").forEach(b3=>{ b3.disabled=true;
+      if(b3.dataset.w===q.w.richtig) b3.style.background="#d9f0dd"; });
     const fb=box.querySelector("#spielfb");
     const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+    // Der Hinweis BLEIBT stehen – weiter geht es erst per Knopf.
+    const weiter=document.createElement("button");
+    weiter.className="btn-primary btn-small mt"; weiter.style.width="100%";
+    weiter.id="spielWeiter"; weiter.disabled=true;
     if(correct){
       runCorrect("spiel", qIdx);
       const fertig = spiel.stage+1 >= spiel.size[i];
       if(fertig){
-        d.innerHTML=`🐟 <b>Gefangen – ${f.kurz}!</b> „${q.w.richtig}“ war richtig. ${q.tipp}`;
-        fb.innerHTML=""; fb.appendChild(d);
-        spielZiehen(i, true);
-        spielKorbPlus();
+        d.innerHTML=`🐟 <b>Gefangen – ${f.kurz}!</b> „${q.w.richtig}“ war richtig.<br>💡 ${q.tipp}`;
+        weiter.textContent="Weiter angeln 🎉";
+        fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
+        spielZiehen(i, true, ()=>{ spielKorb(); weiter.disabled=false; });
+        weiter.onclick=()=>{ if(!weiter.disabled) spielRefresh(); };
       }else{
         spiel.stage++;
-        d.innerHTML=`Richtig! Du ziehst ihn näher heran … 💪 ${q.tipp}`;
-        fb.innerHTML=""; fb.appendChild(d);
-        spielZiehen(i, false);
+        d.innerHTML=`Richtig! Du ziehst ihn näher heran … 💪<br>💡 ${q.tipp}`;
+        weiter.textContent=`Weiter – Frage ${spiel.stage+1} von ${spiel.size[i]}`;
+        fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
+        spielZiehen(i, false, ()=>{ weiter.disabled=false; });
+        weiter.onclick=()=>{ if(weiter.disabled) return;
+          spiel.frage=spielFrage(true); spielFragBox(); };
       }
     }else{
       runWrong("spiel", qIdx);
-      spiel.frage=spielFrage();
-      d.innerHTML=`Der ${f.kurz} zappelt sich frei von der Frage! 💨 ${q.tipp} Versuch es gleich nochmal …`;
-      fb.innerHTML=""; fb.appendChild(d);
+      d.innerHTML=`Oh – richtig wäre <b>„${q.w.richtig}“</b> gewesen!<br>💡 ${q.tipp}<br>Der ${f.kurz} ist noch dran – gleich kommt die nächste Frage.`;
+      weiter.textContent="🎣 Nächster Versuch";
+      weiter.disabled=false;
+      fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
       focusFeedback(d,null);
-      setTimeout(()=>{ if(spiel && spiel.aktiv===i && !spiel.busy) spielFragBox(); }, spielT(1500));
+      weiter.onclick=()=>{ spiel.frage=spielFrage(q.schwer); spielFragBox(); };
     }
   });
 }
-function spielKorbPlus(){ setTimeout(()=>{ if(spiel) spielKorb(); }, spielT(500)); }
 function spielSVG(){
   const S=SPIEL_SEE;
   const spots=SPIEL_SPOTS.map((sp,i)=>{

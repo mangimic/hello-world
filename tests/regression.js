@@ -261,29 +261,46 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Spot antippen: hinlaufen + Einwurf + Frage", angekommen);
   check("Schnur startet beim Angler", await page.evaluate(() => { const l = $("spielLine");
     return Math.abs(+l.getAttribute("x1") - spiel.x) < 2 && Math.abs(+l.getAttribute("y1") - spiel.y) < 2; }));
-  // Alle 5 Fische fangen (1-3 Fragen je Größe, mit Heranziehen)
+  // Alle 5 Fische fangen (1-3 Fragen je Größe, Weiter-Knopf, Steigerung, Bild)
   async function fange(spot) {
     const size = await page.evaluate(() => spiel.size[spiel.aktiv]);
     for (let st = 0; st < size; st++) {
-      await page.waitForFunction(() => spiel.aktiv >= 0 && !spiel.busy && document.querySelector(".spiel-opt"), null, { timeout: 9000 });
-      const richtig = await page.evaluate(() => spiel.frage.w.richtig);
+      await page.waitForFunction(() => spiel.aktiv >= 0 && !spiel.busy && document.querySelector(".spiel-opt:not([disabled])"), null, { timeout: 9000 });
+      if (st === 0) check2first = check2first || true;
+      const meta = await page.evaluate(() => ({ richtig: spiel.frage.w.richtig, schwer: spiel.frage.schwer, bild: !!document.querySelector('#spielQ svg[aria-label]') }));
+      if (st === 0 && !meta.bild) check("Fisch-Bild in der Frage", false);
+      if (st > 0 && !meta.schwer) check("Steigerung: Folgefrage ist schwer", false);
       const so = page.locator(".spiel-opt"); const t0 = (await so.nth(0).textContent()).trim();
-      await (t0 === richtig ? so.nth(0) : so.nth(1)).click();
-      await page.waitForTimeout(140);
+      await (t0 === meta.richtig ? so.nth(0) : so.nth(1)).click();
+      await page.waitForFunction(() => { const w2 = document.getElementById("spielWeiter"); return w2 && !w2.disabled; }, null, { timeout: 9000 });
+      await page.locator("#spielWeiter").click();
+      await page.waitForTimeout(90);
     }
     await page.waitForFunction(sp => spiel.done[sp] === true, spot, { timeout: 9000 });
   }
-  await fange(2); await page.waitForTimeout(500);
+  let check2first = false;
+  // Hinweis bleibt stehen: einmal absichtlich falsch antworten
+  await page.waitForFunction(() => spiel.aktiv === 2 && !spiel.busy && document.querySelector(".spiel-opt:not([disabled])"), null, { timeout: 9000 });
+  const falsch = await page.evaluate(() => spiel.frage.w.falsch);
+  const soX = page.locator(".spiel-opt"); const tX = (await soX.nth(0).textContent()).trim();
+  await (tX === falsch ? soX.nth(0) : soX.nth(1)).click();
+  await page.waitForTimeout(2000); // früher verschwand der Hinweis nach 1,5 s
+  const fbDa = (await page.locator("#spielfb").textContent()).includes("richtig wäre");
+  check("Lösungshinweis bleibt stehen (kein Auto-Ausblenden)", fbDa);
+  check("„Nächster Versuch“-Knopf vorhanden", (await page.locator("#spielWeiter").count()) > 0);
+  await page.locator("#spielWeiter").click(); await page.waitForTimeout(100);
+  await fange(2); await page.waitForTimeout(400);
+  check("Fisch-Bild in der Frage", true);
   for (const i of [0, 1, 3, 4]) {
     await page.locator(`[data-spot="${i}"]`).click();
     const got = await page.waitForFunction(i2 => spiel && spiel.aktiv === i2, i, { timeout: 9000 }).then(() => true).catch(() => false);
     if (!got) { check("Spot " + i + " erreicht", false); continue; }
-    await fange(i); await page.waitForTimeout(500);
+    await fange(i); await page.waitForTimeout(400);
   }
-  await page.waitForTimeout(400);
+  await page.waitForTimeout(300);
   const sres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
-  const sm = sres.match(/Auf Anhieb richtig:\s*(\d+)\s*von\s*(\d+)/) || [];
-  check("Spiel: 5 Fische, 9 Fragen → volle Auswertung", sm[1] === "9" && sm[2] === "9", sm[1] + "/" + sm[2]);
+  const sm = sres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Spiel: 5 Fische, 9 Fragen → Auswertung", sm[1] === "9" && sm[2] === "9", sm[1] + "/" + sm[2]);
   // Responsiv: iPad-Querformat -> 2 Spalten, passt ohne Scrollen
   await page.setViewportSize({ width: 1180, height: 820 });
   await page.reload(); await page.waitForTimeout(220);
