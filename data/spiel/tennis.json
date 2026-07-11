@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "kommentar": "Tennis-Match: Gegner, Tennis-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Mentaltraining nach dem Kinder-Mentaltrainer-Prompt: kurze Sätze, Kinderbilder (Löwe, Adler, Ninja, Superman, Tennismagnet), Rituale, kein Gewinn-Druck. Fun Facts recherchiert: srf.ch/kids, klexikon.zum.de, tennis.de, tennisfinale.com.",
+  "gegner": [
+    {
+      "id": "wand",
+      "name": "Die Ballwand",
+      "emoji": "🧱",
+      "staerke": 1,
+      "spruch": "Die Ballwand gibt jeden Ball zurück – perfekt zum Aufwärmen!"
+    },
+    {
+      "id": "mia",
+      "name": "Mia Topspin",
+      "emoji": "👧",
+      "staerke": 2,
+      "spruch": "Mia liebt lange Ballwechsel. Bleib geduldig und spiel deinen Plan!"
+    },
+    {
+      "id": "robo",
+      "name": "Robo-Schläger 3000",
+      "emoji": "🤖",
+      "staerke": 3,
+      "spruch": "Der Roboter macht fast keine Fehler. Zeig ihm dein mutigstes Tennis!"
+    }
+  ],
+  "fakten": [
+    { "begriff": "Zählweise", "text": "Beim Tennis zählt man komisch: nicht 1, 2, 3 – sondern 15, 30, 40 … und dann heißt es schon „Spiel“!" },
+    { "begriff": "Ass", "text": "Ein Ass ist ein Aufschlag, den der Gegner gar nicht erreicht. Der Punkt gehört sofort dir!" },
+    { "begriff": "Aufschlag", "text": "Beim Aufschlag hast du zwei Versuche – und der Ball muss immer schräg (diagonal) ins Aufschlagfeld." },
+    { "begriff": "Tiebreak", "text": "Steht ein Satz 6:6, gibt es den Tiebreak. Dort zählt man ganz normal 1, 2, 3 – wer zuerst 7 Punkte hat, gewinnt." },
+    { "begriff": "Wimbledon", "text": "Das älteste und berühmteste Tennisturnier der Welt ist Wimbledon in London. Dort spielt man auf echtem Rasen!" },
+    { "begriff": "Rückschlagspiel", "text": "Tennis ist ein Rückschlagspiel: Du gewinnst den Punkt, wenn der Gegner den Ball nicht mehr regelgerecht zurückbringt." },
+    { "begriff": "Einzel & Doppel", "text": "Im Einzel spielst du allein gegen einen Gegner. Im Doppel seid ihr zu zweit auf jeder Seite – vier Spieler auf dem Platz!" },
+    { "begriff": "Filz", "text": "Tennisbälle sind mit gelbem Filz überzogen. Deshalb fühlen sie sich flauschig an und fliegen schön gleichmäßig." }
+  ],
+  "mental": [
+    {
+      "id": "training",
+      "titel": "Motivation vor dem Training",
+      "emoji": "🎒",
+      "trainieren": "Heute trainieren wir Mut. Der Löwe brüllt nicht leise – er traut sich. Genau so schlägst du heute deine Bälle.",
+      "mission": "Spiele heute zehn Bälle richtig mutig. Mit vollem Schwung – auch wenn mal einer rausgeht.",
+      "mut": "Trau dich – der Ball darf fliegen!",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Mit jedem mutigen Schlag wirst du stärker. Fehler? Die gehören zum Lernen dazu. Viel Spaß beim Training, Felix!"
+    },
+    {
+      "id": "match",
+      "titel": "Motivation vor einem Match",
+      "emoji": "🌟",
+      "trainieren": "Heute zeigst du dein Tennis. Deine Aufgabe ist nicht gewinnen – deine Aufgabe ist gut spielen.",
+      "mission": "Mach vor jedem Punkt dein Ritual: tief einatmen, Schläger locker halten, Ziel überlegen. Dann: Los geht’s!",
+      "mut": "Ich bin bereit. Ich kämpfe um jeden Ball.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Egal wie es ausgeht: Wenn du mutig spielst und dabei lächelst, hast du heute schon gewonnen."
+    },
+    {
+      "id": "fehler",
+      "titel": "Nach einem Fehler",
+      "emoji": "🙂",
+      "trainieren": "Jetzt üben wir das Abhaken. Jeder Profi macht Fehler – sogar die Allerbesten in Wimbledon.",
+      "mission": "Hake den Fehler ab wie ein Ninja: kurz nicken, umdrehen, fertig. Denk nicht mehr an den letzten Ball.",
+      "mut": "Fehler gehören zum Lernen.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Ein Fehler macht dich nicht schlechter. Er zeigt nur: Du traust dich. Weiter geht’s!"
+    },
+    {
+      "id": "fehlerserie",
+      "titel": "Nach mehreren Fehlern",
+      "emoji": "🔄",
+      "trainieren": "Wir drücken jetzt den Neustart-Knopf. Stell dir vor, du wischst die Fehler weg wie Kreide von der Tafel.",
+      "mission": "Atme dreimal ganz tief. Schüttel Arme und Beine aus. Dann spiel den nächsten Ball einfach nur sicher in die Mitte.",
+      "mut": "Jetzt zählt nur dieser Ball.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Jede Fehlerserie reißt irgendwann ab. Dein nächster guter Ball kommt bestimmt – hol ihn dir."
+    },
+    {
+      "id": "nervositaet",
+      "titel": "Bei Nervosität",
+      "emoji": "🦅",
+      "trainieren": "Heute zähmen wir das Kribbeln im Bauch. Das Kribbeln heißt nur: Dein Körper ist bereit.",
+      "mission": "Mach den Adler: Stell dich groß hin, schau ruhig über den Platz und atme dreimal langsam ein und aus.",
+      "mut": "Ich bin bereit. Ich kann das.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Mutige Spieler haben auch Kribbeln – sie spielen einfach mit dem Kribbeln. Genau wie du."
+    },
+    {
+      "id": "fuehrung",
+      "titel": "Wenn du führst",
+      "emoji": "🚂",
+      "trainieren": "Du führst! Jetzt üben wir Dranbleiben – wie eine Lokomotive, die einfach ruhig weiterfährt.",
+      "mission": "Spiele genauso mutig weiter wie bisher. Kein Bummeln, kein Träumen: Jeder Punkt startet wieder bei null.",
+      "mut": "Ich bleibe wach. Nur dieser Ball zählt.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Führen fühlt sich gut an. Bleib freundlich zu dir und spiel dein Spiel weiter – Ball für Ball."
+    },
+    {
+      "id": "rueckstand",
+      "titel": "Wenn du zurückliegst",
+      "emoji": "🦸",
+      "trainieren": "Aufholen ist eine Superkraft. Superman richtet sich auf – genau das machst du jetzt.",
+      "mission": "Vergiss den Spielstand. Gewinne einfach den nächsten Ball. Nur diesen einen.",
+      "mut": "Ich kämpfe um jeden Ball.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Viele Matches drehen sich, wenn einer mutig bleibt. Sei du dieser Eine – Punkt für Punkt."
+    },
+    {
+      "id": "tiebreak",
+      "titel": "Beim Entscheidungsball",
+      "emoji": "⚡",
+      "trainieren": "Jetzt kommt der spannendste Moment – und spannend heißt: Es macht Spaß!",
+      "mission": "Mach alles wie immer: einatmen, Schläger locker, Ziel überlegen. Dann spiel deinen Lieblingsschlag.",
+      "mut": "Jetzt. Nur dieser Ball zählt.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Egal wohin der Ball fliegt: Wer beim Entscheidungsball mutig schwingt, ist schon ein Champion."
+    },
+    {
+      "id": "aufschlag",
+      "titel": "Beim Aufschlag",
+      "emoji": "🎯",
+      "trainieren": "Der Aufschlag ist dein Moment – nur du bestimmst, wann es losgeht.",
+      "mission": "Tipp den Ball dreimal auf den Boden. Atme ein. Wirf den Ball hoch und schwing mutig durch.",
+      "mut": "Mein Aufschlag. Mein Moment.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Ob der erste sitzt oder der zweite – du hast zwei Versuche. Der Löwe traut sich. Du auch."
+    },
+    {
+      "id": "return",
+      "titel": "Beim Return",
+      "emoji": "🧲",
+      "trainieren": "Beim Return bist du der Tennismagnet: Der Ball fliegt zu dir – du ziehst ihn an.",
+      "mission": "Steh leicht auf den Zehenspitzen, schau auf den Ball wie der Adler und spiel ihn einfach zurück ins Feld.",
+      "mut": "Ich bin der Magnet. Der Ball gehört mir.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Jeder zurückgespielte Ball ärgert den Aufschläger ein kleines bisschen. Bleib dran – das ist deine Stärke."
+    },
+    {
+      "id": "seitenwechsel",
+      "titel": "Beim Seitenwechsel",
+      "emoji": "🔁",
+      "trainieren": "Der Seitenwechsel ist deine Boxenstopp-Pause – kurz auftanken wie ein Rennauto.",
+      "mission": "Trink einen Schluck, atme dreimal tief und such dir ein einziges Ding aus, das du gleich richtig gut machen willst.",
+      "mut": "Neue Seite, neues Glück – ich bin bereit.",
+      "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
+      "schluss": "Alles, was vorher war, bleibt auf der alten Seite. Drüben wartet dein nächstes gutes Spiel."
+    },
+    {
+      "id": "lob",
+      "titel": "Lob nach dem Match",
+      "emoji": "🏆",
+      "trainieren": "Jetzt trainieren wir das Stolzsein – das gehört genauso zum Tennis wie der Aufschlag.",
+      "mission": "Nenn drei Dinge, die dir heute gut gelungen sind. Sag sie laut oder denk sie dir.",
+      "mut": "Ich habe gekämpft. Ich bin stolz auf mich.",
+      "punkt": "Schläger antippen, lächeln: Das war stark.",
+      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Felix!"
+    }
+  ]
+}

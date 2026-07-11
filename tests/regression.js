@@ -323,6 +323,73 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("iPad quer: passt ohne Scrollen", fit.ok);
   await page.setViewportSize({ width: 800, height: 1000 });
 
+  // ---------- 7b) Tennis-Match (Grundwortschatz + Mentaltrainer) ----------
+  section("Tennis-Match");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await openMod("Tennis-Match", null);
+  check("Tennis-Daten eingebettet (Gegner/Fakten/Mental)", await page.evaluate(() =>
+    SpielRepo.tennis().gegner.length >= 3 && SpielRepo.tennis().fakten.length >= 5 && SpielRepo.tennis().mental.length === 12));
+  check("Alle 12 Mentaltrainer-Situationen vorhanden", await page.evaluate(() =>
+    ["training", "match", "fehler", "fehlerserie", "nervositaet", "fuehrung", "rueckstand",
+     "tiebreak", "aufschlag", "return", "seitenwechsel", "lob"].every(id => !!tennisMental(id))));
+  check("Intro: Mentaltrainer-Karte mit 5 Bausteinen", await page.evaluate(() => {
+    const k = document.querySelector("#tennisHost .mental-card"); if (!k) return false;
+    const t = k.textContent;
+    return ["Heute trainieren wir", "Deine Mission", "Dein Mut-Satz", "Nach jedem Punkt", "Zum Schluss"].every(s => t.includes(s)); }));
+  check("Start erst nach Lesen/Anhören", await page.evaluate(() => document.getElementById("tennisStart").disabled === true));
+  await page.locator("#tennisHost .gate-row >> text=Habe ich gelesen").click();
+  await page.locator("#tennisStart").click(); await page.waitForTimeout(150);
+  check("Tennisplatz sichtbar", (await page.locator("#tennisFeld").count()) > 0);
+  check("Frage aus dem Grundwortschatz (2 Wörter)", (await page.locator(".tennis-opt").count()) === 2);
+  // Falsche Antwort: Punkt für den Gegner, Lösung + Mentaltrainer bleiben stehen
+  const falschT = await page.evaluate(() => tennis.frage.w.falsch);
+  const toT = page.locator(".tennis-opt"); const tT = (await toT.nth(0).textContent()).trim();
+  await (tT === falschT ? toT.nth(0) : toT.nth(1)).click();
+  await page.waitForFunction(() => { const w = document.getElementById("tennisWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
+  await page.waitForTimeout(1600);
+  const fbT = await page.locator("#tennisfb").textContent();
+  check("Fehler: Lösung + Mentaltrainer bleiben stehen", fbT.includes("richtig wäre") && fbT.includes("Mentaltrainer"));
+  check("Fehler = Punkt für den Gegner", await page.evaluate(() => tennis.ihm === 1 && tennis.mir === 0));
+  await page.locator("#tennisWeiter").click(); await page.waitForTimeout(100);
+  // Match durchspielen: ab jetzt immer richtig antworten
+  async function tennisBall() {
+    await page.waitForFunction(() => tennis && tennis.phase === "ball" && document.querySelector(".tennis-opt:not([disabled])"), null, { timeout: 9000 });
+    const richtig = await page.evaluate(() => tennis.frage.w.richtig);
+    const o = page.locator(".tennis-opt"); const t0 = (await o.nth(0).textContent()).trim();
+    await (t0 === richtig ? o.nth(0) : o.nth(1)).click();
+    await page.waitForFunction(() => { const w = document.getElementById("tennisWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
+    await page.locator("#tennisWeiter").click();
+    await page.waitForTimeout(70);
+  }
+  let schwerGesehen = false, seitenwechsel = 0;
+  for (let guard = 0; guard < 40; guard++) {
+    const ph = await page.evaluate(() => tennis.phase);
+    if (ph === "ball") {
+      schwerGesehen = schwerGesehen || await page.evaluate(() => tennis.frage.schwer && tennis.spielNr >= 2);
+      await tennisBall(); continue;
+    }
+    if (ph === "spielende") {
+      seitenwechsel++;
+      if (seitenwechsel === 1) { const txt = await page.locator("#tennisHost").textContent();
+        check("Seitenwechsel: Tennis-Wissen + Mentaltrainer", txt.includes("Tennis-Wissen") && txt.includes("Mentaltrainer")); }
+      await page.locator("#tennisWeiter").click(); await page.waitForTimeout(90); continue;
+    }
+    if (ph === "ende") break;
+    await page.waitForTimeout(120);
+  }
+  check("Steigerung: ab Spiel 2 schwere Wörter", schwerGesehen);
+  check("Matchende: Lob vom Mentaltrainer", await page.evaluate(() =>
+    tennis.phase === "ende" && !!document.querySelector('#tennisHost .mental-card[data-mental="lob"]')));
+  const bilanzT = await page.evaluate(() => ({ balls: tennis.balls, wins: tennis.wins }));
+  await page.locator("#tennisWeiter").click(); await page.waitForTimeout(150);
+  const tres = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  const tm = tres.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Tennis: Auswertung mit Ball-Bilanz", tm[1] === String(bilanzT.wins) && tm[2] === String(bilanzT.balls),
+    tm[1] + "/" + tm[2] + " (erwartet " + bilanzT.wins + "/" + bilanzT.balls + ")");
+  await page.locator("#bottomNav >> text=Mental").first().click(); await page.waitForTimeout(140);
+  check("Mental-Tab: alle 12 Karten zum Nachlesen", (await page.locator("#moduleContent .mental-card").count()) === 12);
+
   // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
   section("Vorgangsbeschreibung interaktiv");
   await fresh(); await setLevel(3);
