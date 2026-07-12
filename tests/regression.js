@@ -46,6 +46,22 @@ function section(t) { console.log("\n== " + t + " =="); }
     await page.locator("#moduleChooser >> text=" + label).first().click(); await page.waitForTimeout(90);
     if (section2) { await page.locator("#bottomNav >> text=" + section2).first().click(); await page.waitForTimeout(90); }
   };
+  // Lese-Gate bestehen: warten bis Mindest-Lesezeit um, bestätigen, Lücken-Frage lösen
+  const passGate = async (scope) => {
+    const pre = scope ? scope + " " : "";
+    await page.waitForFunction(sc => {
+      const root = sc ? document.querySelector(sc) : document;
+      if (!root) return false;
+      const b = [...root.querySelectorAll(".gate-row button")].find(x => x.textContent.includes("Habe ich gelesen"));
+      return b && !b.disabled;
+    }, scope || null, { timeout: 25000 });
+    await page.locator(pre + ".gate-row >> text=Habe ich gelesen").click();
+    await page.waitForTimeout(140);
+    if (await page.locator(pre + '.gate-opt[data-ok="1"]').count()) {
+      await page.locator(pre + '.gate-opt[data-ok="1"]').first().click();
+      await page.waitForTimeout(100);
+    }
+  };
   const closeOverlay = async () => { await page.waitForTimeout(380);
     if (await page.locator("#levelUp.show").count()) { const t = (await page.locator("#lvlupTitle").textContent()).trim();
       await page.locator("#lvlupClose").click(); await page.waitForTimeout(100); return t; } return null; };
@@ -235,17 +251,45 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Blume in Auswertung ≤ 100px", potW <= 100, Math.round(potW) + "px");
 
   section("Vorlesen & Lese-Bestätigung");
-  await fresh(); await setLevel(3); await openMod("Subjekte", null);
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await openMod("Subjekte", null);
   check("Vorlesen-Knöpfe auf Erklär-Seite", (await page.locator(".speak-btn").count()) > 0);
   check("CTA gesperrt vor Bestätigung", await page.locator("#toUeben").isDisabled());
-  await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(80);
+  await passGate();
   check("CTA frei nach Bestätigung", !(await page.locator("#toUeben").isDisabled()));
   await page.locator("#toUeben").click(); await page.waitForTimeout(90);
   check("Übung erreichbar nach Gate", (await page.locator("#sbox").count()) > 0);
 
-  section("See-Abenteuer");
+  // ---------- Lese-Check gegen Schummeln ----------
+  section("Lese-Check (Anti-Schummel)");
   await fresh(); await setLevel(3);
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await openMod("Subjekte", null);
+  check("Bestätigen erst nach Mindest-Lesezeit möglich", await page.evaluate(() => {
+    const b = [...document.querySelectorAll(".gate-row button")].find(x => x.textContent.includes("Habe ich gelesen"));
+    return b && b.disabled; }));
+  await page.waitForFunction(() => {
+    const b = [...document.querySelectorAll(".gate-row button")].find(x => x.textContent.includes("Habe ich gelesen"));
+    return b && !b.disabled; }, null, { timeout: 25000 });
+  await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(140);
+  check("Lücken-Frage aus dem Text (3 Wörter)", (await page.locator(".gate-opt").count()) === 3);
+  await page.locator(".gate-opt:not([data-ok])").first().click(); await page.waitForTimeout(120);
+  check("Falsches Wort: bleibt gesperrt + Hinweis", await page.locator("#toUeben").isDisabled()
+    && (await page.locator(".gate-fb").textContent()).includes("genau"));
+  await page.locator('.gate-opt[data-ok="1"]').click(); await page.waitForTimeout(120);
+  check("Richtiges Wort: freigeschaltet", !(await page.locator("#toUeben").isDisabled()));
+  // Einstellung „aus": sofort bestätigen, keine Frage
+  await page.evaluate(() => { store.leseKontrolle = "aus"; save(); goHome(); });
+  await page.waitForTimeout(120);
+  await openMod("Prädikat", null);
+  await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(120);
+  check("Einstellung „aus“: sofort frei ohne Frage", !(await page.locator("#toLesen, #toUeben").first().isDisabled())
+    && (await page.locator(".gate-opt").count()) === 0);
+
+  section("See-Abenteuer");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
   await openMod("See-Abenteuer", null);
   check("Spielfeld mit See", (await page.locator("#spielFeld").count()) > 0);
   check("Steuerkreuz (4 Richtungen)", (await page.locator("#spielPad button").count()) === 4);
@@ -326,7 +370,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 7b) Tennis-Match (Grundwortschatz + Mentaltrainer) ----------
   section("Tennis-Match");
   await fresh(); await setLevel(3);
-  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
   await openMod("Tennis-Match", null);
   check("Tennis-Daten eingebettet (Gegner/Fakten/Mental)", await page.evaluate(() =>
     SpielRepo.tennis().gegner.length >= 3 && SpielRepo.tennis().fakten.length >= 5 && SpielRepo.tennis().mental.length === 12));
@@ -338,7 +382,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     const t = k.textContent;
     return ["Heute trainieren wir", "Deine Mission", "Dein Mut-Satz", "Nach jedem Punkt", "Zum Schluss"].every(s => t.includes(s)); }));
   check("Start erst nach Lesen/Anhören", await page.evaluate(() => document.getElementById("tennisStart").disabled === true));
-  await page.locator("#tennisHost .gate-row >> text=Habe ich gelesen").click();
+  await passGate("#tennisHost");
   await page.locator("#tennisStart").click(); await page.waitForTimeout(150);
   check("Tennisplatz sichtbar", (await page.locator("#tennisFeld").count()) > 0);
   check("Frage aus dem Grundwortschatz (2 Wörter)", (await page.locator(".tennis-opt").count()) === 2);
@@ -393,7 +437,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 7c) Fußball-Match (Grundwortschatz + Mentaltrainer) ----------
   section("Fußball-Match");
   await fresh(); await setLevel(3);
-  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
   await openMod("Fußball-Match", null);
   check("Fußball-Daten eingebettet (Gegner/Fakten/Mental)", await page.evaluate(() =>
     SpielRepo.fussball().gegner.length >= 3 && SpielRepo.fussball().fakten.length >= 5 && SpielRepo.fussball().mental.length === 12));
@@ -402,7 +446,7 @@ function section(t) { console.log("\n== " + t + " =="); }
      "elfmeter", "torschuss", "abwehr", "halbzeit", "lob"].every(id => !!fbMental(id))));
   check("Intro: Mentaltrainer-Karte + Lese-Bestätigung", await page.evaluate(() =>
     !!document.querySelector("#fbHost .mental-card") && document.getElementById("fbStart").disabled === true));
-  await page.locator("#fbHost .gate-row >> text=Habe ich gelesen").click();
+  await passGate("#fbHost");
   await page.locator("#fbStart").click(); await page.waitForTimeout(150);
   check("Fußballplatz mit Tor sichtbar", (await page.locator("#fbFeld").count()) > 0 && (await page.locator("#fbKeeper").count()) > 0);
   // Erster Ball absichtlich falsch: Konter-Tor + Mentaltrainer bleibt stehen
@@ -487,6 +531,42 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
   check("Heute freigegeben: Sperre weg, Übungen erreichbar", (await page.locator("#zeitSperre").count()) === 0
     && await page.evaluate(() => { openModule("subjekt"); return activeModuleId === "subjekt"; }));
+
+  // ---------- 7e) Spiele-Freischaltung (Münzen) ----------
+  section("Spiele-Freischaltung (Münzen)");
+  await fresh(); await setLevel(3);
+  check("Ohne Münze: Spiel-Karte zeigt Schloss", (await page.locator("#moduleChooser").textContent()).includes("🔒"));
+  await openMod("Tennis-Match", null);
+  check("Ohne Münze: Spiel gesperrt mit Erklärung", (await page.locator("#moduleContent").textContent()).includes("noch gesperrt"));
+  await page.locator("#gesperrtZurueck").click(); await page.waitForTimeout(120);
+  // Eine Übungsrunde gut lösen -> 1 Münze
+  await openMod("Subjekte", "Üben");
+  let gmz = 0;
+  while (gmz++ < 25) {
+    if (await page.locator("#runAgain").count()) break;
+    const idxs = await page.evaluate(() => subjSaetze()[subjIdx].subj);
+    for (const i of idxs) await page.locator("#sbox .word").nth(i).click();
+    await page.locator("#checkBtn").click(); await page.waitForTimeout(20);
+    await page.locator("#nextBtn").click(); await page.waitForTimeout(25);
+  }
+  await closeOverlay();
+  check("Gute Runde = 1 Spiel-Münze", await page.evaluate(() => store.muenzen === 1)
+    && (await page.locator("#moduleContent").textContent()).includes("Spiel-Münze verdient"));
+  await page.locator("#runBack").click(); await page.waitForTimeout(120);
+  await openMod("Tennis-Match", null);
+  check("Spiel öffnet und löst die Münze ein", (await page.locator("#tennisHost").count()) === 1
+    && await page.evaluate(() => store.muenzen === 0));
+  // Eltern: Münzen schenken + Freischaltung ausschalten
+  await page.evaluate(() => goHome()); await page.waitForTimeout(100);
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
+  await page.locator("#muenzGeschenk").click(); await page.waitForTimeout(100);
+  check("Eltern können Münzen schenken (+3)", await page.evaluate(() => store.muenzen === 3));
+  await page.locator('.seg[data-muenz="0"]').click(); await page.waitForTimeout(100);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  await openMod("Fußball-Match", null);
+  check("Freischaltung aus: Spiel ohne Münz-Abzug frei", (await page.locator("#fbHost").count()) === 1
+    && await page.evaluate(() => store.muenzen === 3));
 
   // ---------- 8a) Vorgangsbeschreibung: interaktive Einheiten ----------
   section("Vorgangsbeschreibung interaktiv");

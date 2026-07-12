@@ -217,6 +217,10 @@ button.chip.on{background:var(--primary); color:#fff;}
 .mental-card{background:#f4f1fc; border:2px solid #d3c8f0; border-radius:14px; padding:12px 14px; margin:10px 0; font-size:16px; line-height:1.45;}
 .mental-card p{margin:7px 0;}
 .mental-kopf{font-weight:800; color:#5b4a9d; margin-bottom:2px;}
+.gate-frage{width:100%;}
+.gate-opts{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
+.gate-opts .gate-opt{flex:1; min-width:90px; font-size:17px;}
+.gate-row.frage{flex-direction:column; align-items:stretch;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
   display:flex; align-items:center; justify-content:center; padding:18px;}
 .zeit-karte{max-width:420px; text-align:center;}
@@ -300,6 +304,7 @@ button.locked{opacity:.45; pointer-events:none;}
       <input id="nameInput" type="text" maxlength="20" placeholder="Dein Name (freiwillig)" style="max-width:280px; margin:6px auto 0; text-align:center;">
       <p class="muted" style="font-size:13px; margin-top:6px;">Wird nur auf diesem Gerät gespeichert.</p>
       <p id="zeitInfo"></p>
+      <p id="muenzInfo" class="muted" style="font-weight:700; margin:2px 0 0;"></p>
     </div>
     <div class="card">
       <h2>Thema</h2>
@@ -368,8 +373,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.30.0";
+const APP_VERSION = "1.31.0";
 const RELEASE_NOTES = [
+  {v:"1.31.0", datum:"12.07.2026", punkte:[
+    "🕵️ Lese-Check: Erklärungen lassen sich erst nach einer Mindest-Lesezeit bestätigen – und dann prüft eine Lücken-Frage aus dem Text, ob wirklich gelesen wurde. „Anhören“ zählt erst, wenn zu Ende vorgelesen wurde. Im Elternbereich einstellbar (immer / Stichprobe / aus).",
+    "🪙 Erst üben, dann spielen: Die Spiele müssen jetzt freigeschaltet werden! Jede gut gelöste Übungsrunde (mehr als die Hälfte richtig) bringt 1 Spiel-Münze – ein Spielbesuch kostet 1 Münze. Im Elternbereich abschaltbar, Eltern können auch Münzen schenken.",
+    "🏠 Die Startseite zeigt deine Münzen, und Spiel-Karten zeigen, ob sie frei sind.",
+  ]},
   {v:"1.30.0", datum:"11.07.2026", punkte:[
     "🦁 Der Mentaltrainer heißt jetzt kindgerecht „Mutmacher“ – überall in Tennis- und Fußball-Match, auf allen Karten und im eigenen Tab „Mutmacher“.",
   ]},
@@ -608,8 +618,8 @@ function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.nam
    ============================================================ */
 function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
 function stopSpeak(){ if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
-function speak(text){
-  if(!speechOK() || !text) return;
+function speak(text, onEnd){
+  if(!speechOK() || !text){ return; }
   try{
     const sp=window.speechSynthesis;
     sp.cancel();
@@ -617,8 +627,10 @@ function speak(text){
     u.lang="de-DE"; u.rate=0.9; u.pitch=1;
     const de=(sp.getVoices()||[]).find(v=>/^de/i.test(v.lang));
     if(de) u.voice=de;
+    if(onEnd){ let fertig=false; const einmal=()=>{ if(!fertig){ fertig=true; onEnd(); } };
+      u.onend=einmal; u.onerror=einmal; }
     sp.speak(u);
-  }catch(e){}
+  }catch(e){ if(onEnd) onEnd(); }
 }
 if(speechOK()){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
 
@@ -636,19 +648,90 @@ function addSpeakButtons(root){
 }
 
 /* „Gelesen oder angehört?" – die Erklärung muss bestätigt werden,
-   bevor der Weiter-Knopf freigeschaltet wird. */
+   bevor der Weiter-Knopf freigeschaltet wird.
+   LESE-KONTROLLE gegen schnelles Durchklicken:
+   1) Mindest-Lesezeit (~250 ms pro Wort) sperrt die Bestätigung.
+   2) Danach kommt ein Lese-Check: eine automatisch erzeugte
+      Lücken-Frage aus dem Text – erst die richtige Antwort schaltet frei.
+   3) „Anhören" schaltet erst frei, wenn die Sprachausgabe fertig ist.
+   Einstellbar im Elternbereich (immer / Stichprobe / aus). */
+function gateFrage(text){
+  const roh=String(text||"").replace(/\s+/g," ").trim();
+  const putz=t=>t.replace(/[„“"‚'’().:;!?»«…·–—-]/g," ").split(/\s+/).filter(w=>w.length>=4 && !/\d/.test(w));
+  const alle=putz(roh);
+  if(alle.length<8) return null;
+  const saetze=roh.split(/(?<=[.!?])\s+/).filter(x=>putz(x).length>=3 && x.length<=140);
+  if(!saetze.length) return null;
+  const satz=saetze[Math.floor(Math.random()*saetze.length)];
+  const kand=putz(satz);
+  const wort=kand[Math.floor(Math.random()*kand.length)];
+  const muster=new RegExp(wort.replace(/[.*+?^${}()|[\]\\]/g,"\\$&"));
+  const luecke=satz.replace(muster,"___");
+  if(luecke===satz) return null;
+  const andere=[]; const gesehen={};
+  vgShuffle(alle.slice()).forEach(w=>{
+    const k=w.toLowerCase();
+    if(k===wort.toLowerCase() || gesehen[k] || andere.length>=2) return;
+    gesehen[k]=1; andere.push(w);
+  });
+  if(andere.length<2) return null;
+  return {satz:luecke, wort:wort, optionen:vgShuffle([wort, andere[0], andere[1]])};
+}
 function readGate(host, btn, text){
   if(!btn || !host) return;
   btn.disabled=true; btn.classList.add("locked");
+  const modus=store.leseKontrolle||"immer";
   const row=document.createElement("div"); row.className="gate-row";
   const hear=document.createElement("button"); hear.type="button"; hear.className="btn-secondary btn-small";
   hear.textContent="🔊 Anhören";
   const ok=document.createElement("button"); ok.type="button"; ok.className="btn-secondary btn-small";
   ok.textContent="✓ Habe ich gelesen";
   const unlock=()=>{ btn.disabled=false; btn.classList.remove("locked");
-    row.classList.add("done"); ok.disabled=true; ok.textContent="✓ Super!"; };
-  hear.onclick=()=>{ speak(text); unlock(); };
-  ok.onclick=unlock;
+    row.classList.add("done");
+    if(ok.isConnected){ ok.disabled=true; ok.textContent="✓ Super!"; hear.disabled=true; } };
+  // Lücken-Frage nur je nach Einstellung (immer / Stichprobe / aus)
+  const frage = (modus==="aus") ? null
+    : (modus==="mix" && Math.random()>=0.5) ? null
+    : gateFrage(text);
+  const kontrolle=()=>{
+    if(!frage){ unlock(); return; }
+    row.innerHTML=""; row.classList.add("frage");
+    const box=document.createElement("div"); box.className="gate-frage";
+    box.innerHTML=`<div class="hint" data-no-speak="1">🕵️ <b>Lese-Check:</b> Welches Wort fehlt?<br>„${frage.satz}“</div>
+      <div class="gate-opts">${frage.optionen.map(w=>`<button type="button" class="btn-secondary btn-small gate-opt"${w===frage.wort?' data-ok="1"':''}>${w}</button>`).join("")}</div>
+      <div class="gate-fb"></div>`;
+    row.appendChild(box);
+    box.querySelectorAll(".gate-opt").forEach(b2=>b2.onclick=()=>{
+      if(b2.dataset.ok==="1"){
+        box.innerHTML=`<div class="feedback ok">🎉 Richtig gelesen – weiter geht's!</div>`;
+        unlock();
+      }else{
+        b2.disabled=true;
+        box.querySelector(".gate-fb").innerHTML=`<div class="feedback tip">Schau noch einmal genau in den Text – dann klappt es!</div>`;
+        try{ host.scrollIntoView({behavior:"smooth", block:"start"}); }catch(e){}
+      }
+    });
+  };
+  // Mindest-Lesezeit: erst danach lässt sich bestätigen
+  const nWorte=String(text||"").trim().split(/\s+/).length;
+  const wartezeit = modus==="aus" ? 0 : Math.min(15000, Math.max(3000, nWorte*250));
+  if(wartezeit>0){
+    ok.disabled=true;
+    const dauer=spielT(wartezeit), start=Date.now();
+    const tick=setInterval(()=>{
+      if(!ok.isConnected){ clearInterval(tick); return; }
+      const restMs=dauer-(Date.now()-start);
+      if(restMs<=0){ clearInterval(tick); if(!row.classList.contains("done")){ ok.disabled=false; ok.textContent="✓ Habe ich gelesen"; } }
+      else ok.textContent="✓ Habe ich gelesen ("+Math.ceil(restMs/1000)+")";
+    }, 200);
+  }
+  ok.onclick=()=>{ if(!ok.disabled) kontrolle(); };
+  // Anhören zählt erst, wenn wirklich zu Ende gesprochen wurde
+  hear.onclick=()=>{
+    hear.disabled=true; hear.textContent="🔊 Ich lese vor …";
+    speak(text, ()=>{ if(row.classList.contains("done")) return;
+      hear.disabled=false; hear.textContent="🔊 Anhören"; kontrolle(); });
+  };
   if(!speechOK()) hear.style.display="none";
   row.appendChild(hear); row.appendChild(ok);
   btn.parentNode.insertBefore(row, btn);
@@ -814,6 +897,19 @@ function renderRunResult(host, key, onRepeat){
   else if(ratio>=0.35){ stufe=2; titel="Du wächst! 🌿"; text="Guter Weg – mit ein bisschen Übung wird es sicherer."; }
   else { stufe=1; titel="Es keimt! 🌱"; text="Ein Anfang ist gemacht – übe die Runde ruhig noch einmal."; }
 
+  // ---- Spiel-Münze: gut gelöste Übungsrunde (keine Spiele) = 1 Münze ----
+  let muenzLine="";
+  if(store.muenzenAktiv && SPIELE_IDS.indexOf(key)<0){
+    if(ratio>=0.6 && !r.muenzeVergeben){
+      r.muenzeVergeben=true; store.muenzen=(store.muenzen||0)+1; save();
+      muenzLine=`<div class="lvl-note up">🪙 <b>Spiel-Münze verdient!</b> Du hast jetzt ${store.muenzen} ${store.muenzen===1?"Münze":"Münzen"} für die Spiele.</div>`;
+    } else if(ratio<0.6 && !r.muenzeVergeben){
+      muenzLine=`<div class="lvl-note">🪙 Löse mehr als die Hälfte der Aufgaben, um eine <b>Spiel-Münze</b> zu verdienen.</div>`;
+    } else if(r.muenzeVergeben){
+      muenzLine=`<div class="lvl-note">🪙 Münze für diese Runde schon verdient – du hast ${store.muenzen||0}.</div>`;
+    }
+  }
+
   // ---- Stufen-Fortschritt: einmal je abgeschlossener Runde auswerten ----
   let unlockedTo=null, newCrown=false, levelLine="";
   const isField = !!FIELD_POOLS[key];
@@ -847,6 +943,7 @@ function renderRunResult(host, key, onRepeat){
         ✅ <b>Insgesamt gelöst:</b> ${solved} von ${total}
       </div>
       ${levelLine}
+      ${muenzLine}
       <div style="display:flex; gap:10px; margin-top:12px;">
         <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
         <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
@@ -5048,6 +5145,32 @@ function renderAdminSpiele(c){
       <div class="lvl-note" id="spieleStatus" style="text-align:left; display:none;">✅ <b>Gespeichert.</b></div>
     </div>
     <div class="card">
+      <h3>🕵️ Lese-Check (gegen schnelles Durchklicken)</h3>
+      <p class="muted">Erklärungen lassen sich erst nach einer <b>Mindest-Lesezeit</b>
+        bestätigen. Danach prüft eine kleine <b>Lücken-Frage</b> aus dem Text,
+        ob wirklich gelesen wurde. „Anhören" schaltet erst frei, wenn zu Ende
+        vorgelesen wurde.</p>
+      <div class="seg-line"><span class="seg-label">Lese-Check</span>
+        <div class="seg-row">
+          <button class="seg${(store.leseKontrolle||"immer")==="immer"?" on":""}" data-lese="immer">Immer</button>
+          <button class="seg${store.leseKontrolle==="mix"?" on":""}" data-lese="mix">Stichprobe</button>
+          <button class="seg${store.leseKontrolle==="aus"?" on":""}" data-lese="aus">Aus</button>
+        </div></div>
+    </div>
+    <div class="card">
+      <h3>🪙 Spiele freischalten (erst üben, dann spielen)</h3>
+      <p class="muted">Ist die Freischaltung an, kostet jeder Spielbesuch
+        <b>1 Münze</b>. Eine Münze gibt es für jede Übungsrunde, in der
+        <b>mehr als die Hälfte</b> gelöst wurde.</p>
+      <div class="seg-line"><span class="seg-label">Freischaltung</span>
+        <div class="seg-row">
+          <button class="seg${store.muenzenAktiv?" on":""}" data-muenz="1">An</button>
+          <button class="seg${store.muenzenAktiv?"":" on"}" data-muenz="0">Aus</button>
+        </div></div>
+      <p class="muted" style="margin-top:8px;">Aktueller Stand: <b>${store.muenzen||0}</b> ${(store.muenzen||0)===1?"Münze":"Münzen"}.</p>
+      <button class="btn-secondary btn-small" id="muenzGeschenk" style="width:100%;">🎁 3 Münzen schenken</button>
+    </div>
+    <div class="card">
       <h3>⏰ Lernzeit pro Tag (Time-Boxing)</h3>
       <p class="muted">Ist die Zeit um, zeigt die App einen freundlichen
         Stopp-Bildschirm. Gezählt wird nur, solange die App sichtbar ist.
@@ -5065,6 +5188,24 @@ function renderAdminSpiele(c){
     const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
     c.querySelector("#spieleStatus").style.display="block";
   });
+  c.querySelectorAll(".seg[data-lese]").forEach(b=>b.onclick=()=>{
+    store.leseKontrolle=b.dataset.lese;
+    save();
+    const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
+    c.querySelector("#spieleStatus").style.display="block";
+  });
+  c.querySelectorAll(".seg[data-muenz]").forEach(b=>b.onclick=()=>{
+    store.muenzenAktiv = b.dataset.muenz==="1";
+    save();
+    const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
+    c.querySelector("#spieleStatus").style.display="block";
+  });
+  c.querySelector("#muenzGeschenk").onclick=()=>{
+    store.muenzen=(store.muenzen||0)+3;
+    save();
+    const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
+    c.querySelector("#spieleStatus").style.display="block";
+  };
   c.querySelectorAll(".seg[data-zeit]").forEach(b=>b.onclick=()=>{
     store.zeitLimit=parseInt(b.dataset.zeit,10);
     save(); zeitAnzeige(); zeitPruefen();
@@ -5408,6 +5549,9 @@ let store = {
   spieleAktiv:{ spiel:true, tennis:true, fussball:true }, // Elternbereich: Spiele an/aus
   zeitLimit:20,                 // Time-Boxing: Lernzeit pro Tag in Minuten (0 = aus)
   zeit:{ tag:"", sek:0 },       // heute verbrauchte Lernzeit
+  leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" (Stichprobe) | "aus"
+  muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
+  muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
   subjekt:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   praedikat:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -5462,6 +5606,9 @@ function load(){
       ["spiel","tennis","fussball"].forEach(k=>{ if(k in d.spieleAktiv) store.spieleAktiv[k]=d.spieleAktiv[k]!==false; });
     }
     if("zeitLimit" in d){ const v=parseInt(d.zeitLimit,10); if(v>=0 && v<=180) store.zeitLimit=v; }
+    if(["immer","mix","aus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
+    if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
+    if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.zeit && typeof d.zeit==="object" && typeof d.zeit.tag==="string"){
       store.zeit={ tag:d.zeit.tag, sek:Math.max(0,parseInt(d.zeit.sek,10)||0) };
     }
@@ -5568,6 +5715,32 @@ function zeitSperren(){
 function zeitEntsperren(){ const d=$("zeitSperre"); if(d) d.remove(); }
 function zeitPruefen(){ zeitAnzeige(); if(zeitAbgelaufen()) zeitSperren(); else zeitEntsperren(); }
 
+// Freundliche Info, wenn ein Spiel noch nicht freigeschaltet ist
+function spieleGesperrt(id){
+  const m=MODULES[id];
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  $("moduleContent").innerHTML=`
+    <div class="card" style="text-align:center;">
+      <div style="font-size:52px;">🔒${m.emoji}</div>
+      <h2 style="margin:6px 0;">${m.name} ist noch gesperrt</h2>
+      <p>So schaltest du es frei: <b>Übe eine Runde</b> in einem Lernfeld und löse
+        <b>mehr als die Hälfte</b> der Aufgaben – dafür bekommst du <b>1 🪙 Spiel-Münze</b>.</p>
+      <p class="muted">1 Münze = 1 Spielbesuch. Du hast gerade <b>${store.muenzen||0}</b> ${(store.muenzen||0)===1?"Münze":"Münzen"}.</p>
+      <button class="btn-primary" id="gesperrtZurueck" style="width:100%;">📖 Zu den Lernfeldern</button>
+    </div>`;
+  $("moduleContent").querySelector("#gesperrtZurueck").onclick=goHome;
+  renderNav();
+  window.scrollTo(0,0);
+}
+function muenzAnzeige(){
+  const el=$("muenzInfo"); if(!el) return;
+  if(!store.muenzenAktiv){ el.textContent=""; return; }
+  el.textContent = (store.muenzen||0)>0
+    ? "🪙 "+store.muenzen+" Spiel-"+(store.muenzen===1?"Münze":"Münzen")
+    : "🪙 Übe eine Runde, um eine Spiel-Münze zu verdienen!";
+}
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
   Object.keys(MODULES)
@@ -5578,14 +5751,25 @@ function buildModuleChooser(){
     const div=document.createElement("div");
     div.className="choice";
     const fk=MOD_FIELD[id];
-    const lvlTag = fk ? `<span class="card-lvl">🎯 Stufe ${fieldLevel(fk)}/${fieldMax(fk)}${fieldProg(fk).crown?" 👑":""}</span>` : "";
+    let lvlTag = fk ? `<span class="card-lvl">🎯 Stufe ${fieldLevel(fk)}/${fieldMax(fk)}${fieldProg(fk).crown?" 👑":""}</span>` : "";
+    if(SPIELE_IDS.includes(id) && store.muenzenAktiv){
+      lvlTag = (store.muenzen||0)>0
+        ? `<span class="card-lvl">🪙 1 Münze einlösen</span>`
+        : `<span class="card-lvl">🔒 1 🪙 nötig</span>`;
+    }
     div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}${lvlTag}`;
     div.onclick=()=>openModule(id);
     grid.appendChild(div);
   });
+  muenzAnzeige();
 }
 function openModule(id){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
+  // Spiele müssen freigeschaltet werden: 1 Münze je Spielbesuch
+  if(SPIELE_IDS.includes(id) && store.muenzenAktiv){
+    if((store.muenzen||0)<1){ spieleGesperrt(id); return; }
+    store.muenzen--; save();
+  }
   activeModuleId=id; store.lastModule=id;
   // Vorgangsbeschreibung folgt dem globalen Thema, wenn ein passender Ablauf existiert
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
