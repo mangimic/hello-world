@@ -217,6 +217,21 @@ button.chip.on{background:var(--primary); color:#fff;}
 .mental-card{background:#f4f1fc; border:2px solid #d3c8f0; border-radius:14px; padding:12px 14px; margin:10px 0; font-size:16px; line-height:1.45;}
 .mental-card p{margin:7px 0;}
 .mental-kopf{font-weight:800; color:#5b4a9d; margin-bottom:2px;}
+/* Mutmacher-Rollenspiel: Comic-Sprechblasen */
+.mut-dialog{background:#f4f1fc; border:2px solid #d3c8f0; border-radius:14px; padding:10px 12px; margin:10px 0;}
+.mut-dialog.klein{padding:8px 10px;}
+.mut-kopf{font-weight:800; color:#5b4a9d; font-size:14px; margin-bottom:4px;}
+.bubble{position:relative; max-width:90%; padding:8px 12px; border-radius:16px; margin:7px 0;
+  font-size:16px; line-height:1.4; animation:bubbleIn .25s ease;}
+.bubble.coach{background:#fff; border:2px solid #e3d9f8; border-bottom-left-radius:4px; margin-right:auto;}
+.bubble.coach::before{content:"🦁 ";}
+.bubble.felix{background:#dcecff; border:2px solid #a9c8f0; border-bottom-right-radius:4px; margin-left:auto; text-align:right; font-weight:700;}
+.bubble.zu{display:none;}
+.bubble.sag{cursor:pointer; border-color:#4a7fd6; box-shadow:0 0 0 3px rgba(74,127,214,0.25); animation:sagPuls 1.2s ease infinite;}
+.bubble.gesagt{box-shadow:none;}
+.mut-weiter{margin-top:4px;}
+@keyframes bubbleIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:none;}}
+@keyframes sagPuls{0%,100%{box-shadow:0 0 0 3px rgba(74,127,214,0.15);} 50%{box-shadow:0 0 0 5px rgba(74,127,214,0.35);}}
 .sch-wrap{display:grid; gap:10px;}
 /* Handy: Frage/Status ÜBER dem Brett – so liest man ohne Scrollen */
 .sch-side{order:-1;}
@@ -408,8 +423,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.33.0";
+const APP_VERSION = "1.34.0";
 const RELEASE_NOTES = [
+  {v:"1.34.0", datum:"12.07.2026", punkte:[
+    "🦁💬 Der Mutmacher ist jetzt ein Rollenspiel mit Sprechblasen: Coach Leo spricht in kurzen Comic-Blasen – eine nach der anderen, per Tipp. Deinen Mut-Satz sprichst DU als eigene Rolle und tippst deine Sprechblase an. Neue Blasen werden automatisch vorgelesen.",
+    "💧 Dosierter im Rotationsprinzip: Im Match erscheint nur noch EINE kurze Blase (abwechselnd Mut-Satz, Ritual oder Mission), in den Pausen ein Mini-Dialog mit wechselnder Botschaft – keine Textwände mehr.",
+    "📚 Recherche-gestützt: Comic-Dialoge mit kurzen Häppchen sind genau das richtige Format für Kinder, die nicht gern lesen (Leseförderung mit Comics, ADHS-Lesetipps).",
+  ]},
   {v:"1.33.0", datum:"12.07.2026", punkte:[
     "📱 Schach passt jetzt auf jedes Gerät: Auf dem Handy stehen Frage und Knöpfe ÜBER dem Brett, das Brett richtet sich nach der Bildschirmhöhe – kein Scrollen mehr mitten im Zug. Die Lektions-Auswahl ist eine wischbare Zeile.",
     "🔢 Das Schachbrett hat jetzt eine Feldnummerierung (a–h und 1–8) – so findest du Felder wie b5 sofort.",
@@ -4625,24 +4645,81 @@ function spielRender(c){
    vor dem Start, nach Fehlern, bei Führung/Rückstand, beim
    Entscheidungsball und mit einem Lob am Ende.
    ============================================================ */
+/* --- Mutmacher als Rollenspiel mit Sprechblasen (Coach Leo 🦁) ---
+   Recherche-gestützt für Kinder, die nicht gern lesen / sich schwer
+   konzentrieren: kurze Dialog-Häppchen statt Textwand (Comic-Prinzip),
+   selbst getaktet (jede Blase per Tipp), Felix spricht seinen Mut-Satz
+   als eigene Rolle, neue Blasen werden automatisch vorgelesen.
+   Dosierung per Rotation: kompakte Momente zeigen abwechselnd
+   Mut-Satz / Ritual / Mission, Pausen-Momente wechseln die Botschaft. */
+function mutDialog(m, opts){
+  if(!m) return "";
+  opts=opts||{};
+  const blasen=[
+    {w:"coach", t:m.trainieren},
+    {w:"coach", t:m.mission},
+    {w:"felix", t:"„"+m.mut+"“", sag:!opts.alle},
+    {w:"coach", t:m.punkt}
+  ];
+  if(opts.alle) blasen.push({w:"coach", t:m.schluss});
+  const bs=blasen.map((b,i)=>`<div class="bubble ${b.w}${b.sag?" sag":""}${(!opts.alle&&i>0)?" zu":""}" data-bi="${i}">${b.w==="felix"?"🧒 ":""}${b.sag?"👉 <b>Deine Rolle – sag es laut und tippe:</b><br>":""}${b.t}</div>`).join("");
+  return `<div class="mut-dialog mental-card" data-mental="${m.id}">
+    <div class="mut-kopf">🦁 <b>Coach Leo</b> · Mutmacher — ${m.emoji} ${m.titel}</div>
+    ${bs}
+    ${opts.alle?"":`<button type="button" class="btn-secondary btn-small mut-weiter">💬 Weiter</button>`}
+  </div>`;
+}
+function mutDialogBind(root, onFertig){
+  const d=root && root.querySelector(".mut-dialog"); 
+  if(!d){ if(onFertig) onFertig(); return; }
+  const blasen=[...d.querySelectorAll(".bubble")];
+  const weiter=d.querySelector(".mut-weiter");
+  if(!weiter){ if(onFertig) onFertig(); return; }
+  let i=0;
+  const sagBinden=(b)=>{
+    weiter.style.display="none";
+    b.onclick=()=>{ b.onclick=null; b.classList.remove("sag"); b.classList.add("gesagt");
+      blasen.forEach(x=>x.classList.remove("zu"));
+      const rest=blasen[blasen.length-1];
+      if(speechOK() && rest) speak(rest.textContent);
+      if(onFertig) onFertig();
+    };
+  };
+  weiter.onclick=()=>{
+    i++;
+    const b=blasen[i];
+    if(!b){ weiter.style.display="none"; if(onFertig) onFertig(); return; }
+    b.classList.remove("zu");
+    if(speechOK()) speak(b.textContent);
+    if(b.classList.contains("sag")) sagBinden(b);
+    else if(i>=blasen.length-1){ weiter.style.display="none"; if(onFertig) onFertig(); }
+  };
+}
+// Kurzer Pausen-Dialog (2 Blasen, Botschaft rotiert)
+function mutMini(m, rot){
+  if(!m) return "";
+  const co=[m.trainieren, m.schluss][Math.abs(rot||0)%2];
+  return `<div class="mut-dialog mental-card" data-mental="${m.id}">
+    <div class="mut-kopf">🦁 <b>Coach Leo</b> · Mutmacher — ${m.emoji} ${m.titel}</div>
+    <div class="bubble coach">${co}</div>
+    <div class="bubble felix">🧒 „${m.mut}“</div>
+  </div>`;
+}
+// Eine einzige Blase (im Spiel, Inhalt rotiert: Mut-Satz / Ritual / Mission)
+function mutKompakt(m, rot){
+  if(!m) return "";
+  const v=[m.mut, m.punkt, m.mission];
+  return `<div class="mut-dialog klein">
+    <div class="mut-kopf">🦁 Mutmacher</div>
+    <div class="bubble coach">${v[Math.abs(rot||0)%v.length]}</div>
+  </div>`;
+}
+
 let tennis=null;
 function tennisStop(){ if(tennis && tennis.timer){ clearInterval(tennis.timer); tennis.timer=null; } }
 function tennisMental(id){ return (SpielRepo.tennis().mental||[]).find(m=>m.id===id)||null; }
-function tennisMentalHTML(id){
-  const m=tennisMental(id); if(!m) return "";
-  return `<div class="mental-card" data-mental="${m.id}">
-    <div class="mental-kopf">🦁 Mutmacher · ${m.emoji} ${m.titel}</div>
-    <p>⭐ <b>Heute trainieren wir:</b><br>${m.trainieren}</p>
-    <p>🎯 <b>Deine Mission:</b><br>${m.mission}</p>
-    <p>💬 <b>Dein Mut-Satz:</b><br>„${m.mut}“</p>
-    <p>🎾 <b>Nach jedem Punkt:</b><br>${m.punkt}</p>
-    <p>🏆 <b>Zum Schluss:</b><br>${m.schluss}</p>
-  </div>`;
-}
-function tennisMentalKompakt(id){
-  const m=tennisMental(id); if(!m) return "";
-  return `<div class="feedback tip">🦁 <b>Mutmacher:</b> „${m.mut}“ – ${m.punkt}</div>`;
-}
+function tennisMentalHTML(id){ return mutDialog(tennisMental(id), {alle:true}); }
+function tennisMentalKompakt(id){ return mutKompakt(tennisMental(id), tennis?tennis.balls:0); }
 function tennisMentalText(id){
   const m=tennisMental(id); if(!m) return "";
   return `Heute trainieren wir: ${m.trainieren} Deine Mission: ${m.mission} Dein Mut-Satz: ${m.mut} Nach jedem Punkt: ${m.punkt} Zum Schluss: ${m.schluss}`;
@@ -4709,7 +4786,7 @@ function tennisFragBox(){
   const kopf = aufschlag ? "🎯 Dein <b>Aufschlag</b>" : "🧲 Dein <b>Return</b>";
   const stufe = q.schwer ? "🔥 schweres Wort" : "🌱 leichtes Wort";
   const entscheidung = (tennis.mir===3 && tennis.ihm===3);
-  const mentalOben = entscheidung ? tennisMentalHTML("tiebreak")
+  const mentalOben = entscheidung ? mutMini(tennisMental("tiebreak"), tennis.balls)
     : tennis.balls===0 ? tennisMentalKompakt("aufschlag")
     : tennis.balls===1 ? tennisMentalKompakt("return") : "";
   const richtigLinks=Math.random()<0.5;
@@ -4745,7 +4822,7 @@ function tennisFragBox(){
     fb.innerHTML=""; fb.appendChild(d);
     if(!correct){
       const m=document.createElement("div");
-      m.innerHTML = tennis.serie>=2 ? tennisMentalHTML("fehlerserie") : tennisMentalKompakt("fehler");
+      m.innerHTML = tennis.serie>=2 ? mutMini(tennisMental("fehlerserie"), tennis.serie) : tennisMentalKompakt("fehler");
       fb.appendChild(m);
       focusFeedback(d,null);
     }
@@ -4790,11 +4867,11 @@ function tennisRender(c){
         <p>Heute spielst du gegen <b>${g.emoji} ${g.name}</b>! <span class="muted">${g.spruch}</span></p>
         <p class="muted" style="margin:6px 0 8px;">Richtiges Wort = Punkt für dich, falsches Wort = Punkt für ${g.name}.
           Ein <b>Spiel</b> geht bis 4 Punkte (15 – 30 – 40 – Spiel). Wer zuerst <b>2 Spiele</b> hat, gewinnt das Match.</p>
-        ${tennisMentalHTML(mId)}
-        <button class="btn-primary" id="tennisStart" style="width:100%;">🎾 Los geht's!</button>
+        ${mutDialog(tennisMental(mId))}
+        <button class="btn-primary locked" id="tennisStart" style="width:100%;" disabled>🎾 Los geht's!</button>
       </div>`;
     const btn=c.querySelector("#tennisStart");
-    readGate(c.querySelector("#tennisHost"), btn, tennisMentalText(mId));
+    mutDialogBind(c.querySelector("#tennisHost"), ()=>{ btn.disabled=false; btn.classList.remove("locked"); });
     btn.onclick=()=>{ if(btn.disabled) return;
       tennis.phase="ball"; tennis.frage=tennisFrage(); tennisRender(c); };
     addSpeakButtons(c);
@@ -4809,7 +4886,7 @@ function tennisRender(c){
         <p><b>Spiele ${tennis.spieleMir} : ${tennis.spieleIhm}</b> – jetzt ist Seitenwechsel.</p>
         ${tennisFakt()}
         ${tennisMentalKompakt("seitenwechsel")}
-        ${tennisMentalHTML(mId)}
+        ${mutMini(tennisMental(mId), tennis.spieleMir+tennis.spieleIhm)}
         <button class="btn-primary" id="tennisWeiter" style="width:100%;">Weiter – Spiel ${tennis.spielNr+1} 🎾</button>
       </div>`;
     c.querySelector("#tennisWeiter").onclick=()=>{
@@ -4827,7 +4904,7 @@ function tennisRender(c){
         <p><b>Endstand: ${tennis.spieleMir} : ${tennis.spieleIhm}</b> gegen ${g.emoji} ${g.name} ·
           Du hast <b>${tennis.wins} von ${tennis.balls}</b> Bällen gewonnen.</p>
         ${tennisFakt()}
-        ${tennisMentalHTML("lob")}
+        ${mutMini(tennisMental("lob"), (fieldProg("tennis").runs||0))}
         <button class="btn-primary" id="tennisWeiter" style="width:100%;">Zur Auswertung 🌱</button>
       </div>`;
     c.querySelector("#tennisWeiter").onclick=()=>{ tennis.phase="auswertung"; tennisRender(c); };
@@ -4875,21 +4952,8 @@ const FB_CHANCEN = 5; // Torchancen je Halbzeit
 let fussball=null;
 function fbStop(){ if(fussball && fussball.timer){ clearInterval(fussball.timer); fussball.timer=null; } }
 function fbMental(id){ return (SpielRepo.fussball().mental||[]).find(m=>m.id===id)||null; }
-function fbMentalHTML(id){
-  const m=fbMental(id); if(!m) return "";
-  return `<div class="mental-card" data-mental="${m.id}">
-    <div class="mental-kopf">🦁 Mutmacher · ${m.emoji} ${m.titel}</div>
-    <p>⭐ <b>Heute trainieren wir:</b><br>${m.trainieren}</p>
-    <p>🎯 <b>Deine Mission:</b><br>${m.mission}</p>
-    <p>💬 <b>Dein Mut-Satz:</b><br>„${m.mut}“</p>
-    <p>⚽ <b>Nach jedem Punkt:</b><br>${m.punkt}</p>
-    <p>🏆 <b>Zum Schluss:</b><br>${m.schluss}</p>
-  </div>`;
-}
-function fbMentalKompakt(id){
-  const m=fbMental(id); if(!m) return "";
-  return `<div class="feedback tip">🦁 <b>Mutmacher:</b> „${m.mut}“ – ${m.punkt}</div>`;
-}
+function fbMentalHTML(id){ return mutDialog(fbMental(id), {alle:true}); }
+function fbMentalKompakt(id){ return mutKompakt(fbMental(id), fussball?fussball.balls:0); }
 function fbMentalText(id){
   const m=fbMental(id); if(!m) return "";
   return `Heute trainieren wir: ${m.trainieren} Deine Mission: ${m.mission} Dein Mut-Satz: ${m.mut} Nach jedem Punkt: ${m.punkt} Zum Schluss: ${m.schluss}`;
@@ -4950,7 +5014,7 @@ function fbFragBox(){
   const kopf = elf ? "⚡ <b>Elfmeterschießen!</b> Dieser Ball entscheidet das Match"
     : `🎯 <b>Torchance ${fussball.chance+1} von ${FB_CHANCEN}</b>`;
   const stufe = q.schwer ? "🔥 schweres Wort" : "🌱 leichtes Wort";
-  const mentalOben = elf ? fbMentalHTML("elfmeter")
+  const mentalOben = elf ? mutMini(fbMental("elfmeter"), fussball.balls)
     : fussball.balls===0 ? fbMentalKompakt("torschuss")
     : fussball.balls===1 ? fbMentalKompakt("abwehr")
     : fussball.balls===2 ? fbMentalKompakt("torwart") : "";
@@ -4988,7 +5052,7 @@ function fbFragBox(){
     fb.innerHTML=""; fb.appendChild(d);
     if(!correct){
       const m=document.createElement("div");
-      m.innerHTML = fussball.serie>=2 ? fbMentalHTML("fehlerserie") : fbMentalKompakt("fehler");
+      m.innerHTML = fussball.serie>=2 ? mutMini(fbMental("fehlerserie"), fussball.serie) : fbMentalKompakt("fehler");
       fb.appendChild(m);
       focusFeedback(d,null);
     }
@@ -5032,11 +5096,11 @@ function fbRender(c){
         <p>Heute spielst du gegen <b>${g.emoji} ${g.name}</b>! <span class="muted">${g.spruch}</span></p>
         <p class="muted" style="margin:6px 0 8px;">Richtiges Wort = <b>Tor für dich</b>, falsches Wort = Konter-Tor für ${g.name}.
           Es gibt <b>2 Halbzeiten mit je ${FB_CHANCEN} Torchancen</b> – bei Gleichstand entscheidet ein Elfmeter!</p>
-        ${fbMentalHTML(mId)}
-        <button class="btn-primary" id="fbStart" style="width:100%;">⚽ Anstoß!</button>
+        ${mutDialog(fbMental(mId))}
+        <button class="btn-primary locked" id="fbStart" style="width:100%;" disabled>⚽ Anstoß!</button>
       </div>`;
     const btn=c.querySelector("#fbStart");
-    readGate(c.querySelector("#fbHost"), btn, fbMentalText(mId));
+    mutDialogBind(c.querySelector("#fbHost"), ()=>{ btn.disabled=false; btn.classList.remove("locked"); });
     btn.onclick=()=>{ if(btn.disabled) return;
       fussball.phase="ball"; fussball.frage=fbFrage(); fbRender(c); };
     addSpeakButtons(c);
@@ -5050,7 +5114,7 @@ function fbRender(c){
         <p><b>Spielstand: ${fussball.mir} : ${fussball.ihm}</b> – kurz durchatmen und auftanken.</p>
         ${fbFakt()}
         ${fbMentalKompakt("halbzeit")}
-        ${fbMentalHTML(mId)}
+        ${mutMini(fbMental(mId), fussball.mir+fussball.ihm)}
         <button class="btn-primary" id="fbWeiter" style="width:100%;">Weiter – 2. Halbzeit ⚽</button>
       </div>`;
     c.querySelector("#fbWeiter").onclick=()=>{
@@ -5068,7 +5132,7 @@ function fbRender(c){
         <p><b>Endstand: ${fussball.mir} : ${fussball.ihm}</b> gegen ${g.emoji} ${g.name} ·
           Du hast <b>${fussball.wins} von ${fussball.balls}</b> Bällen verwandelt.</p>
         ${fbFakt()}
-        ${fbMentalHTML("lob")}
+        ${mutMini(fbMental("lob"), (fieldProg("fussball").runs||0))}
         <button class="btn-primary" id="fbWeiter" style="width:100%;">Zur Auswertung 🌱</button>
       </div>`;
     c.querySelector("#fbWeiter").onclick=()=>{ fussball.phase="auswertung"; fbRender(c); };
