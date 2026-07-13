@@ -62,6 +62,19 @@ function section(t) { console.log("\n== " + t + " =="); }
       await page.waitForTimeout(100);
     }
   };
+  // Mutmacher-Dialog durchtippen: Blasen aufdecken, dann den eigenen Mut-Satz antippen
+  const tapDialog = async (scope) => {
+    const pre = scope ? scope + " " : "";
+    for (let k = 0; k < 8; k++) {
+      const w = page.locator(pre + ".mut-weiter");
+      if (await w.count() && await w.isVisible().catch(() => false)) {
+        await w.click(); await page.waitForTimeout(60); continue;
+      }
+      break;
+    }
+    const sag = page.locator(pre + ".bubble.sag");
+    if (await sag.count()) { await sag.first().click(); await page.waitForTimeout(100); }
+  };
   const closeOverlay = async () => { await page.waitForTimeout(380);
     if (await page.locator("#levelUp.show").count()) { const t = (await page.locator("#lvlupTitle").textContent()).trim();
       await page.locator("#lvlupClose").click(); await page.waitForTimeout(100); return t; } return null; };
@@ -377,12 +390,13 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Alle 12 Mentaltrainer-Situationen vorhanden", await page.evaluate(() =>
     ["training", "match", "fehler", "fehlerserie", "nervositaet", "fuehrung", "rueckstand",
      "tiebreak", "aufschlag", "return", "seitenwechsel", "lob"].every(id => !!tennisMental(id))));
-  check("Intro: Mentaltrainer-Karte mit 5 Bausteinen", await page.evaluate(() => {
-    const k = document.querySelector("#tennisHost .mental-card"); if (!k) return false;
-    const t = k.textContent;
-    return ["Heute trainieren wir", "Deine Mission", "Dein Mut-Satz", "Nach jedem Punkt", "Zum Schluss"].every(s => t.includes(s)); }));
-  check("Start erst nach Lesen/Anhören", await page.evaluate(() => document.getElementById("tennisStart").disabled === true));
-  await passGate("#tennisHost");
+  check("Intro: Mutmacher-Dialog mit Sprechblasen (Coach Leo)", await page.evaluate(() => {
+    const d = document.querySelector("#tennisHost .mut-dialog");
+    return !!d && d.textContent.includes("Coach Leo") && d.querySelectorAll(".bubble").length >= 3
+      && d.querySelectorAll(".bubble.zu").length >= 2; }));
+  check("Start gesperrt, bis der Dialog durchgetippt ist", await page.evaluate(() => document.getElementById("tennisStart").disabled === true));
+  await tapDialog("#tennisHost");
+  check("Mut-Satz angetippt → Start frei", !(await page.locator("#tennisStart").isDisabled()));
   await page.locator("#tennisStart").click(); await page.waitForTimeout(150);
   check("Tennisplatz sichtbar", (await page.locator("#tennisFeld").count()) > 0);
   check("Frage aus dem Grundwortschatz (2 Wörter)", (await page.locator(".tennis-opt").count()) === 2);
@@ -395,6 +409,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   const fbT = await page.locator("#tennisfb").textContent();
   check("Fehler: Lösung + Mutmacher bleiben stehen", fbT.includes("richtig wäre") && fbT.includes("Mutmacher"));
   check("Fehler = Punkt für den Gegner", await page.evaluate(() => tennis.ihm === 1 && tennis.mir === 0));
+  check("Mutmacher-Blase rotiert den Inhalt (Dosierung)", await page.evaluate(() => {
+    const m = tennisMental("fehler");
+    return [mutKompakt(m, 0), mutKompakt(m, 1), mutKompakt(m, 2)]
+      .every((h, i, arr) => arr.indexOf(h) === i); }));
   await page.locator("#tennisWeiter").click(); await page.waitForTimeout(100);
   // Match durchspielen: ab jetzt immer richtig antworten
   async function tennisBall() {
@@ -444,9 +462,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Alle 12 Fußball-Mentalsituationen (inkl. Elfmeter/Abwehr)", await page.evaluate(() =>
     ["training", "match", "fehler", "fehlerserie", "nervositaet", "fuehrung", "rueckstand",
      "elfmeter", "torschuss", "abwehr", "torwart", "halbzeit", "lob"].every(id => !!fbMental(id))));
-  check("Intro: Mentaltrainer-Karte + Lese-Bestätigung", await page.evaluate(() =>
-    !!document.querySelector("#fbHost .mental-card") && document.getElementById("fbStart").disabled === true));
-  await passGate("#fbHost");
+  check("Intro: Mutmacher-Dialog + Start gesperrt", await page.evaluate(() =>
+    !!document.querySelector("#fbHost .mut-dialog .bubble") && document.getElementById("fbStart").disabled === true));
+  await tapDialog("#fbHost");
+  check("Fußball: Mut-Satz angetippt → Anstoß frei", !(await page.locator("#fbStart").isDisabled()));
   await page.locator("#fbStart").click(); await page.waitForTimeout(150);
   check("Fußballplatz mit Tor sichtbar", (await page.locator("#fbFeld").count()) > 0 && (await page.locator("#fbKeeper").count()) > 0);
   // Erster Ball absichtlich falsch: Konter-Tor + Mentaltrainer bleibt stehen
