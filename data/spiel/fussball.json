@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kommentar": "Fußball-Match: Gegner, Fußball-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Gleiche Mentaltrainer-Regeln wie beim Tennis: kurze Sätze, Kinderbilder, Rituale, kein Gewinn-Druck. Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de, owayo.de.",
+  "kommentar": "Fußball-Match: Gegner, Fußball-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Gleiche Mentaltrainer-Regeln wie beim Tennis: kurze Sätze, Kinderbilder, Rituale, kein Gewinn-Druck. Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de, owayo.de. Extra: Torwart-Karte (id 'torwart') und Torwart-Wissen, weil Felix gerne im Tor steht.",
   "gegner": [
     {
       "id": "torwand",
@@ -25,14 +25,46 @@
     }
   ],
   "fakten": [
-    { "begriff": "Spieldauer", "text": "Ein Profi-Spiel dauert 2 × 45 Minuten. Kinder spielen kürzer – in der F-Jugend zum Beispiel 2 × 25 Minuten." },
-    { "begriff": "Elfmeter", "text": "Der Elfmeter heißt so, weil der Punkt genau elf Meter vom Tor entfernt ist. Bei Kindern liegt er oft nur 8 oder 9 Meter weit weg." },
-    { "begriff": "Torwart", "text": "Nur der Torwart darf den Ball mit den Händen halten – und auch nur in seinem eigenen Strafraum." },
-    { "begriff": "Elfmeter-Regel", "text": "Beim Elfmeter muss der Torwart mit mindestens einem Fuß auf der Torlinie bleiben, bis geschossen wird." },
-    { "begriff": "Mannschaft", "text": "Eine Fußball-Mannschaft hat elf Spieler auf dem Platz – zehn Feldspieler und einen Torwart." },
-    { "begriff": "Abseits", "text": "Abseits heißt: Beim Abspiel steht ein Stürmer näher am Tor als der Ball und der vorletzte Gegner. In der eigenen Hälfte gibt es kein Abseits." },
-    { "begriff": "Anstoß", "text": "Jedes Spiel und jede Halbzeit beginnt mit dem Anstoß am Mittelpunkt – und nach jedem Tor gibt es wieder einen." },
-    { "begriff": "Weltmeisterschaft", "text": "Die Fußball-Weltmeisterschaft gibt es nur alle vier Jahre – Deutschland hat sie schon viermal gewonnen." }
+    {
+      "begriff": "Spieldauer",
+      "text": "Ein Profi-Spiel dauert 2 × 45 Minuten. Kinder spielen kürzer – in der F-Jugend zum Beispiel 2 × 25 Minuten."
+    },
+    {
+      "begriff": "Elfmeter",
+      "text": "Der Elfmeter heißt so, weil der Punkt genau elf Meter vom Tor entfernt ist. Bei Kindern liegt er oft nur 8 oder 9 Meter weit weg."
+    },
+    {
+      "begriff": "Torwart",
+      "text": "Nur der Torwart darf den Ball mit den Händen halten – und auch nur in seinem eigenen Strafraum."
+    },
+    {
+      "begriff": "Elfmeter-Regel",
+      "text": "Beim Elfmeter muss der Torwart mit mindestens einem Fuß auf der Torlinie bleiben, bis geschossen wird."
+    },
+    {
+      "begriff": "Mannschaft",
+      "text": "Eine Fußball-Mannschaft hat elf Spieler auf dem Platz – zehn Feldspieler und einen Torwart."
+    },
+    {
+      "begriff": "Abseits",
+      "text": "Abseits heißt: Beim Abspiel steht ein Stürmer näher am Tor als der Ball und der vorletzte Gegner. In der eigenen Hälfte gibt es kein Abseits."
+    },
+    {
+      "begriff": "Anstoß",
+      "text": "Jedes Spiel und jede Halbzeit beginnt mit dem Anstoß am Mittelpunkt – und nach jedem Tor gibt es wieder einen."
+    },
+    {
+      "begriff": "Weltmeisterschaft",
+      "text": "Die Fußball-Weltmeisterschaft gibt es nur alle vier Jahre – Deutschland hat sie schon viermal gewonnen."
+    },
+    {
+      "begriff": "Torwart-Handschuhe",
+      "text": "Torwarthandschuhe haben eine spezielle Haftschicht (den „Grip“), damit der Ball beim Fangen fast kleben bleibt."
+    },
+    {
+      "begriff": "Sich groß machen",
+      "text": "Beim Eins-gegen-Eins machen sich gute Torhüter groß und warten ruhig ab – wer zuerst wackelt, verliert meistens das Duell."
+    }
   ],
   "mental": [
     {
@@ -134,6 +166,16 @@
       "mut": "Hier kommt keiner vorbei.",
       "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
       "schluss": "Jeder abgewehrte Ball ist wie ein halbes Tor. Bleib dran – das ist deine Stärke."
+    },
+    {
+      "id": "torwart",
+      "titel": "Im Tor (Torwart-Tipps)",
+      "emoji": "🧤",
+      "trainieren": "Heute trainieren wir Torwart-Mut. Der Torwart ist der Löwe im Tor: wach, groß und mutig.",
+      "mission": "Mach dich breit wie ein Stern: Zehenspitzen, Knie leicht gebeugt, Hände vor. Schau dem Ball bis in deine Handschuhe hinterher.",
+      "mut": "Mein Tor. Hier komme ich an jeden Ball.",
+      "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
+      "schluss": "Ein Gegentor ist nie deine Schuld allein. Gute Torhüter haken ab und halten den nächsten – genau wie du."
     },
     {
       "id": "halbzeit",

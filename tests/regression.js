@@ -440,10 +440,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
   await openMod("Fußball-Match", null);
   check("Fußball-Daten eingebettet (Gegner/Fakten/Mental)", await page.evaluate(() =>
-    SpielRepo.fussball().gegner.length >= 3 && SpielRepo.fussball().fakten.length >= 5 && SpielRepo.fussball().mental.length === 12));
+    SpielRepo.fussball().gegner.length >= 3 && SpielRepo.fussball().fakten.length >= 5 && SpielRepo.fussball().mental.length >= 12));
   check("Alle 12 Fußball-Mentalsituationen (inkl. Elfmeter/Abwehr)", await page.evaluate(() =>
     ["training", "match", "fehler", "fehlerserie", "nervositaet", "fuehrung", "rueckstand",
-     "elfmeter", "torschuss", "abwehr", "halbzeit", "lob"].every(id => !!fbMental(id))));
+     "elfmeter", "torschuss", "abwehr", "torwart", "halbzeit", "lob"].every(id => !!fbMental(id))));
   check("Intro: Mentaltrainer-Karte + Lese-Bestätigung", await page.evaluate(() =>
     !!document.querySelector("#fbHost .mental-card") && document.getElementById("fbStart").disabled === true));
   await passGate("#fbHost");
@@ -494,7 +494,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Fußball: Auswertung mit Ball-Bilanz", fbm[1] === String(bilanzF.wins) && fbm[2] === String(bilanzF.balls),
     fbm[1] + "/" + fbm[2] + " (erwartet " + bilanzF.wins + "/" + bilanzF.balls + ")");
   await page.locator("#bottomNav >> text=Mutmacher").first().click(); await page.waitForTimeout(140);
-  check("Mental-Tab: alle 12 Fußball-Karten", (await page.locator("#moduleContent .mental-card").count()) === 12);
+  check("Mutmacher-Tab: 13 Fußball-Karten (inkl. Torwart)", (await page.locator("#moduleContent .mental-card").count()) === 13
+    && (await page.locator("#moduleContent").textContent()).includes("Torwart"));
 
   // ---------- 7d) Elternbereich: Spiele an/aus + Time-Boxing ----------
   section("Elternbereich: Spiele & Zeit");
@@ -601,6 +602,42 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.locator("#schUndo").click(); await page.waitForTimeout(120);
   check("Zug zurücknehmen: wieder Ausgangsstellung", await page.evaluate(() =>
     schach.st.weiss && schach.st.b.join("") === schFen(SCH_START).b.join("")));
+  check("Brett mit Feldnummerierung (a–h, 1–8)", await page.evaluate(() =>
+    document.querySelectorAll(".sch-kor").length === 8 && document.querySelectorAll(".sch-kof").length === 8
+    && document.querySelector('.sch-feld[data-feld="56"] .sch-kor').textContent === "1"
+    && document.querySelector('.sch-feld[data-feld="56"] .sch-kof').textContent === "a"));
+  // Responsiv: Handy hoch -> Status/Frage über dem Brett, alles ohne Scrollen
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.evaluate(() => goSection("spielen")); await page.waitForTimeout(200);
+  const fitH = await page.evaluate(() => {
+    const b = document.querySelector(".sch-brett").getBoundingClientRect();
+    const st2 = document.querySelector(".sch-side .hint").getBoundingClientRect();
+    return { passt: b.bottom <= window.innerHeight && b.width <= window.innerWidth, oben: st2.top < b.top }; });
+  check("Handy hoch: Brett + Knöpfe ohne Scrollen", fitH.passt);
+  check("Handy: Status/Knöpfe stehen ÜBER dem Brett", fitH.oben);
+  await page.evaluate(() => { schAufIdx = 0; runReset("schach"); goSection("aufgaben"); }); await page.waitForTimeout(200);
+  check("Handy: Aufgaben-Frage über dem Brett, Brett passt", await page.evaluate(() => {
+    const b = document.querySelector(".sch-brett").getBoundingClientRect();
+    const q = document.querySelector(".sch-side .hint").getBoundingClientRect();
+    return q.top < b.top && b.bottom <= window.innerHeight; }));
+  await page.evaluate(() => goSection("schule")); await page.waitForTimeout(200);
+  check("Handy: Lektions-Wahl in einer wischbaren Zeile", await page.evaluate(() => {
+    const r = document.querySelector(".sch-chips");
+    return r && r.offsetHeight < 70; }));
+  // kleines Handy
+  await page.setViewportSize({ width: 360, height: 640 });
+  await page.evaluate(() => goSection("spielen")); await page.waitForTimeout(200);
+  check("kleines Handy (360×640): Brett passt komplett", await page.evaluate(() => {
+    const b = document.querySelector(".sch-brett").getBoundingClientRect();
+    return b.bottom <= window.innerHeight && b.width <= window.innerWidth; }));
+  // iPad quer: 2 Spalten, Brett links
+  await page.setViewportSize({ width: 1180, height: 820 });
+  await page.evaluate(() => goSection("spielen")); await page.waitForTimeout(200);
+  check("iPad quer: 2 Spalten + passt ohne Scrollen", await page.evaluate(() => {
+    const cols = getComputedStyle(document.querySelector(".sch-wrap")).gridTemplateColumns.split(" ").length;
+    const card = document.querySelector("#moduleContent .card").getBoundingClientRect();
+    return cols === 2 && card.bottom <= window.innerHeight + 1; }));
+  await page.setViewportSize({ width: 800, height: 1000 });
 
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
