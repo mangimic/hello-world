@@ -1,0 +1,124 @@
+{
+  "version": 1,
+  "kommentar": "Schach für Felix (9): Lektionen knüpfen an die Spanische Eröffnung an (kennt er schon) und bauen Taktik-Wissen auf (Italienisch, Rochade, Gabel, Fesselung, Schäfermatt-Abwehr, Grundreihen-Matt). Züge im Format 'e2e4' (werden von der Regel-Engine geprüft). FEN-Stellungen ohne Zugzähler.",
+  "lektionen": [
+    {
+      "id": "spanisch",
+      "titel": "Die Spanische Eröffnung",
+      "emoji": "🇪🇸",
+      "intro": "Die kennst du schon – schauen wir sie uns ganz genau an! Bei der Spanischen Eröffnung ärgert der Läufer den Springer, der e5 beschützt.",
+      "schritte": [
+        { "zug": "e2e4", "text": "1. e4 – Weiß besetzt das Zentrum. Die Mitte ist der wichtigste Teil des Bretts!" },
+        { "zug": "e7e5", "text": "1. … e5 – Schwarz hält dagegen und will die Mitte auch." },
+        { "zug": "g1f3", "text": "2. Sf3 – Der Springer greift den Bauern e5 an UND entwickelt sich. Zwei Dinge auf einmal – stark!" },
+        { "zug": "b8c6", "text": "2. … Sc6 – Schwarz verteidigt e5 mit dem Springer." },
+        { "zug": "f1b5", "text": "3. Lb5! – DER spanische Zug: Der Läufer greift genau den Springer an, der e5 beschützt. Merk dir: Der Angriff auf den Verteidiger ist ein Trick der Profis!" }
+      ]
+    },
+    {
+      "id": "italienisch",
+      "titel": "Die Italienische Partie",
+      "emoji": "🇮🇹",
+      "intro": "Die kleine Schwester der Spanischen: Alles gleich – nur der Läufer zieht ein Feld kürzer und zielt auf den schwächsten Punkt von Schwarz: f7!",
+      "schritte": [
+        { "zug": "e2e4", "text": "1. e4 – wie beim Spanier: Zentrum!" },
+        { "zug": "e7e5", "text": "1. … e5 – Schwarz hält mit." },
+        { "zug": "g1f3", "text": "2. Sf3 – Springer entwickeln, e5 angreifen." },
+        { "zug": "b8c6", "text": "2. … Sc6 – Schwarz verteidigt." },
+        { "zug": "f1c4", "text": "3. Lc4! – Der italienische Zug: Der Läufer schaut genau auf f7. Dieses Feld beschützt bei Schwarz nur der König – deshalb ist es so verwundbar!" }
+      ]
+    },
+    {
+      "id": "regeln",
+      "titel": "Die 3 goldenen Eröffnungsregeln",
+      "emoji": "⭐",
+      "intro": "Merk dir für jede Eröffnung: 1. Besetze das Zentrum. 2. Entwickle Springer und Läufer. 3. Bring den König mit der Rochade in Sicherheit – und hol die Dame nicht zu früh raus!",
+      "schritte": [
+        { "zug": "e2e4", "text": "Regel 1: Zentrum besetzen – der Bauer zieht mutig in die Mitte." },
+        { "zug": "e7e5", "text": "Schwarz macht es genauso." },
+        { "zug": "g1f3", "text": "Regel 2: Figuren entwickeln – erst die Springer …" },
+        { "zug": "b8c6", "text": "… Schwarz entwickelt auch." },
+        { "zug": "f1c4", "text": "… dann die Läufer. Jede Figur nur EINMAL ziehen in der Eröffnung!" },
+        { "zug": "g8f6", "text": "Schwarz entwickelt den zweiten Springer." },
+        { "zug": "e1g1", "text": "Regel 3: Die Rochade! König und Turm machen ihren Spezial-Sprung – der König ist in Sicherheit wie in einer Burg. 🏰" }
+      ]
+    },
+    {
+      "id": "gabel",
+      "titel": "Die Gabel",
+      "emoji": "🍴",
+      "intro": "Eine Gabel greift ZWEI Figuren gleichzeitig an – der Gegner kann nur eine retten! Der Springer ist der Gabel-König, weil er so verwinkelt springt.",
+      "fen": "r3k3/8/8/3N4/8/8/8/4K3 w - -",
+      "schritte": [
+        { "zug": "d5c7", "text": "Sc7+! Der Springer sagt Schach UND greift gleichzeitig den Turm auf a8 an. Das ist die Gabel!" },
+        { "zug": "e8d7", "text": "Der König MUSS aus dem Schach ziehen – den Turm kann er nicht mehr retten …" },
+        { "zug": "c7a8", "text": "Sxa8! Der Springer schnappt sich den Turm. Halte immer Ausschau nach Feldern, von denen du zwei Figuren gleichzeitig angreifst!" }
+      ]
+    },
+    {
+      "id": "fesselung",
+      "titel": "Die Fesselung",
+      "emoji": "📌",
+      "intro": "Eine gefesselte Figur darf nicht ziehen – sonst wäre ihr eigener König im Schach! Schau hin: Der Läufer auf b5, der Springer auf c6 und der König auf e8 stehen auf EINER Linie. Zieht der Springer weg, stünde der König im Schach – er ist gefesselt! Genau das droht bei der Spanischen Eröffnung, wenn der Bauer d7 nicht mehr dazwischen steht.",
+      "fen": "r3k3/8/2n5/1B6/8/8/8/4K3 b - -",
+      "marks": ["b5", "c6", "e8"],
+      "schritte": []
+    },
+    {
+      "id": "schaefer",
+      "titel": "Schäfermatt abwehren",
+      "emoji": "🛡️",
+      "intro": "Manche Gegner versuchen das schnelle Schäfermatt: Dame und Läufer zielen zusammen auf f7. Wer den Trick kennt, wehrt ihn ganz leicht ab!",
+      "schritte": [
+        { "zug": "e2e4", "text": "1. e4 – sieht ganz normal aus …" },
+        { "zug": "e7e5", "text": "1. … e5." },
+        { "zug": "f1c4", "text": "2. Lc4 – der Läufer schaut auf f7 …" },
+        { "zug": "b8c6", "text": "2. … Sc6 – Schwarz entwickelt ruhig weiter." },
+        { "zug": "d1h5", "text": "3. Dh5?! – ACHTUNG! Jetzt zielen Dame UND Läufer auf f7. Es droht Matt in einem Zug!" },
+        { "zug": "g7g6", "text": "3. … g6! Die beste Abwehr: Der kleine Bauer vertreibt die große Dame. Merk dir: Wer zu früh mit der Dame angreift, wird mit Tempo-Gewinn zurückgedrängt!" }
+      ]
+    }
+  ],
+  "aufgaben": [
+    { "id": "a1", "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -",
+      "frage": "Spanische Eröffnung! Auf welches Feld zieht der weiße Läufer? Tippe das Feld an.",
+      "ziel": "b5", "tipp": "Der Läufer will den Springer ärgern, der e5 beschützt.",
+      "erfolg": "Lb5 – der spanische Läuferzug!" },
+    { "id": "a2", "fen": "r1bqkbnr/pppp1ppp/2n5/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq -",
+      "frage": "Und jetzt die Italienische Partie: Auf welches Feld zieht der Läufer da? Tippe es an.",
+      "ziel": "c4", "tipp": "Der Läufer zielt auf den schwächsten Punkt f7 – von welchem Feld aus geht das?",
+      "erfolg": "Lc4 – italienisch, mit Blick auf f7!" },
+    { "id": "a3", "fen": "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq -",
+      "frage": "Regel 1 – Zentrum! Tippe das Feld an, auf das der Bauer beim starken ersten Zug 1. e4 zieht.",
+      "ziel": "e4", "tipp": "Der Bauer vor dem König zieht zwei Felder vor – mitten ins Zentrum.",
+      "erfolg": "e4 – das Zentrum gehört dir!" },
+    { "id": "a4", "fen": "rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq -",
+      "frage": "Regel 2 – Entwicklung! Auf welches Feld springt der Springer von g1 am besten? Tippe es an.",
+      "ziel": "f3", "tipp": "Von dort greift er sofort den Bauern e5 an.",
+      "erfolg": "Sf3 – entwickeln und angreifen zugleich!" },
+    { "id": "a5", "fen": "r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -",
+      "frage": "Regel 3 – Sicherheit! Zeit für die Rochade: Auf welches Feld hüpft der weiße König? Tippe es an.",
+      "ziel": "g1", "tipp": "Bei der kurzen Rochade zieht der König zwei Felder Richtung Turm.",
+      "erfolg": "0-0 – der König ist in seiner Burg! 🏰" },
+    { "id": "a6", "fen": "r3k3/8/8/3N4/8/8/8/4K3 w - -",
+      "frage": "Gabel-Zeit! Von welchem Feld aus greift der Springer König UND Turm gleichzeitig an? Tippe es an.",
+      "ziel": "c7", "tipp": "Der Springer muss Schach geben und dabei auch auf a8 zielen.",
+      "erfolg": "Sc7+ – Gabel! Der Turm ist verloren." },
+    { "id": "a7", "fen": "2q3k1/8/8/3N4/8/8/8/4K3 w - -",
+      "frage": "Noch eine Gabel: Von welchem Feld greift der Springer König UND Dame gleichzeitig an? Tippe es an.",
+      "ziel": "e7", "tipp": "Such ein Feld, von dem der Springer sowohl c8 als auch g8 erreicht.",
+      "erfolg": "Se7+ – die Dame ist geschnappt!" },
+    { "id": "a8", "fen": "r3k3/8/2n5/1B6/8/8/8/4K3 b - -",
+      "frage": "Welche schwarze Figur ist gefesselt und darf nicht ziehen? Tippe sie an.",
+      "ziel": "c6", "tipp": "Läufer, Figur und König stehen auf einer Diagonale – wer steht in der Mitte?",
+      "erfolg": "Genau – der Springer c6 ist gefesselt!" },
+    { "id": "a9", "fen": "r1bqkbnr/pppp1ppp/2n5/4p2Q/2B1P3/8/PPPP1PPP/RNB1K1NR b KQkq -",
+      "frage": "Alarm – Schäfermatt-Gefahr! Die Dame droht Matt auf f7. Tippe das Feld des besten Abwehr-Zugs an (ein Bauern-Zug!).",
+      "ziel": "g6", "tipp": "Ein kleiner Bauer kann die große Dame vertreiben.",
+      "erfolg": "g6! Die Dame muss fliehen – Gefahr gebannt. 🛡️" },
+    { "id": "a10", "fen": "6k1/5ppp/8/8/8/8/8/R3K3 w - -",
+      "frage": "Matt in einem Zug! Auf welches Feld zieht der weiße Turm? Tippe es an.",
+      "ziel": "a8", "tipp": "Der schwarze König ist auf der letzten Reihe eingesperrt – seine eigenen Bauern stehen im Weg.",
+      "erfolg": "Ta8 – Grundreihen-Matt! ♟️👑" }
+  ]
+}

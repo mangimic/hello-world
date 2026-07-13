@@ -21,6 +21,7 @@ const fische = JSON.parse(fs.readFileSync(path.join(DATA, "fische.json"), "utf8"
 const welten = JSON.parse(fs.readFileSync(path.join(DATA, "welten.json"), "utf8"));
 const tennis = JSON.parse(fs.readFileSync(path.join(DATA, "tennis.json"), "utf8"));
 const fussball = JSON.parse(fs.readFileSync(path.join(DATA, "fussball.json"), "utf8"));
+const schach = JSON.parse(fs.readFileSync(path.join(DATA, "schach.json"), "utf8"));
 
 // ---------- Validierung ----------
 const ids = new Set();
@@ -74,6 +75,28 @@ pruefeMatchSpiel("tennis", tennis, ["training", "match", "fehler", "fehlerserie"
   "fuehrung", "rueckstand", "tiebreak", "aufschlag", "return", "seitenwechsel", "lob"]);
 pruefeMatchSpiel("fussball", fussball, ["training", "match", "fehler", "fehlerserie", "nervositaet",
   "fuehrung", "rueckstand", "elfmeter", "torschuss", "abwehr", "halbzeit", "lob"]);
+// Schach: Lektionen (Züge in Langnotation) und Tipp-Aufgaben (Feld antippen)
+const ZUG_RE = /^[a-h][1-8][a-h][1-8]$/, FELD_RE = /^[a-h][1-8]$/;
+if (!Array.isArray(schach.lektionen) || schach.lektionen.length < 4) fail("schach: mindestens 4 Lektionen nötig");
+const lids = new Set();
+for (const l of schach.lektionen) {
+  if (lids.has(l.id)) fail("schach: Lektion-id doppelt: " + l.id);
+  lids.add(l.id);
+  if (!l.titel || !l.emoji || !l.intro) fail("schach/" + l.id + ": titel/emoji/intro fehlt");
+  if (!Array.isArray(l.schritte)) fail("schach/" + l.id + ": schritte fehlt (darf leer sein)");
+  l.schritte.forEach((sch, i) => {
+    if (!ZUG_RE.test(sch.zug || "")) fail("schach/" + l.id + ": Schritt " + i + " hat keinen Zug im Format e2e4");
+    if (!sch.text) fail("schach/" + l.id + ": Schritt " + i + " ohne Erklärtext");
+  });
+  (l.marks || []).forEach(m => { if (!FELD_RE.test(m)) fail("schach/" + l.id + ": ungültige Markierung " + m); });
+}
+if (!Array.isArray(schach.aufgaben) || schach.aufgaben.length < 8) fail("schach: mindestens 8 Aufgaben nötig");
+for (const a of schach.aufgaben) {
+  if (!a.fen || a.fen.split("/").length !== 8) fail("schach/" + a.id + ": FEN fehlt oder hat keine 8 Reihen");
+  if (!FELD_RE.test(a.ziel || "")) fail("schach/" + a.id + ": ziel muss ein Feld wie b5 sein");
+  for (const feld of ["frage", "tipp", "erfolg"]) if (!a[feld]) fail("schach/" + a.id + ": Feld fehlt: " + feld);
+}
+console.log("✅ schach gültig · " + schach.lektionen.length + " Lektionen · " + schach.aufgaben.length + " Aufgaben");
 console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + welten.welten[0].spots.length + " Spots · Besatz-Pool: " + welten.welten[0].besatz.length + " Fische (pro Runde wird je Spot ein Fisch gezogen)");
 
 // ---------- Bilder einbetten (optional, verkleinert über Chromium) ----------
@@ -116,6 +139,7 @@ console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + 
   const daten = { fische: fische.fische, welten: welten.welten,
     tennis: { gegner: tennis.gegner, fakten: tennis.fakten, mental: tennis.mental },
     fussball: { gegner: fussball.gegner, fakten: fussball.fakten, mental: fussball.mental },
+    schach: { lektionen: schach.lektionen, aufgaben: schach.aufgaben },
     bilder: bilder };
   const block = MARK_A + "\nconst SPIEL_DATEN = " + JSON.stringify(daten) + ";\n" + MARK_B;
   let html = fs.readFileSync(INDEX, "utf8");

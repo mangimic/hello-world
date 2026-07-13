@@ -504,7 +504,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Standard-Limit 20 Minuten", await page.evaluate(() => store.zeitLimit === 20));
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
   await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
-  check("Tab „Spiele & Zeit“ vorhanden", (await page.locator(".seg[data-spiel]").count()) === 6 && (await page.locator(".seg[data-zeit]").count()) === 7);
+  check("Tab „Spiele & Zeit“ vorhanden", (await page.locator(".seg[data-spiel]").count()) === 8 && (await page.locator(".seg[data-zeit]").count()) === 7);
   // Tennis deaktivieren -> verschwindet von der Startseite
   await page.locator('.seg[data-spiel="tennis"][data-an="0"]').click(); await page.waitForTimeout(100);
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
@@ -532,7 +532,77 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Heute freigegeben: Sperre weg, Übungen erreichbar", (await page.locator("#zeitSperre").count()) === 0
     && await page.evaluate(() => { openModule("subjekt"); return activeModuleId === "subjekt"; }));
 
-  // ---------- 7e) Spiele-Freischaltung (Münzen) ----------
+  // ---------- 7e) Schach (Schule, Aufgaben, Spielen) ----------
+  section("Schach");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
+  await openMod("Schach", null);
+  check("Engine: 20 legale Anfangszüge, perft(2)=400", await page.evaluate(() => {
+    const s0 = schFen(SCH_START);
+    let n2 = 0; for (const z of schZuege(s0)) n2 += schZuege(schZug(s0, z)).length;
+    return schZuege(s0).length === 20 && n2 === 400; }));
+  check("Engine: Narrenmatt wird als Matt erkannt", await page.evaluate(() => {
+    let st = schFen(SCH_START);
+    for (const zg of ["f2f3", "e7e5", "g2g4", "d8h4"]) {
+      const z = schZuege(st).find(x => x.von === schFeldIdx(zg.slice(0, 2)) && x.nach === schFeldIdx(zg.slice(2, 4)));
+      if (!z) return false; st = schZug(st, z);
+    }
+    return schZuege(st).length === 0 && schImSchach(st, true); }));
+  check("Engine: Rochade + en passant vorhanden", await page.evaluate(() => {
+    const r5 = schFen("r1bqkb1r/pppp1ppp/2n2n2/4p3/2B1P3/5N2/PPPP1PPP/RNBQK2R w KQkq -");
+    let st2 = schFen(SCH_START);
+    for (const zg of ["e2e4", "a7a6", "e4e5", "d7d5"])
+      st2 = schZug(st2, schZuege(st2).find(x => x.von === schFeldIdx(zg.slice(0, 2)) && x.nach === schFeldIdx(zg.slice(2, 4))));
+    return schZuege(r5).some(z => z.roch === "k") && schZuege(st2).some(z => z.ep); }));
+  check("Schule: 6 Lektionen, Spanische zuerst", await page.evaluate(() =>
+    document.querySelectorAll(".chip[data-lek]").length === 6 &&
+    document.querySelector(".chip[data-lek]").textContent.includes("Spanische")));
+  check("Schule: alle Lektions-Züge sind regelkonform", await page.evaluate(() =>
+    SpielRepo.schach().lektionen.every(l => {
+      let st = schFen(l.fen || SCH_START);
+      return l.schritte.every(sch => {
+        const z = schZuege(st).find(x => x.von === schFeldIdx(sch.zug.slice(0, 2)) && x.nach === schFeldIdx(sch.zug.slice(2, 4)));
+        if (!z) return false; st = schZug(st, z); return true; }); })));
+  // Spanische Lektion komplett durchklicken
+  for (let k = 0; k < 6; k++) {
+    const w = await page.locator("#schWeiter").count();
+    if (!w) break;
+    await page.locator("#schWeiter").click(); await page.waitForTimeout(60);
+  }
+  check("Schule: Lektion bis zum Ende durchklickbar", (await page.locator("#moduleContent").textContent()).includes("Lektion geschafft"));
+  // Aufgaben: erste falsch, dann alle richtig
+  await page.locator("#bottomNav >> text=Aufgaben").first().click(); await page.waitForTimeout(150);
+  check("10 Taktik-Aufgaben", await page.evaluate(() => SpielRepo.schach().aufgaben.length === 10));
+  const falschesFeld = await page.evaluate(() => {
+    const a = SpielRepo.schach().aufgaben[schAufIdx];
+    return schFeldIdx(a.ziel) === 0 ? 1 : 0; });
+  await page.locator(`.sch-feld[data-feld="${falschesFeld}"]`).click(); await page.waitForTimeout(100);
+  check("Aufgabe: falsches Feld -> Tipp bleibt stehen", (await page.locator("#schAfb").textContent()).includes("💡"));
+  for (let k = 0; k < 10; k++) {
+    const ziel = await page.evaluate(() => schFeldIdx(SpielRepo.schach().aufgaben[schAufIdx].ziel));
+    await page.locator(`.sch-feld[data-feld="${ziel}"]`).click(); await page.waitForTimeout(80);
+    await page.locator("#schAWeiter").click(); await page.waitForTimeout(80);
+  }
+  const schRes = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  const schM = schRes.match(/Insgesamt gelöst:\s*(\d+)\s*von\s*(\d+)/) || [];
+  check("Aufgaben: Auswertung 10/10", schM[1] === "10" && schM[2] === "10", schM[1] + "/" + schM[2]);
+  // Spielen: Zug machen, Computer antwortet, Tipp + Zurücknehmen
+  await page.locator("#bottomNav >> text=Spielen").first().click(); await page.waitForTimeout(150);
+  check("Spielbrett mit 64 Feldern", (await page.locator(".sch-feld").count()) === 64);
+  await page.locator('.sch-feld[data-feld="52"]').click(); await page.waitForTimeout(80); // e2
+  check("Figur wählen zeigt Zielfelder", (await page.locator(".sch-feld.ziel").count()) === 2);
+  await page.locator('.sch-feld[data-feld="36"]').click(); // e4
+  const antwortete = await page.waitForFunction(() =>
+    schach && !schach.busy && !schach.st.weiss === false && schach.verlauf.length === 2, null, { timeout: 9000 })
+    .then(() => true).catch(() => false);
+  check("Computer antwortet mit legalem Zug", antwortete);
+  await page.locator("#schTipp").click(); await page.waitForTimeout(120);
+  check("Tipp-Knopf markiert einen Zug", await page.evaluate(() => !!schach.tippZug));
+  await page.locator("#schUndo").click(); await page.waitForTimeout(120);
+  check("Zug zurücknehmen: wieder Ausgangsstellung", await page.evaluate(() =>
+    schach.st.weiss && schach.st.b.join("") === schFen(SCH_START).b.join("")));
+
+  // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
   await fresh(); await setLevel(3);
   check("Ohne Münze: Spiel-Karte zeigt Schloss", (await page.locator("#moduleChooser").textContent()).includes("🔒"));
