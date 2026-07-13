@@ -65,6 +65,17 @@ Fun Facts („Wusstest du?") gibt es bewusst **nur** zu Angel-Wissen
 (Fische) und Tennis-Wissen – die Übungswörter kommen überall aus dem
 Grundwortschatz.
 
+### schach.json (Schach)
+| Feld | Typ | Bedeutung |
+|---|---|---|
+| `lektionen` | Liste | Schach-Schule: `id`, `titel`, `emoji`, `intro`, optional `fen` (Start-Stellung) und `marks` (markierte Felder), `schritte` = Züge in Langnotation (`e2e4`) mit Erklärtext – jeder Zug wird von der Regel-Engine geprüft |
+| `aufgaben` | Liste | Taktik-Rätsel: `fen`-Stellung, `frage`, `ziel` (anzutippendes Feld wie `b5`), `tipp`, `erfolg` |
+
+Die Lektionen knüpfen an Felix' Wissen an (Spanische Eröffnung) und
+bauen auf: Italienisch, goldene Eröffnungsregeln, Rochade, Gabel,
+Fesselung, Schäfermatt-Abwehr. Das freie Spielen nutzt die eingebaute
+Regel-Engine (Rochade, en passant, Umwandlung, Matt/Patt).
+
 ## Regeln (werden vom Werkzeug geprüft)
 - Fisch-`id`s eindeutig; `fragen` = Länge von `steigerung` (max. 3).
 - Jeder `besatz`-Eintrag verweist auf eine existierende Fisch-`id`;
