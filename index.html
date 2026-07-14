@@ -447,8 +447,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.43.0";
+const APP_VERSION = "1.44.0";
 const RELEASE_NOTES = [
+  {v:"1.44.0", datum:"14.07.2026", punkte:[
+    "💾 Blockwelt: Welt sichern & wiederherstellen! Mit „💾 Welt sichern“ legst du einen Speicherstand an (Welt + Inventar) – mit „↩️ Sicherung laden“ kehrst du jederzeit dorthin zurück. Praktisch vor riskanten 🧨 TNT-Experimenten!",
+    "🗑️ „Welt komplett neu beginnen“ repariert: Der Knopf fragt jetzt mit einem app-eigenen Dialog nach (der alte Browser-Dialog wurde in manchen Ansichten stumm blockiert). Deine 🎁 verdienten Blöcke, Werkstatt-Freischaltungen und die 💾 Sicherung bleiben beim Neu-Beginnen erhalten.",
+    "✅ Auch die Zurücksetzen-Fragen bei der Blume und im Elternbereich nutzen jetzt den neuen Dialog und funktionieren damit überall zuverlässig.",
+  ]},
   {v:"1.43.0", datum:"14.07.2026", punkte:[
     "🛠️ Blockwelt-Werkstatt: Baue aus deinen Blöcken neue Sachen – Tür, Fenster, Bett, Boot, Schatztruhe und Tiere (🐑🐔🐄🐕🐈)! Jedes Rezept kostet Blöcke aus deinem Inventar – genau wie Crafting in Minecraft.",
     "🏆 Meilensteine: Je mehr Blöcke du mit Wörter-Fragen verdienst, desto mehr Rezepte schalten sich frei – vom Schaf (ab 10) bis zum 🐉 Drachen (ab 75, kostet ✨ Gold + 💎 Diamant). Die Werkstatt zeigt dir immer, was als Nächstes kommt.",
@@ -1160,7 +1165,7 @@ function renderFlower(c, cfg, st){
     fl.appendChild(li);
   });
   c.querySelector("#flowerReset").onclick=()=>{
-    if(confirm("Einschätzung zurücksetzen?")){ st.groups.forEach(a=>a.fill(0)); st.form.fill(false); save(); renderFlower(c,cfg,st); }
+    appConfirm("Einschätzung zurücksetzen?",()=>{ st.groups.forEach(a=>a.fill(0)); st.form.fill(false); save(); renderFlower(c,cfg,st); });
   };
   updateBloom(c,st);
 }
@@ -5509,6 +5514,23 @@ function schSpielen(c){
    über Tage ist ausdrücklich erwünscht.
    Inhalte: data/spiel/blockwelt.json (Blocktypen, Startwelt).
    ============================================================ */
+/* App-eigener Bestätigungs-Dialog. window.confirm() ist in eingebetteten
+   Ansichten (z. B. Artefakt-iframe) stumm blockiert – Knöpfe wirkten dann
+   "kaputt". Dieses Overlay funktioniert überall und ist kindgerechter. */
+function appConfirm(text, onJa, jaText){
+  const alt=document.getElementById("appConfirm"); if(alt) alt.remove();
+  const o=document.createElement("div");
+  o.className="zeit-sperre"; o.id="appConfirm";
+  o.innerHTML=`<div class="card" style="max-width:340px; width:100%; text-align:center;">
+    <p style="font-weight:700; margin-top:0;">${text}</p>
+    <div style="display:flex; gap:8px;">
+      <button class="btn-secondary btn-small" id="acNein" style="flex:1;">Abbrechen</button>
+      <button class="btn-primary btn-small" id="acJa" style="flex:1;">${jaText||"Ja!"}</button>
+    </div></div>`;
+  document.body.appendChild(o);
+  o.querySelector("#acNein").onclick=()=>o.remove();
+  o.querySelector("#acJa").onclick=()=>{ o.remove(); onJa(); };
+}
 let bw=null; // Laufzeit: Auswahl/Werkzeug (nicht gespeichert)
 function bwDaten(){ return SpielRepo.blockwelt(); }
 function bwBlock(id){ return bwDaten().bloecke.find(b=>b.id===id); }
@@ -5517,7 +5539,7 @@ function bwExtra(id){ return (bwDaten().extras||[]).find(x=>x.id===id); }
 function bwTeil(id){ return bwBlock(id)||bwExtra(id); }
 function bwStore(){
   if(!store.blockwelt || typeof store.blockwelt!=="object")
-    store.blockwelt={welt:null, inv:null, verdient:0, zaehler:0};
+    store.blockwelt={welt:null, inv:null, verdient:0, zaehler:0, sicherung:null};
   return store.blockwelt;
 }
 function bwWelt(){
@@ -5571,6 +5593,31 @@ function bwWerkzeugAnzeigen(){
 }
 function bwVerdientAnzeigen(){
   const el=$("bwVerdient"); if(el) el.textContent="🎁 "+(bwStore().verdient||0)+" Blöcke verdient";
+}
+/* --- Sichern & Wiederherstellen der Welt --------------------------
+   Ein Speicherstand (Welt + Inventar zusammen, damit nichts doppelt
+   entsteht). Verdiente Blöcke/Meilensteine sind Lernfortschritt und
+   werden NIE zurückgesetzt – auch nicht beim Neu-Beginnen. */
+function bwSichern(){
+  const st=bwWelt();
+  st.sicherung={welt:st.welt.slice(), inv:Object.assign({},st.inv),
+    datum:new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr"};
+  save();
+}
+function bwSicherungLaden(){
+  const st=bwWelt(); if(!st.sicherung || !Array.isArray(st.sicherung.welt)) return false;
+  st.welt=st.sicherung.welt.slice();
+  st.inv=Object.assign({},st.sicherung.inv||{});
+  save(); bw=null;
+  return true;
+}
+function bwNeuAnfangen(){
+  const st=bwStore();
+  st.welt=null; st.inv=null; // bwWelt() baut daraus wieder die Startwelt
+  save(); bw=null;
+}
+function bwSysMeldung(html){
+  const el=$("bwSysMeld"); if(el) el.innerHTML=html?`<div class="feedback ok">${html}</div>`:"";
 }
 /* --- Werkstatt: Extras aus Blöcken bauen (Crafting) ---------------
    Jedes Extra hat kosten (Blöcke aus dem Inventar) und einen
@@ -5713,16 +5760,35 @@ function bwRender(c){
           <div id="bwQ" style="margin-top:8px;"></div>
         </div>
       </div>
-      <button class="linklike" id="bwReset" style="margin-top:10px; font-size:13px;">🗑️ Welt komplett neu beginnen</button>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn-secondary btn-small" id="bwSichern" style="flex:1;">💾 Welt sichern</button>
+        <button class="btn-secondary btn-small" id="bwLaden" style="flex:1;"${st.sicherung?"":" disabled"}>↩️ Sicherung laden</button>
+      </div>
+      ${st.sicherung?`<p class="muted" style="margin:6px 0 0; font-size:13px;">💾 Sicherung vom ${st.sicherung.datum||"?"}</p>`:""}
+      <div id="bwSysMeld" style="margin-top:8px;"></div>
+      <button class="linklike" id="bwReset" style="margin-top:8px; font-size:13px;">🗑️ Welt komplett neu beginnen</button>
     </div>`;
   bwWerkzeugAnzeigen(); bwPaletteBinden(c);
   c.querySelector("#bwBauen").onclick=()=>{ bw.werkzeug="bauen"; bwWerkzeugAnzeigen(); };
   c.querySelector("#bwAbbau").onclick=()=>{ bw.werkzeug="abbau"; bwWerkzeugAnzeigen(); };
   c.querySelector("#bwVerdienen").onclick=()=>bwFrage();
   c.querySelector("#bwWerkstatt").onclick=()=>bwWerkstatt();
+  c.querySelector("#bwSichern").onclick=()=>{
+    bwSichern(); bwRender(c);
+    bwSysMeldung("💾 Welt gesichert! Mit „↩️ Sicherung laden“ kommst du jederzeit hierher zurück.");
+  };
+  c.querySelector("#bwLaden").onclick=()=>{
+    const st2=bwStore(); if(!st2.sicherung) return;
+    appConfirm(`Deine jetzige Welt wird durch die Sicherung vom ${st2.sicherung.datum||"?"} ersetzt. Weiter?`,()=>{
+      bwSicherungLaden(); bwRender(c);
+      bwSysMeldung("↩️ Sicherung geladen – weiterbauen!");
+    },"Ja, laden!");
+  };
   c.querySelector("#bwReset").onclick=()=>{
-    if(!confirm("Wirklich die ganze Welt löschen und neu anfangen?")) return;
-    store.blockwelt=null; bw=null; save(); bwRender(c);
+    appConfirm("Wirklich die ganze Welt löschen und neu anfangen?<br><span class='muted' style='font-size:14px;'>Deine 🎁 verdienten Blöcke, die Werkstatt-Freischaltungen und deine 💾 Sicherung bleiben erhalten.</span>",()=>{
+      bwNeuAnfangen(); bwRender(c);
+      bwSysMeldung("🗑️ Neue Welt! Dein Fortschritt in der Werkstatt ist noch da.");
+    },"Ja, neu anfangen!");
   };
   c.querySelector("#bwGrid").addEventListener("click",(e)=>{
     const z=e.target.closest(".bw-zelle"); if(!z) return;
@@ -6177,14 +6243,14 @@ function renderAdminWoerter(c){
   c.querySelector("#addLeicht").onclick=()=>addRow("leicht");
   c.querySelector("#addSchwer").onclick=()=>addRow("schwer");
   c.querySelector("#admReset").onclick=()=>{
-    if(confirm("Eigene Wörter dieser Gruppe verwerfen und die amtliche Liste verwenden?")){
+    appConfirm("Eigene Wörter dieser Gruppe verwerfen und die amtliche Liste verwenden?",()=>{
       delete store.gwsWords[K.id]; save(); renderAdmin(c);
-    }
+    });
   };
   c.querySelector("#admProg").onclick=()=>{
-    if(confirm("Stufen und Pakete dieser Gruppe auf Anfang setzen?")){
+    appConfirm("Stufen und Pakete dieser Gruppe auf Anfang setzen?",()=>{
       delete store.progress[key]; save(); renderAdmin(c);
-    }
+    });
   };
 }
 
@@ -6437,11 +6503,17 @@ function load(){
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
     if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.blockwelt && typeof d.blockwelt==="object"){
+      const sich=d.blockwelt.sicherung;
       store.blockwelt={
         welt:Array.isArray(d.blockwelt.welt)?d.blockwelt.welt.map(x=>typeof x==="string"?x:""):null,
         inv:(d.blockwelt.inv && typeof d.blockwelt.inv==="object")?d.blockwelt.inv:null,
         verdient:Math.max(0,parseInt(d.blockwelt.verdient,10)||0),
-        zaehler:Math.max(0,parseInt(d.blockwelt.zaehler,10)||0)
+        zaehler:Math.max(0,parseInt(d.blockwelt.zaehler,10)||0),
+        sicherung:(sich && typeof sich==="object" && Array.isArray(sich.welt))?{
+          welt:sich.welt.map(x=>typeof x==="string"?x:""),
+          inv:(sich.inv && typeof sich.inv==="object")?sich.inv:{},
+          datum:typeof sich.datum==="string"?sich.datum:""
+        }:null
       };
     }
     if(d.zeit && typeof d.zeit==="object" && typeof d.zeit.tag==="string"){

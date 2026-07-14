@@ -277,6 +277,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.locator("#adminLink").click(); await page.waitForTimeout(140);
   await page.locator('.chip[data-tab="woerter"]').click(); await page.waitForTimeout(140);
   await page.locator("#admReset").click(); await page.waitForTimeout(140);
+  await page.locator("#acJa").click(); await page.waitForTimeout(140); // app-eigener Dialog statt confirm()
   check("Reset auf amtliche Liste", await page.evaluate(() => gwsLists(GWS_KATEGORIEN[0]).leicht.some(w => w.richtig === "bitten")));
 
   // ---------- 6) Elternbereich: Stufen mit Speichern ----------
@@ -834,6 +835,31 @@ function section(t) { console.log("\n== " + t + " =="); }
     const w = bwWelt().welt;
     return w[7 * 16 + 4] === "" && w[7 * 16 + 5] === "" && w[7 * 16 + 6] === ""
       && w[8 * 16 + 5] === "erde" && bwWelt().inv.tnt === 0; }));
+  // Sichern & Wiederherstellen: Speicherstand anlegen, Welt ändern, zurückkehren
+  await page.locator("#bwSichern").click(); await page.waitForTimeout(100);
+  check("Welt sichern: Speicherstand mit Datum, Laden-Knopf aktiv", await page.evaluate(() => {
+    const s = bwStore().sicherung;
+    return s && Array.isArray(s.welt) && s.welt[40] === "schaf" && !!s.datum
+      && !document.querySelector("#bwLaden").disabled; }));
+  await page.evaluate(() => { bw.werkzeug = "abbau"; });
+  await page.locator('.bw-zelle[data-i="40"]').click(); await page.waitForTimeout(80);
+  await page.locator("#bwLaden").click(); await page.waitForTimeout(100);
+  check("Laden fragt mit app-eigenem Dialog nach (kein confirm())", (await page.locator("#appConfirm").count()) === 1);
+  await page.locator("#acJa").click(); await page.waitForTimeout(150);
+  check("Sicherung geladen: Schaf ist wieder da", await page.evaluate(() =>
+    bwWelt().welt[40] === "schaf" && !document.getElementById("appConfirm")));
+  // Neu beginnen: Dialog, Abbrechen wirkt, Ja setzt Welt zurück – Fortschritt bleibt
+  const bwVorher = await page.evaluate(() => bwStore().verdient);
+  await page.locator("#bwReset").click(); await page.waitForTimeout(100);
+  await page.locator("#acNein").click(); await page.waitForTimeout(100);
+  check("Neu beginnen: Abbrechen lässt die Welt unverändert", await page.evaluate(() =>
+    !document.getElementById("appConfirm") && bwWelt().welt[40] === "schaf"));
+  await page.locator("#bwReset").click(); await page.waitForTimeout(100);
+  await page.locator("#acJa").click(); await page.waitForTimeout(150);
+  check("Neu beginnen: Startwelt, aber Meilensteine + Sicherung bleiben", await page.evaluate((v) => {
+    const st = bwStore();
+    return st.welt[40] === "" && st.welt[9 * 16 + 3] === "erde"
+      && st.verdient === v && !!st.sicherung; }, bwVorher));
 
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
