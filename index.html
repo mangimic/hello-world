@@ -271,6 +271,9 @@ button.chip.on{background:var(--primary); color:#fff;}
 .gate-opts{display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;}
 .gate-opts .gate-opt{flex:1; min-width:90px; font-size:17px;}
 .gate-row.frage{flex-direction:column; align-items:stretch;}
+.choice.gruppe{border-width:2.5px;}
+.choice.gruppe .card-lvl{letter-spacing:2px;}
+.choice.spielhalle{background:linear-gradient(135deg,#fdf3d7,#fde8c8); border-color:#e0b23e;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
   display:flex; align-items:center; justify-content:center; padding:18px;}
 .zeit-karte{max-width:420px; text-align:center;}
@@ -363,7 +366,7 @@ button.locked{opacity:.45; pointer-events:none;}
     </div>
 
     <div class="card">
-      <h2>Wähle ein Lernfeld</h2>
+      <h2>Was möchtest du machen?</h2>
       <div class="level-row" id="levelRow">
         <button class="level-btn" data-level="3">Klasse 3</button>
         <button class="level-btn" data-level="4">Klasse 4</button>
@@ -423,8 +426,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.35.0";
+const APP_VERSION = "1.36.0";
 const RELEASE_NOTES = [
+  {v:"1.36.0", datum:"13.07.2026", punkte:[
+    "🗂️ Neue, aufgeräumte Startseite: Statt 17 Kacheln gibt es jetzt 3 klare Lern-Gruppen (✍️ Schreiben & Lesen · 🧩 Sätze & Grammatik · 🔤 Richtig schreiben) – antippen zeigt die Lernfelder der Gruppe.",
+    "🎮 Neue Spielhalle: Alle Spiele haben einen eigenen Bereich mit Münz-Anzeige – die Startseite zeigt nur noch die Spielhalle-Karte.",
+  ]},
   {v:"1.35.0", datum:"13.07.2026", punkte:[
     "📝 Textpflege in den Release Notes: Formulierung zu den Lese-Empfehlungen vereinfacht.",
   ]},
@@ -6188,26 +6195,100 @@ function muenzAnzeige(){
     ? "🪙 "+store.muenzen+" Spiel-"+(store.muenzen===1?"Münze":"Münzen")
     : "🪙 Übe eine Runde, um eine Spiel-Münze zu verdienen!";
 }
+/* --- Startseite: Lernfelder in 3 übersichtlichen Gruppen,
+   die Spiele in einer eigenen Spielhalle (weniger überladen) --- */
+const MODUL_GRUPPEN=[
+  {id:"schreiben", emoji:"✍️", titel:"Schreiben & Lesen",
+   text:"Texte schreiben, lesen und verstehen",
+   module:["vorgang","kompass"]},
+  {id:"grammatik", emoji:"🧩", titel:"Sätze & Grammatik",
+   text:"Satzglieder, Wortarten, Zeitformen und mehr",
+   module:["subjekt","praedikat","satzglieder","rede","zeit","wortarten","faelle"]},
+  {id:"recht", emoji:"🔤", titel:"Richtig schreiben",
+   text:"Rechtschreibung und Grundwortschatz",
+   module:["grossklein","dassdas","doppel","gws"]}
+];
+function gruppenModule(g){
+  return g.module.filter(id=> store.level===0 || (MODUL_KLASSE[id]||[3,4]).includes(store.level));
+}
+// Einzelne Lernfeld-/Spiel-Kachel (in Gruppen-Seite und Spielhalle)
+function moduleTile(id){
+  const m=MODULES[id];
+  const div=document.createElement("div");
+  div.className="choice";
+  const fk=MOD_FIELD[id];
+  let lvlTag = fk ? `<span class="card-lvl">🎯 Stufe ${fieldLevel(fk)}/${fieldMax(fk)}${fieldProg(fk).crown?" 👑":""}</span>` : "";
+  if(SPIELE_IDS.includes(id) && store.muenzenAktiv){
+    lvlTag = (store.muenzen||0)>0
+      ? `<span class="card-lvl">🪙 1 Münze einlösen</span>`
+      : `<span class="card-lvl">🔒 1 🪙 nötig</span>`;
+  }
+  div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}${lvlTag}`;
+  div.onclick=()=>openModule(id);
+  return div;
+}
+// Gruppen-Seite: die Lernfelder EINER Gruppe
+function openGruppe(gid){
+  if(zeitAbgelaufen()){ zeitSperren(); return; }
+  const g=MODUL_GRUPPEN.find(x=>x.id===gid); if(!g) return goHome();
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2 style="margin:0 0 2px;">${g.emoji} ${g.titel}</h2>
+      <p class="muted" style="margin:0 0 10px;">${g.text}</p>
+      <div class="choice-grid" id="gruppenGrid"></div>
+    </div>`;
+  const grid=$("gruppenGrid");
+  gruppenModule(g).forEach(id=>grid.appendChild(moduleTile(id)));
+  renderNav(); window.scrollTo(0,0);
+}
+// Spielhalle: eigener Bereich für alle Spiele
+function openSpielhalle(){
+  if(zeitAbgelaufen()){ zeitSperren(); return; }
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  const aktive=SPIELE_IDS.filter(spielAktiv);
+  const muenzText = store.muenzenAktiv
+    ? `<p class="muted" style="margin:0 0 10px;">Ein Spiel-Besuch kostet <b>1 🪙 Münze</b> – Münzen verdienst du beim Üben.
+       Du hast gerade <b>${store.muenzen||0}</b> ${(store.muenzen||0)===1?"Münze":"Münzen"}.</p>`
+    : `<p class="muted" style="margin:0 0 10px;">Viel Spaß – such dir ein Spiel aus!</p>`;
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2 style="margin:0 0 2px;">🎮 Spielhalle</h2>
+      ${muenzText}
+      <div class="choice-grid" id="spielhalleGrid"></div>
+      ${aktive.length?"":`<p class="muted">Alle Spiele sind gerade im Elternbereich ausgeschaltet.</p>`}
+    </div>`;
+  const grid=$("spielhalleGrid");
+  aktive.forEach(id=>grid.appendChild(moduleTile(id)));
+  renderNav(); window.scrollTo(0,0);
+}
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
-  Object.keys(MODULES)
-    .filter(id=> store.level===0 || (MODUL_KLASSE[id]||[3,4]).includes(store.level))
-    .filter(id=> !SPIELE_IDS.includes(id) || spielAktiv(id))
-    .forEach(id=>{
-    const m=MODULES[id];
+  MODUL_GRUPPEN.forEach(g=>{
+    const mods=gruppenModule(g);
+    if(!mods.length) return;
     const div=document.createElement("div");
-    div.className="choice";
-    const fk=MOD_FIELD[id];
-    let lvlTag = fk ? `<span class="card-lvl">🎯 Stufe ${fieldLevel(fk)}/${fieldMax(fk)}${fieldProg(fk).crown?" 👑":""}</span>` : "";
-    if(SPIELE_IDS.includes(id) && store.muenzenAktiv){
-      lvlTag = (store.muenzen||0)>0
-        ? `<span class="card-lvl">🪙 1 Münze einlösen</span>`
-        : `<span class="card-lvl">🔒 1 🪙 nötig</span>`;
-    }
-    div.innerHTML=`<span class="emoji">${m.emoji}</span>${m.name}${lvlTag}`;
-    div.onclick=()=>openModule(id);
+    div.className="choice gruppe";
+    div.innerHTML=`<span class="emoji">${g.emoji}</span>${g.titel}
+      <span class="card-lvl">${mods.map(id=>MODULES[id].emoji).join(" ")}</span>`;
+    div.onclick=()=>openGruppe(g.id);
     grid.appendChild(div);
   });
+  const aktive=SPIELE_IDS.filter(spielAktiv);
+  const halle=document.createElement("div");
+  halle.className="choice gruppe spielhalle";
+  const badge = !aktive.length ? "aus"
+    : store.muenzenAktiv ? ((store.muenzen||0)>0 ? "🪙 "+store.muenzen : "🔒 Übe für Münzen") : "frei";
+  halle.innerHTML=`<span class="emoji">🎮</span>Spielhalle
+    <span class="card-lvl">${aktive.map(id=>MODULES[id].emoji).join(" ")}${aktive.length?" · ":""}${badge}</span>`;
+  halle.onclick=openSpielhalle;
+  grid.appendChild(halle);
   muenzAnzeige();
 }
 function openModule(id){

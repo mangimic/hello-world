@@ -43,7 +43,15 @@ function section(t) { console.log("\n== " + t + " =="); }
     await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(220); };
   const setLevel = async l => { await page.locator(`#levelRow .level-btn[data-level="${l}"]`).click(); await page.waitForTimeout(60); };
   const openMod = async (label, section2) => {
-    await page.locator("#moduleChooser >> text=" + label).first().click(); await page.waitForTimeout(90);
+    // Neue Start-UX: Lernfelder liegen in Gruppen, Spiele in der Spielhalle
+    await page.evaluate((l) => {
+      const norm = s2 => (s2 || "").replace(/\u00AD/g, "");
+      const id = Object.keys(MODULES).find(k => norm(MODULES[k].name).includes(l));
+      if (SPIELE_IDS.includes(id)) openSpielhalle();
+      else openGruppe(MODUL_GRUPPEN.find(g => g.module.includes(id)).id);
+    }, label);
+    await page.waitForTimeout(90);
+    await page.locator("#moduleContent .choice >> text=" + label).first().click(); await page.waitForTimeout(90);
     if (section2) { await page.locator("#bottomNav >> text=" + section2).first().click(); await page.waitForTimeout(90); }
   };
   // Lese-Gate bestehen: warten bis Mindest-Lesezeit um, bestätigen, Lücken-Frage lösen
@@ -83,11 +91,24 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
+  check("Aufgeräumte Startseite: 3 Gruppen + Spielhalle statt Kachelwand",
+    (await page.locator("#moduleChooser .choice").count()) === 4
+    && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1);
   for (const l of [3, 4, 0]) {
     await setLevel(l);
-    const shown = await page.locator("#moduleChooser .choice").count();
+    const shown = await page.evaluate(lv => {
+      let n = 0;
+      MODUL_GRUPPEN.forEach(g => {
+        openGruppe(g.id);
+        n += document.querySelectorAll("#gruppenGrid .choice").length;
+      });
+      openSpielhalle();
+      n += document.querySelectorAll("#spielhalleGrid .choice").length;
+      goHome();
+      return n;
+    }, l);
     const expect = await page.evaluate(lv => Object.keys(MODULES).filter(id => lv === 0 || (MODUL_KLASSE[id] || [3, 4]).includes(lv)).length, l);
-    check(`Klassenfilter ${l === 0 ? "Alle" : "Klasse " + l}: ${shown} Felder`, shown === expect, `erwartet ${expect}`);
+    check(`Klassenfilter ${l === 0 ? "Alle" : "Klasse " + l}: ${shown} Felder in Gruppen+Spielhalle`, shown === expect, `erwartet ${expect}`);
   }
 
   // ---------- 2) Antwort-Pflicht & Feedback (alle 10 Lernfelder) ----------
@@ -519,8 +540,11 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 7d) Elternbereich: Spiele an/aus + Time-Boxing ----------
   section("Elternbereich: Spiele & Zeit");
   await fresh(); await setLevel(3);
-  check("Standard: 3 Spiele auf der Startseite", await page.evaluate(() =>
-    ["See-Abenteuer", "Tennis-Match", "Fußball-Match"].every(n => document.querySelector("#moduleChooser").textContent.includes(n))));
+  check("Spielhalle: alle 4 Spiele in eigenem Bereich", await page.evaluate(() => {
+    openSpielhalle();
+    const t = document.querySelector("#spielhalleGrid").textContent;
+    const ok = ["See-Abenteuer", "Tennis-Match", "Fußball-Match", "Schach"].every(n => t.includes(n));
+    goHome(); return ok; }));
   check("Standard-Limit 20 Minuten", await page.evaluate(() => store.zeitLimit === 20));
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
   await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
@@ -528,14 +552,20 @@ function section(t) { console.log("\n== " + t + " =="); }
   // Tennis deaktivieren -> verschwindet von der Startseite
   await page.locator('.seg[data-spiel="tennis"][data-an="0"]').click(); await page.waitForTimeout(100);
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
-  check("Deaktiviertes Spiel verschwindet", !(await page.locator("#moduleChooser").textContent()).includes("Tennis-Match")
-    && (await page.locator("#moduleChooser").textContent()).includes("See-Abenteuer"));
+  check("Deaktiviertes Spiel verschwindet aus der Spielhalle", await page.evaluate(() => {
+    openSpielhalle();
+    const t = document.querySelector("#spielhalleGrid").textContent;
+    const ok = !t.includes("Tennis-Match") && t.includes("See-Abenteuer");
+    goHome(); return ok; }));
   // wieder aktivieren
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
   await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
   await page.locator('.seg[data-spiel="tennis"][data-an="1"]').click(); await page.waitForTimeout(100);
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
-  check("Wieder aktiviert: Spiel ist zurück", (await page.locator("#moduleChooser").textContent()).includes("Tennis-Match"));
+  check("Wieder aktiviert: Spiel ist zurück in der Spielhalle", await page.evaluate(() => {
+    openSpielhalle();
+    const ok = document.querySelector("#spielhalleGrid").textContent.includes("Tennis-Match");
+    goHome(); return ok; }));
   // Time-Boxing: Zeit aufgebraucht -> Sperr-Bildschirm, Übungen blockiert
   await page.evaluate(() => { store.zeit = { tag: heuteKey(), sek: store.zeitLimit * 60 }; save(); goHome(); });
   await page.waitForTimeout(120);
@@ -661,7 +691,11 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
   await fresh(); await setLevel(3);
-  check("Ohne Münze: Spiel-Karte zeigt Schloss", (await page.locator("#moduleChooser").textContent()).includes("🔒"));
+  check("Ohne Münze: Spielhalle-Karte + Spiel-Kachel zeigen Schloss", await page.evaluate(() => {
+    const start = document.querySelector("#moduleChooser").textContent.includes("🔒");
+    openSpielhalle();
+    const halle = document.querySelector("#spielhalleGrid").textContent.includes("🔒");
+    goHome(); return start && halle; }));
   await openMod("Tennis-Match", null);
   check("Ohne Münze: Spiel gesperrt mit Erklärung", (await page.locator("#moduleContent").textContent()).includes("noch gesperrt"));
   await page.locator("#gesperrtZurueck").click(); await page.waitForTimeout(120);
