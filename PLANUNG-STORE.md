@@ -212,7 +212,51 @@ sind lehrplanähnlich in allen Ländern); Bundesland-Pakete dann als
 kostenlose Updates nachliefern. So verschenkt man keine Downloads,
 weckt aber auch keine falschen Erwartungen („dein Bundesland folgt").
 
-### 4.6 Alternativen zum Einmalkauf (zur Diskussion)
+### 4.6 Business Case im Deutschland-Rollout
+
+Gleiche Erlöslogik (≈ 3,56 € je Verkauf), aber der Trichter wird
+~7× größer – bei fast unveränderten Kosten (die Bundesland-Pakete
+sind Eigenleistung, ~25–40 PT verteilt über Monate):
+
+| Trichter Deutschland | Anzahl |
+|---|---|
+| Grundschüler DE (Kl. 1–4) | ≈ 3.100.000 |
+| davon digital lernend (≈ 85 %) | ≈ 2.600.000 |
+| davon zahlungsbereit (≈ 8 %) | **≈ 210.000 Kinder** (Käuferpool-Obergrenze) |
+| jährlich nachrückend (~750.000 Einschulungen) | ≈ 51.000 neue zahlungsbereite Kinder/Jahr |
+
+**Einnahmen-Szenarien Jahr 1 (bundesweit sichtbar ab Launch):**
+
+| Szenario | Downloads J1 | Konversion | Verkäufe | Umsatz (netto) |
+|---|---|---|---|---|
+| 🐢 Vorsichtig | 20.000 | 1,5 % | 300 | **≈ 1.070 €** |
+| 🚶 Basis | 75.000 | 2 % | 1.500 | **≈ 5.340 €** |
+| 🚀 Optimistisch | 250.000 | 3 % | 7.500 | **≈ 26.700 €** |
+
+**Was sich gegenüber dem BW-Case ändert:**
+
+- **Break-even rückt vom Rand in die Mitte:** Die nötigen 620–1.600
+  Verkäufe liegen bundesweit schon im Basis-Szenario von Jahr 1 –
+  in BW allein brauchte es dafür das Optimal-Szenario.
+- **3-Jahres-Sicht (Basis-Pfad):** J1 ≈ 5.300 €, J2 ≈ 10.000 €
+  (Bekanntheit + Länder-Pakete als Update-Anlässe), J3 ≈ 13.000 €
+  ⇒ kumuliert ≈ 28.000 € Umsatz bei ≈ 8.000 € Gesamtkosten =
+  **≈ 20.000 € Überschuss über 3 Jahre** – ein solides Nebenprojekt,
+  kein Vollerwerb.
+- **Theoretische Obergrenze:** Käuferpool 210.000 × 3,56 € ≈ 750.000 €
+  Gesamtpotenzial; schon 10 % Marktausschöpfung wären ≈ 75.000 €.
+  Realistisch wird das nur mit dem KI-Alleinstellungsmerkmal und
+  aktivem Marketing (Lehrer-Multiplikatoren!).
+- **Steuer-Hinweis:** Ab ~25.000 € Umsatz/Jahr fällt die
+  Kleinunternehmerregelung – im optimistischen Szenario ab Jahr 2
+  relevant, gehört auf die Steuerberater-Agenda.
+- **Abo-Vergleich:** Im DE-Maßstab wird der Unterschied groß: 1.500
+  Basis-Verkäufe einmalig ≈ 5.300 €, dieselben Familien im
+  9,99 €/Jahr-Abo ≈ 10.700 €/Jahr wiederkehrend. Je größer der Markt,
+  desto stärker spricht die Ökonomie fürs Abo – die Nutzerfreundlichkeit
+  fürs Einmalmodell. Entscheidung bewusst nach der Beta treffen.
+
+### 4.7 Alternativen zum Einmalkauf (zur Diskussion)
 
 1. **9,99 €/Jahr Familien-Abo** – ANTON-Plus-Anker, wiederkehrender
    Umsatz, finanziert später die KI-Kosten. Nachteil: Abo-Müdigkeit.
