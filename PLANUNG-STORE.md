@@ -1,8 +1,10 @@
 # 📱 Planung: Vom Prototyp zur Store-App („Lernprofi“)
 
-Stand: Juli 2026 · Status: **Planungssession, noch keine Entscheidung**
-Ziel: Freie Version + Vollversion in Google Play & Apple App Store,
-angepeilter Preis **4,99 € einmalig pro Kind**.
+Stand: Juli 2026 · Status: **Geschäftsmodell ENTSCHIEDEN: Abo**
+Ziel: Freie Version + **„Lernprofi Plus“-Familien-Abo für 9,99 €/Jahr**
+(inkl. 7 Tage kostenlos testen) in Google Play & Apple App Store.
+*(Ursprünglich geplant: 4,99 € Einmalkauf – nach Business-Case-Vergleich
+im Deutschland-Maßstab zugunsten des Abos verworfen, siehe 4.6/4.7.)*
 
 ---
 
@@ -24,9 +26,12 @@ mit der ganzen Familie**. Ohne eigenes Konto-Backend (das dem
 Offline-/Datenschutz-Versprechen widerspricht) ist der Kauf faktisch
 eine **Familienlizenz**.
 
-**Empfehlung:** Preis als „4,99 € einmalig – für alle Kinder der
-Familie (bis 4 Profile)“ positionieren. Das ist ehrlich, technisch
-sauber und ein Verkaufsargument statt eines Support-Ärgernisses.
+**Entscheidung (Juli 2026):** **Familien-Abo „Lernprofi Plus“ für
+9,99 €/Jahr** – für alle Kinder der Familie (bis 4 Profile), mit
+**7 Tagen kostenlosem Test** (hebt die Konversion deutlich). Bewusst
+nur EIN Preis (kein Monats-Abo zum Start – weniger Churn-Komplexität,
+klarere Kommunikation). Preis-Anker: exakt auf ANTON-Plus-Niveau,
+aber mit persönlicherem Produkt.
 
 **Wettbewerbs-Anker (ernst zu nehmen):** Marktführer **ANTON** ist
 komplett kostenlos (20 Mio.+ Nutzer, Klasse 1–10), das Plus-Abo kostet
@@ -38,7 +43,7 @@ Eltern-Kontrolle, künftig KI-Personalisierung – siehe BACKLOG).
 
 ### Vorschlag Free/Voll-Aufteilung
 
-| | 🆓 Frei | ⭐ Vollversion (4,99 €) |
+| | 🆓 Frei | ⭐ Lernprofi Plus (9,99 €/Jahr) |
 |---|---|---|
 | Profile | 1 Kind | bis 4 Kinder |
 | Lernfelder | 4 (je Gruppe 1–2), nur Stufe 1 | alle 13, alle Stufen + Krone |
@@ -60,7 +65,7 @@ realistisch **3–5 Monate** bis Launch.
 |---|---|---|
 | **0 – Beta jetzt** (läuft) | GitHub-Pages-Beta im Freundeskreis, Feedback einsammeln, Umbenennung/UX-Politur | 2–4 PT |
 | **1 – Produktreife** | **Mehrkind-Profile** (größter Umbau lt. ROADMAP – Store-Refactor), **Klasse 1/2-Inhalte** (neue Lernfelder + GWS-Stufe 1 nutzen), Onboarding-Assistent (zunächst regelbasiert, KI später), Free/Voll-Feature-Flag | 25–35 PT |
-| **2 – Store-Technik** | App-Hülle mit **Capacitor** (eine Codebasis → iOS + Android), **In-App-Kauf** (StoreKit 2 / Play Billing – für digitale Inhalte PFLICHT, externe Zahlung verboten), Kauf-Wiederherstellung, **Parental Gate** vor Kauf/Links (Kids-Pflicht), Store-Assets (Icon, Screenshots je Gerätegröße, Beschreibungstexte) | 15–20 PT |
+| **2 – Store-Technik** | App-Hülle mit **Capacitor** (eine Codebasis → iOS + Android), **Auto-Renew-Abo** (StoreKit 2 / Play Billing – für digitale Inhalte PFLICHT, externe Zahlung verboten) inkl. 7-Tage-Trial, Abo-Status-Prüfung **offline-tauglich** (letzte bekannte Gültigkeit + Kulanzfrist cachen, freundlicher Ablauf-Hinweis), Wiederherstellung, **Parental Gate** vor Kauf/Links (Kids-Pflicht), Store-Assets | 18–25 PT |
 | **3 – Recht & Compliance** | Gewerbeanmeldung, Impressum/AGB/**Datenschutzerklärung für Kinder-App vom Anwalt** (Apple Kids Category + Google Families Policy verlangen u. a.: keine Werbung/Tracking, Datenminimierung, Privacy-Links), Altersfreigabe über IARC-Fragebogen (kostenlos), Steuer klären (Stores treten als Händler auf und führen die MwSt ab) | 5–8 PT + Anwalt |
 | **4 – Submission & Launch** | Einreichung beide Stores; **Kids-Kategorie wird streng geprüft** – 1–3 Review-Schleifen einplanen; Beta über TestFlight / Play-Testtrack mit den Freunden | 3–6 PT |
 | **5 – Betrieb** | Updates (unsere Regression-Pipeline hilft massiv), Support-Postfach, Bewertungen beantworten, Marketing (Eltern-Blogs, Lehrer-Communities, Schul-Newsletter) | laufend, ~2 PT/Monat |
@@ -72,14 +77,21 @@ Store-Builds. Alternative „TWA“ ginge nur für Android. Der PWA-Weg
 
 ## 4. Business Case
 
-### 4.1 Was von 4,99 € übrig bleibt
+### 4.1 Was vom Abo übrig bleibt (9,99 €/Jahr)
 
 | Schritt | Betrag |
 |---|---|
-| Verkaufspreis (brutto, DE) | 4,99 € |
-| − 19 % MwSt (führt der Store ab) | −0,80 € |
-| − 15 % Store-Provision (Small-Business-Programm, gilt bis 1 Mio. $ Umsatz/Jahr; Apple 99 $/Jahr Konto, Google 25 $ einmalig) | −0,63 € |
-| **Netto-Erlös pro Verkauf** | **≈ 3,56 €** |
+| Abo-Preis pro Jahr (brutto, DE) | 9,99 € |
+| − 19 % MwSt (führt der Store ab) | −1,60 € |
+| − 15 % Store-Provision (Abos: Google 15 % ab Tag 1; Apple im Small-Business-Programm ebenfalls 15 %) | −1,26 € |
+| **Netto-Erlös pro Abo-Jahr** | **≈ 7,14 €** |
+
+Abo-Annahmen für alle Szenarien: **Verlängerungsquote ≈ 55–60 %**
+(Kinder wachsen aus der Grundschule heraus – die App „verliert“ ihre
+Kunden nach oben, gewinnt aber jedes Jahr einen frischen Jahrgang),
+Konversion mit 7-Tage-Trial ≈ 1–2,5 % der Downloads.
+*(Zum Vergleich verworfen: Einmalkauf 4,99 € ≈ 3,56 € netto – nur halb
+so viel wie EIN Abo-Jahr, ohne Wiederkehr.)*
 
 ### 4.2 Kosten
 
@@ -111,20 +123,18 @@ Annahme hier: Eigenleistung mit KI-Unterstützung wie bisher.)*
 Betriebskosten und Datenschutz-Risiko. Erst das spätere KI-Onboarding
 bräuchte API-Budget, grob 1–5 Cent pro Onboarding.)*
 
-### 4.3 Einnahmen-Szenarien (Jahr 1)
+### 4.3 Einnahmen-Szenarien Jahr 1 (nur BW, Abo)
 
-Annahme: Freemium-Konversion bei Kinder-Lern-Apps typisch **1–3 %**.
-
-| Szenario | Downloads J1 | Konversion | Verkäufe | Umsatz (netto) |
+| Szenario | Downloads J1 | Konversion | Abos | Umsatz (netto) |
 |---|---|---|---|---|
-| 🐢 Vorsichtig | 5.000 | 1,5 % | 75 | **≈ 270 €** |
-| 🚶 Basis | 25.000 | 2 % | 500 | **≈ 1.780 €** |
-| 🚀 Optimistisch | 100.000 | 3 % | 3.000 | **≈ 10.700 €** |
+| 🐢 Vorsichtig | 5.000 | 1,2 % | 60 | **≈ 430 €** |
+| 🚶 Basis | 25.000 | 1,8 % | 450 | **≈ 3.210 €** |
+| 🚀 Optimistisch | 100.000 | 2,5 % | 2.500 | **≈ 17.900 €** |
 
 **Break-even (nur Cash-Kosten, ohne eigene Zeit):**
 - Einmalig 1.400–4.400 € + Jahr-1-Betrieb ≈ 2.200–5.700 €
-- ⇒ **~620 bis ~1.600 Verkäufe** nötig – zwischen Basis- und
-  optimistischem Szenario.
+- ⇒ **~310 bis ~800 Abos** nötig – das Abo halbiert die
+  Break-even-Hürde gegenüber dem Einmalkauf.
 
 **Ehrliche Einordnung:** Als Geschäft trägt das Projekt sich erst ab
 einer Sichtbarkeit, die organisch schwer zu erreichen ist (ANTON-Effekt).
@@ -225,45 +235,56 @@ sind Eigenleistung, ~25–40 PT verteilt über Monate):
 | davon zahlungsbereit (≈ 8 %) | **≈ 210.000 Kinder** (Käuferpool-Obergrenze) |
 | jährlich nachrückend (~750.000 Einschulungen) | ≈ 51.000 neue zahlungsbereite Kinder/Jahr |
 
-**Einnahmen-Szenarien Jahr 1 (bundesweit sichtbar ab Launch):**
+**Einnahmen-Szenarien Jahr 1 mit Abo (bundesweit sichtbar ab Launch):**
 
-| Szenario | Downloads J1 | Konversion | Verkäufe | Umsatz (netto) |
+| Szenario | Downloads J1 | Konversion | Abos J1 | Umsatz (netto) |
 |---|---|---|---|---|
-| 🐢 Vorsichtig | 20.000 | 1,5 % | 300 | **≈ 1.070 €** |
-| 🚶 Basis | 75.000 | 2 % | 1.500 | **≈ 5.340 €** |
-| 🚀 Optimistisch | 250.000 | 3 % | 7.500 | **≈ 26.700 €** |
+| 🐢 Vorsichtig | 20.000 | 1,2 % | 240 | **≈ 1.710 €** |
+| 🚶 Basis | 75.000 | 1,8 % | 1.350 | **≈ 9.600 €** |
+| 🚀 Optimistisch | 250.000 | 2,5 % | 6.250 | **≈ 44.600 €** |
 
-**Was sich gegenüber dem BW-Case ändert:**
+**Der Abo-Effekt über 3 Jahre (Basis-Pfad, 55 % Verlängerung):**
 
-- **Break-even rückt vom Rand in die Mitte:** Die nötigen 620–1.600
-  Verkäufe liegen bundesweit schon im Basis-Szenario von Jahr 1 –
-  in BW allein brauchte es dafür das Optimal-Szenario.
-- **3-Jahres-Sicht (Basis-Pfad):** J1 ≈ 5.300 €, J2 ≈ 10.000 €
-  (Bekanntheit + Länder-Pakete als Update-Anlässe), J3 ≈ 13.000 €
-  ⇒ kumuliert ≈ 28.000 € Umsatz bei ≈ 8.000 € Gesamtkosten =
-  **≈ 20.000 € Überschuss über 3 Jahre** – ein solides Nebenprojekt,
-  kein Vollerwerb.
-- **Theoretische Obergrenze:** Käuferpool 210.000 × 3,56 € ≈ 750.000 €
-  Gesamtpotenzial; schon 10 % Marktausschöpfung wären ≈ 75.000 €.
-  Realistisch wird das nur mit dem KI-Alleinstellungsmerkmal und
-  aktivem Marketing (Lehrer-Multiplikatoren!).
-- **Steuer-Hinweis:** Ab ~25.000 € Umsatz/Jahr fällt die
-  Kleinunternehmerregelung – im optimistischen Szenario ab Jahr 2
-  relevant, gehört auf die Steuerberater-Agenda.
-- **Abo-Vergleich:** Im DE-Maßstab wird der Unterschied groß: 1.500
-  Basis-Verkäufe einmalig ≈ 5.300 €, dieselben Familien im
-  9,99 €/Jahr-Abo ≈ 10.700 €/Jahr wiederkehrend. Je größer der Markt,
-  desto stärker spricht die Ökonomie fürs Abo – die Nutzerfreundlichkeit
-  fürs Einmalmodell. Entscheidung bewusst nach der Beta treffen.
+| Jahr | Bestand verlängert | neue Abos | aktive Abos | Umsatz (netto) |
+|---|---|---|---|---|
+| 1 | – | 1.350 | 1.350 | ≈ 9.600 € |
+| 2 | ≈ 740 | ≈ 1.800 | ≈ 2.540 | ≈ 18.100 € |
+| 3 | ≈ 1.400 | ≈ 2.200 | ≈ 3.600 | ≈ 25.700 € |
 
-### 4.7 Alternativen zum Einmalkauf (zur Diskussion)
+⇒ kumuliert **≈ 53.000 € Umsatz** bei ≈ 8.000–9.000 € Gesamtkosten =
+**≈ 45.000 € Überschuss über 3 Jahre** – fast das Doppelte des
+Einmalkauf-Pfads (≈ 20.000 €), weil jeder gewonnene Kunde
+weiterzahlt, solange das Kind in der Grundschule ist.
 
-1. **9,99 €/Jahr Familien-Abo** – ANTON-Plus-Anker, wiederkehrender
-   Umsatz, finanziert später die KI-Kosten. Nachteil: Abo-Müdigkeit.
-2. **4,99 € einmalig (Familienlizenz)** – wie geplant, einfachste
-   Kommunikation, kein Abo-Frust. Nachteil: kein wiederkehrender Umsatz.
-3. **Hybrid:** Einmalkauf 4,99 € + späteres optionales KI-Add-on als
-   Abo (deckt API-Kosten). ⇒ **Empfehlung: mit (2) starten, (3) offenhalten.**
+**Weitere Punkte:**
+
+- **Break-even schon früh in Jahr 1:** 310–800 Abos nötig – im
+  Basis-Szenario nach wenigen Monaten erreicht.
+- **Theoretische Obergrenze:** 210.000 Abo-Haushalte × 7,14 €/Jahr ≈
+  **1,5 Mio. €/Jahr wiederkehrend**; schon 5 % Marktausschöpfung
+  wären ≈ 75.000 €/Jahr. Realistisch nur mit KI-Alleinstellung und
+  Lehrer-Multiplikatoren.
+- **Wiederkehrender Umsatz finanziert die KI:** Das Abo deckt die
+  laufenden API-Kosten des geplanten KI-Onboardings/Themenfeld-Generators
+  strukturell – beim Einmalkauf wäre das ein Dauerproblem gewesen.
+- **Steuer-Hinweis:** Die Kleinunternehmergrenze (~25.000 €/Jahr) wird
+  im Basis-Pfad in Jahr 3, im optimistischen Pfad schon in Jahr 1
+  gerissen – Steuerberater früh einbinden.
+- **Abo-Pflichten:** klare Auto-Renew-Hinweise, einfache Kündigung
+  über den Store, Preisanzeige vor dem Trial – alles Standard-Pflichten,
+  die die Stores erzwingen; im Kids-Kontext zusätzlich hinter dem
+  Parental Gate.
+
+### 4.7 Modell-Entscheidung (Juli 2026): Abo ✅
+
+Geprüft wurden: (1) Familien-Abo 9,99 €/Jahr, (2) Einmalkauf 4,99 €,
+(3) Hybrid. **Entschieden: Option 1 – das Familien-Abo.**
+Ausschlaggebend: doppelter 3-Jahres-Überschuss im Deutschland-Maßstab,
+halbierte Break-even-Hürde, strukturelle Finanzierung der geplanten
+KI-Funktionen und der ANTON-Plus-Preisanker (gleicher Preis,
+persönlicheres Produkt). Dem Abo-Müdigkeits-Risiko begegnen wir mit
+7-Tage-Trial, fairem Jahres-Preis („unter 1 € im Monat“) und einer
+frei nutzbaren Basis-Version, die nicht verkrüppelt ist.
 
 ## 5. Top-Risiken
 
