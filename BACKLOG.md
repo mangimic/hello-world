@@ -73,6 +73,17 @@ bis diese Produktrichtung geklärt ist – die technische Vorbereitung
 genutzt werden.
 
 ## Zurückgestellt (Backlog)
+- 🤖📚 **Eigene Themenfelder im Elternbereich (KI-gestützt)**: Eltern können
+  im Elternbereich neue Themen anlegen (z. B. „Weltraum", „Pferde",
+  „Dinosaurier"). Eine KI-Funktion generiert dazu die Übungssätze und
+  Aufgaben für alle Lernfelder – **konform zum amtlichen Grundwortschatz**
+  (nur geprüfte Wörter, altersgerechte Satzmuster) und mit
+  Qualitätsprüfung, bevor die Inhalte dem Kind angezeigt werden.
+  Hängt mit der großen KI-Onboarding-Idee oben zusammen (gleiche offene
+  Fragen: Datenschutz/Offline-Versprechen, QS generierter Inhalte).
+  Seit v1.38/1.39 ist die Themen-Wahl zentralisiert (nur in der
+  Lernfeld-Übersicht) – ein neues Themenfeld müsste sich also nur noch
+  an EINER Stelle einhängen.
 - ⏱️ **Timeboxing**: Fokus-/Pausen-Timer (8 min / 2 min / 5 min), Pausen-Overlay
 - ⭐ **Gamification**: Sterne, Punkte, Level (Satz-Starter … Schreib-Champion),
   Fortschrittsbalken
