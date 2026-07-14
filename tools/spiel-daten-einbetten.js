@@ -22,6 +22,7 @@ const welten = JSON.parse(fs.readFileSync(path.join(DATA, "welten.json"), "utf8"
 const tennis = JSON.parse(fs.readFileSync(path.join(DATA, "tennis.json"), "utf8"));
 const fussball = JSON.parse(fs.readFileSync(path.join(DATA, "fussball.json"), "utf8"));
 const schach = JSON.parse(fs.readFileSync(path.join(DATA, "schach.json"), "utf8"));
+const blockwelt = JSON.parse(fs.readFileSync(path.join(DATA, "blockwelt.json"), "utf8"));
 
 // ---------- Validierung ----------
 const ids = new Set();
@@ -97,6 +98,21 @@ for (const a of schach.aufgaben) {
   for (const feld of ["frage", "tipp", "erfolg"]) if (!a[feld]) fail("schach/" + a.id + ": Feld fehlt: " + feld);
 }
 console.log("✅ schach gültig · " + schach.lektionen.length + " Lektionen · " + schach.aufgaben.length + " Aufgaben");
+// Blockwelt: Blocktypen, Startwelt und Belohnungsregeln
+const bwIds = new Set();
+for (const b of blockwelt.bloecke) {
+  if (bwIds.has(b.id)) fail("blockwelt: Block-id doppelt: " + b.id);
+  bwIds.add(b.id);
+  if (!b.name || !/^#[0-9a-fA-F]{6}$/.test(b.farbe || "")) fail("blockwelt/" + b.id + ": name/farbe (Hex) fehlt");
+}
+if (blockwelt.bloecke.length < 8) fail("blockwelt: mindestens 8 Blocktypen nötig");
+if (blockwelt.bloecke.filter(b => b.selten).length < 2) fail("blockwelt: mindestens 2 seltene Blöcke nötig");
+const bwS = blockwelt.start || {};
+if (!(bwS.breite >= 8 && bwS.breite <= 24 && bwS.hoehe >= 6 && bwS.hoehe <= 16)) fail("blockwelt: start.breite/hoehe außerhalb 8-24/6-16");
+(bwS.boden || []).forEach(id => { if (!bwIds.has(id)) fail("blockwelt: boden verweist auf unbekannten Block " + id); });
+Object.keys(bwS.inventar || {}).forEach(id => { if (!bwIds.has(id)) fail("blockwelt: inventar verweist auf unbekannten Block " + id); });
+if (!(blockwelt.belohnung && blockwelt.belohnung.leicht >= 1 && blockwelt.belohnung.schwer >= 1)) fail("blockwelt: belohnung.leicht/schwer fehlt");
+console.log("✅ blockwelt gültig · " + blockwelt.bloecke.length + " Blocktypen · Welt " + bwS.breite + "×" + bwS.hoehe);
 console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + welten.welten[0].spots.length + " Spots · Besatz-Pool: " + welten.welten[0].besatz.length + " Fische (pro Runde wird je Spot ein Fisch gezogen)");
 
 // ---------- Bilder einbetten (optional, verkleinert über Chromium) ----------
@@ -140,6 +156,7 @@ console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + 
     tennis: { gegner: tennis.gegner, fakten: tennis.fakten, mental: tennis.mental },
     fussball: { gegner: fussball.gegner, fakten: fussball.fakten, mental: fussball.mental },
     schach: { lektionen: schach.lektionen, aufgaben: schach.aufgaben },
+    blockwelt: { bloecke: blockwelt.bloecke, start: blockwelt.start, belohnung: blockwelt.belohnung },
     bilder: bilder };
   const block = MARK_A + "\nconst SPIEL_DATEN = " + JSON.stringify(daten) + ";\n" + MARK_B;
   let html = fs.readFileSync(INDEX, "utf8");

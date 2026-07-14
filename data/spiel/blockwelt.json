@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "kommentar": "Blockwelt: vereinfachtes Minecraft-artiges Bau-Spiel. Blöcke werden mit Grundwortschatz-Fragen verdient (leicht = 3 normale Blöcke, schwer = 2 normale + 1 seltener). Die Welt wird dauerhaft gespeichert.",
+  "bloecke": [
+    { "id": "gras",    "name": "Gras",     "farbe": "#6bbf59" },
+    { "id": "erde",    "name": "Erde",     "farbe": "#8a6242" },
+    { "id": "stein",   "name": "Stein",    "farbe": "#9a9a9a" },
+    { "id": "holz",    "name": "Holz",     "farbe": "#b08968" },
+    { "id": "blatt",   "name": "Blätter",  "farbe": "#3f9d54" },
+    { "id": "sand",    "name": "Sand",     "farbe": "#e8d28a" },
+    { "id": "wasser",  "name": "Wasser",   "farbe": "#7db8e8" },
+    { "id": "glas",    "name": "Glas",     "farbe": "#d6ecf7" },
+    { "id": "blume",   "name": "Blume",    "farbe": "#eafadf", "emoji": "🌼" },
+    { "id": "fackel",  "name": "Fackel",   "farbe": "#fdf0d0", "emoji": "🔥" },
+    { "id": "gold",    "name": "Gold",     "farbe": "#ffd94d", "emoji": "✨", "selten": true },
+    { "id": "diamant", "name": "Diamant",  "farbe": "#8ff0e8", "emoji": "💎", "selten": true }
+  ],
+  "start": {
+    "breite": 16,
+    "hoehe": 10,
+    "boden": ["erde", "erde", "gras"],
+    "inventar": { "gras": 6, "erde": 6, "holz": 4, "stein": 4 }
+  },
+  "belohnung": { "leicht": 3, "schwer": 2 }
+}
