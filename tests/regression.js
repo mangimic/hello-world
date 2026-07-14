@@ -610,12 +610,12 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Spielhalle: alle 4 Spiele in eigenem Bereich", await page.evaluate(() => {
     openSpielhalle();
     const t = document.querySelector("#spielhalleGrid").textContent;
-    const ok = ["See-Abenteuer", "Tennis-Match", "Fußball-Match", "Schach"].every(n => t.includes(n));
+    const ok = ["See-Abenteuer", "Tennis-Match", "Fußball-Match", "Schach", "Blockwelt"].every(n => t.includes(n));
     goHome(); return ok; }));
   check("Standard-Limit 20 Minuten", await page.evaluate(() => store.zeitLimit === 20));
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
   await page.locator('.chip[data-tab="spiele"]').click(); await page.waitForTimeout(120);
-  check("Tab „Spiele & Zeit“ vorhanden", (await page.locator(".seg[data-spiel]").count()) === 8 && (await page.locator(".seg[data-zeit]").count()) === 7);
+  check("Tab „Spiele & Zeit“ vorhanden", (await page.locator(".seg[data-spiel]").count()) === 10 && (await page.locator(".seg[data-zeit]").count()) === 7);
   // Tennis deaktivieren -> verschwindet von der Startseite
   await page.locator('.seg[data-spiel="tennis"][data-an="0"]').click(); await page.waitForTimeout(100);
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
@@ -754,6 +754,49 @@ function section(t) { console.log("\n== " + t + " =="); }
     const card = document.querySelector("#moduleContent .card").getBoundingClientRect();
     return cols === 2 && card.bottom <= window.innerHeight + 1; }));
   await page.setViewportSize({ width: 800, height: 1000 });
+
+  // ---------- 7f) Blockwelt (Mini-Minecraft) ----------
+  section("Blockwelt");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
+  await openMod("Blockwelt", null);
+  check("Blockwelt-Daten eingebettet (12 Blocktypen, 2 seltene)", await page.evaluate(() =>
+    SpielRepo.blockwelt().bloecke.length === 12 && SpielRepo.blockwelt().bloecke.filter(b => b.selten).length === 2));
+  check("Raster 16×10 mit Boden (Gras auf Erde)", await page.evaluate(() => {
+    const w = bwWelt().welt;
+    return document.querySelectorAll(".bw-zelle").length === 160
+      && w[9 * 16 + 3] === "erde" && w[7 * 16 + 3] === "gras"; }));
+  check("Start-Inventar vorhanden", await page.evaluate(() =>
+    Object.values(bwWelt().inv).reduce((a, b) => a + b, 0) >= 20));
+  // Bauen: leere Zelle anklicken
+  await page.evaluate(() => { bw.wahl = "holz"; bw.werkzeug = "bauen"; });
+  await page.locator('.bw-zelle[data-i="20"]').click(); await page.waitForTimeout(80);
+  check("Block setzen: Zelle gefüllt + Inventar verringert", await page.evaluate(() =>
+    bwWelt().welt[20] === "holz" && bwWelt().inv.holz === 3));
+  // Abbauen: gleiche Zelle
+  await page.locator("#bwAbbau").click();
+  await page.locator('.bw-zelle[data-i="20"]').click(); await page.waitForTimeout(80);
+  check("Block abbauen: Zelle leer + zurück ins Inventar", await page.evaluate(() =>
+    bwWelt().welt[20] === "" && bwWelt().inv.holz === 4));
+  // Blöcke verdienen: erst absichtlich falsch (Tipp bleibt), dann richtig (Inventar wächst)
+  await page.locator("#bwVerdienen").click(); await page.waitForTimeout(100);
+  const summe0 = await page.evaluate(() => Object.values(bwWelt().inv).reduce((a, b) => a + b, 0));
+  const bwF = await page.evaluate(() => bw.frage.w.falsch);
+  await page.locator(`.bw-opt[data-w="${bwF}"]`).click(); await page.waitForTimeout(120);
+  check("Falsche Antwort: Tipp bleibt stehen", (await page.locator("#bwfb").textContent()).includes("richtig wäre"));
+  await page.locator("#bwWeiter").click(); await page.waitForTimeout(100);
+  const bwR = await page.evaluate(() => bw.frage.w.richtig);
+  await page.locator(`.bw-opt[data-w="${bwR}"]`).click(); await page.waitForTimeout(120);
+  const summe1 = await page.evaluate(() => Object.values(bwWelt().inv).reduce((a, b) => a + b, 0));
+  check("Richtige Antwort: Blöcke im Inventar + Zähler", summe1 > summe0
+    && await page.evaluate(() => (bwStore().verdient || 0) >= 3));
+  await page.locator("#bwWeiter").click(); await page.waitForTimeout(80);
+  // Persistenz: bauen, neu laden (ohne localStorage zu löschen)
+  await page.evaluate(() => { bw.wahl = "stein"; bw.werkzeug = "bauen"; });
+  await page.locator('.bw-zelle[data-i="21"]').click(); await page.waitForTimeout(80);
+  await page.reload(); await page.waitForTimeout(300);
+  check("Welt bleibt nach Neuladen gespeichert", await page.evaluate(() =>
+    store.blockwelt && store.blockwelt.welt && store.blockwelt.welt[21] === "stein"));
 
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
