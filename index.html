@@ -313,6 +313,11 @@ button.chip.on{background:var(--primary); color:#fff;}
 .speak-btn{background:#e4eefb; color:var(--primary-dark); border-radius:20px; padding:5px 12px;
   font-size:13.5px; font-weight:700; min-height:auto; margin:0 0 8px; display:inline-block;}
 @media (hover:hover){ .speak-btn:hover{background:#d3e3f8;} }
+.speak-btn.an{background:var(--primary); color:#fff;}
+/* Mitlese-Markierung: das gerade vorgelesene Wort leuchtet auf */
+.kar-wort.an{background:#ffd54d; border-radius:4px; box-shadow:0 0 0 2.5px #ffd54d;}
+.admin-select{font-family:inherit; font-size:16px; padding:10px 12px; border-radius:12px;
+  border:2px solid var(--line, #cfdcec); background:#fff; color:inherit;}
 /* Gelesen/Angehört-Bestätigung */
 .gate-row{display:flex; gap:8px; margin-top:10px;}
 .gate-row button{flex:1;}
@@ -447,8 +452,15 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.44.0";
+const APP_VERSION = "1.45.0";
 const RELEASE_NOTES = [
+  {v:"1.45.0", datum:"14.07.2026", punkte:[
+    "👀 Mitlese-Markierung: Beim Vorlesen leuchtet jetzt das gerade gesprochene Wort im Text gelb auf – so kannst du mit den Augen mitlesen, während du zuhörst!",
+    "🗣️ Bessere Stimme: Die App wählt automatisch die natürlichste deutsche Stimme deines Geräts. Im Elternbereich (neuer Tab „🔊 Vorlesen“) kann eine Stimme fest gewählt und probegehört werden.",
+    "🐢 Tempo einstellbar: Langsam, Normal oder Schnell – langsames Vorlesen hilft beim Mitlesen (Elternbereich → Vorlesen).",
+    "📖 Lange Texte werden jetzt vollständig vorgelesen (vorher war nach 600 Zeichen Schluss) – satzweise, ohne mitten im Satz einzufrieren.",
+    "⏹️ Der Vorlesen-Knopf kann jetzt auch stoppen: einmal tippen = vorlesen, nochmal tippen = Stopp.",
+  ]},
   {v:"1.44.0", datum:"14.07.2026", punkte:[
     "💾 Blockwelt: Welt sichern & wiederherstellen! Mit „💾 Welt sichern“ legst du einen Speicherstand an (Welt + Inventar) – mit „↩️ Sicherung laden“ kehrst du jederzeit dorthin zurück. Praktisch vor riskanten 🧨 TNT-Experimenten!",
     "🗑️ „Welt komplett neu beginnen“ repariert: Der Knopf fragt jetzt mit einem app-eigenen Dialog nach (der alte Browser-Dialog wurde in manchen Ansichten stumm blockiert). Deine 🎁 verdienten Blöcke, Werkstatt-Freischaltungen und die 💾 Sicherung bleiben beim Neu-Beginnen erhalten.",
@@ -742,24 +754,143 @@ function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.nam
    VORLESEN (Web Speech API) – Alternative zum Selbst-Lesen.
    Kleine 🔊-Knöpfe erscheinen automatisch an Text-/Beispiel-
    und Satzboxen; Fragen in den Quiz-Engines haben eigene Knöpfe.
+   Seit v1.45: beste Stimme automatisch (oder im Elternbereich
+   gewählt), Tempo einstellbar, satzweises Vorlesen ohne
+   Abschneiden, Start/Stopp-Knopf und Mitlese-Markierung
+   (das gerade gesprochene Wort leuchtet auf).
    ============================================================ */
 function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
-function stopSpeak(){ if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} } }
-function speak(text, onEnd){
+function stopSpeak(){
+  if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+  sprechKnopfReset();
+}
+// Deutsche Stimmen des Geräts, beste zuerst. Die Qualität schwankt enorm:
+// „Natural/Neural"-Stimmen (Edge) und „Premium/Enhanced" (iOS) klingen fast
+// menschlich, die Standard-Stimmen oft blechern.
+function alleStimmen(){
+  if(!speechOK()) return [];
+  try{ return (window.speechSynthesis.getVoices()||[]).filter(v=>/^de/i.test(v.lang)); }catch(e){ return []; }
+}
+function stimmenRang(v){
+  const n=String(v.name||"").toLowerCase();
+  if(/natural|neural/.test(n)) return 0;
+  if(/premium|enhanced|erweitert|siri/.test(n)) return 1;
+  if(/google/.test(n)) return 2;
+  if(/anna|katja|petra|hedda|helena|markus|conrad|viktoria/.test(n)) return 3;
+  return 4;
+}
+function speakStimme(){
+  const alle=alleStimmen(); if(!alle.length) return null;
+  if(store.stimme){ const w=alle.find(v=>v.voiceURI===store.stimme); if(w) return w; }
+  return alle.slice().sort((a,b)=>stimmenRang(a)-stimmenRang(b))[0];
+}
+function speakRate(){ return {langsam:0.75, normal:0.9, schnell:1.1}[store.leseTempo||"normal"]||0.9; }
+// Text in Stücke aus GANZEN Wörtern teilen (bevorzugt an Satzenden,
+// max. ~180 Zeichen). Lange Texte werden so komplett vorgelesen
+// (vorher: nach 600 Zeichen abgeschnitten) und Chrome friert bei
+// langen Ansagen nicht mehr mitten im Satz ein.
+function speakChunks(plain){
+  const woerter=String(plain).split(" ").filter(Boolean);
+  const chunks=[]; let start=0;
+  while(start<woerter.length){
+    let len=0, ende=start, satzEnde=-1;
+    while(ende<woerter.length && len+woerter[ende].length+1<=180){
+      len+=woerter[ende].length+1;
+      if(/[.!?:]$/.test(woerter[ende])) satzEnde=ende;
+      ende++;
+    }
+    if(ende<woerter.length && satzEnde>=start) ende=satzEnde+1;
+    if(ende===start) ende=start+1; // einzelnes über-langes Wort
+    chunks.push({ w0:start, text:woerter.slice(start,ende).join(" ") });
+    start=ende;
+  }
+  return chunks;
+}
+let sprechLauf=0; // Laufnummer: Wort-Meldungen alter Läufe verfallen
+function speak(text, onEnd, onWort){
   if(!speechOK() || !text){ return; }
+  sprechKnopfReset(); // laufende Box-Vorlesung sauber beenden (Knopf + Markierung)
   try{
     const sp=window.speechSynthesis;
     sp.cancel();
-    const u=new SpeechSynthesisUtterance(String(text).replace(/\s+/g," ").trim().slice(0,600));
-    u.lang="de-DE"; u.rate=0.9; u.pitch=1;
-    const de=(sp.getVoices()||[]).find(v=>/^de/i.test(v.lang));
-    if(de) u.voice=de;
-    if(onEnd){ let fertig=false; const einmal=()=>{ if(!fertig){ fertig=true; onEnd(); } };
-      u.onend=einmal; u.onerror=einmal; }
-    sp.speak(u);
+    const lauf=++sprechLauf;
+    const plain=String(text).replace(/\s+/g," ").trim().slice(0,4000);
+    if(!plain){ if(onEnd) onEnd(); return; }
+    const chunks=speakChunks(plain);
+    const stimme=speakStimme(), rate=speakRate();
+    let fertig=false; const einmal=()=>{ if(!fertig){ fertig=true; if(onEnd) onEnd(); } };
+    chunks.forEach((ch,ci)=>{
+      const u=new SpeechSynthesisUtterance(ch.text);
+      u.lang="de-DE"; u.rate=rate; u.pitch=1;
+      if(stimme) u.voice=stimme;
+      if(onWort) u.onboundary=(e)=>{
+        if(lauf!==sprechLauf) return;
+        if(e.name && e.name!=="word") return;
+        const davor=ch.text.slice(0, e.charIndex||0).split(/\s+/).filter(Boolean).length;
+        onWort(ch.w0+davor);
+      };
+      if(ci===chunks.length-1) u.onend=einmal;
+      if(onEnd) u.onerror=einmal;
+      sp.speak(u);
+    });
   }catch(e){ if(onEnd) onEnd(); }
 }
 if(speechOK()){ try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=function(){ window.speechSynthesis.getVoices(); }; }catch(e){} }
+
+/* --- Mitlese-Markierung („Karaoke"): jedes Wort der Box wird in ein
+   <span class="kar-wort"> gehüllt; beim Vorlesen leuchtet das gerade
+   gesprochene Wort auf. Die Hülle wird danach rückstandslos entfernt. --- */
+function karaokeAn(box){
+  if(box.dataset.karaoke) return;
+  const walker=document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null);
+  const knoten=[]; while(walker.nextNode()) knoten.push(walker.currentNode);
+  let n=0;
+  knoten.forEach(node=>{
+    if(!node.nodeValue || !node.nodeValue.trim()) return;
+    const frag=document.createDocumentFragment();
+    node.nodeValue.split(/(\s+)/).forEach(tok=>{
+      if(!tok) return;
+      if(/^\s+$/.test(tok)){ frag.appendChild(document.createTextNode(tok)); return; }
+      const s=document.createElement("span");
+      s.className="kar-wort"; s.dataset.k=n++; s.textContent=tok;
+      frag.appendChild(s);
+    });
+    node.parentNode.replaceChild(frag, node);
+  });
+  box.dataset.karaoke="1";
+}
+function karaokeAus(box){
+  if(!box || !box.dataset || !box.dataset.karaoke) return;
+  box.querySelectorAll(".kar-wort").forEach(s=>s.replaceWith(document.createTextNode(s.textContent)));
+  delete box.dataset.karaoke;
+  box.normalize();
+}
+function karaokeWort(box, idx){
+  const alt=box.querySelector(".kar-wort.an"); if(alt) alt.classList.remove("an");
+  const s=box.querySelector(`.kar-wort[data-k="${idx}"]`);
+  if(s){ s.classList.add("an"); if(s.scrollIntoView) try{ s.scrollIntoView({block:"nearest"}); }catch(e){} }
+}
+
+/* --- Start/Stopp je Box: zweites Tippen stoppt, der Knopf zeigt den
+   Zustand. Es liest immer nur eine Box gleichzeitig. --- */
+let sprechKnopf=null; // {btn, box}
+function sprechKnopfReset(){
+  if(!sprechKnopf) return;
+  const k=sprechKnopf; sprechKnopf=null;
+  k.btn.textContent="🔊 Vorlesen"; k.btn.classList.remove("an");
+  karaokeAus(k.box);
+}
+function speakBox(btn, box){
+  if(sprechKnopf && sprechKnopf.btn===btn){ stopSpeak(); return; }
+  karaokeAn(box);
+  const woerter=Array.from(box.querySelectorAll(".kar-wort")).map(s=>s.textContent);
+  // speak() setzt zuerst einen evtl. laufenden Knopf zurück, danach übernimmt dieser
+  speak(woerter.join(" "),
+    ()=>{ if(sprechKnopf && sprechKnopf.btn===btn) sprechKnopfReset(); },
+    (idx)=>{ if(sprechKnopf && sprechKnopf.btn===btn) karaokeWort(box, idx); });
+  sprechKnopf={btn, box};
+  btn.textContent="⏹️ Stopp"; btn.classList.add("an");
+}
 
 // Hängt automatisch 🔊-Knöpfe vor vorlesbare Boxen.
 function addSpeakButtons(root){
@@ -769,7 +900,7 @@ function addSpeakButtons(root){
     box.dataset.speakReady="1";
     const btn=document.createElement("button");
     btn.type="button"; btn.className="speak-btn"; btn.textContent="🔊 Vorlesen";
-    btn.addEventListener("click", function(e){ e.preventDefault(); speak(box.textContent||""); });
+    btn.addEventListener("click", function(e){ e.preventDefault(); speakBox(btn, box); });
     box.parentNode.insertBefore(btn, box);
   });
 }
@@ -5988,6 +6119,7 @@ function admHeader(active){
       <button class="chip${active==="stufen"?" on":""}" data-tab="stufen">🎯 Stufen</button>
       <button class="chip${active==="woerter"?" on":""}" data-tab="woerter">📚 Wörter</button>
       <button class="chip${active==="spiele"?" on":""}" data-tab="spiele">🎮 Spiele &amp; Zeit</button>
+      <button class="chip${active==="vorlesen"?" on":""}" data-tab="vorlesen">🔊 Vorlesen</button>
     </div></div>`;
 }
 function admBindTabs(c){
@@ -5996,7 +6128,54 @@ function admBindTabs(c){
 function renderAdmin(c){
   if(adminTab==="woerter") renderAdminWoerter(c);
   else if(adminTab==="spiele") renderAdminSpiele(c);
+  else if(adminTab==="vorlesen") renderAdminVorlesen(c);
   else renderAdminStufen(c);
+}
+
+/* --- Tab „Vorlesen": Stimme und Tempo der Sprachausgabe.
+   Die Stimmen kommen vom Gerät (Web Speech API) – je nach
+   Handy/Tablet/Browser stehen unterschiedliche zur Auswahl. --- */
+function renderAdminVorlesen(c){
+  const stimmen=alleStimmen().slice().sort((a,b)=>stimmenRang(a)-stimmenRang(b));
+  const beste=stimmen.length?stimmen[0].name:"–";
+  const opts=[`<option value="">Automatisch – beste Stimme (${beste})</option>`]
+    .concat(stimmen.map(v=>`<option value="${v.voiceURI.replace(/"/g,"&quot;")}"${store.stimme===v.voiceURI?" selected":""}>${v.name}${stimmenRang(v)<=1?" ⭐":""}</option>`))
+    .join("");
+  const TEMPI=[["langsam","🐢 Langsam"],["normal","🙂 Normal"],["schnell","🐇 Schnell"]];
+  const tempoBtns=TEMPI.map(([id,label])=>
+    `<button class="seg${(store.leseTempo||"normal")===id?" on":""}" data-tempo="${id}">${label}</button>`).join("");
+  c.innerHTML = admHeader("vorlesen") + `
+    <div class="card">
+      <h3>🗣️ Stimme</h3>
+      <p class="muted">Die App wählt automatisch die beste deutsche Stimme des Geräts
+        (⭐ = besonders natürlich). Hier kann eine andere fest eingestellt werden –
+        die Auswahl gilt nur auf diesem Gerät.</p>
+      ${speechOK()?`
+        <select id="stimmeWahl" class="admin-select" style="width:100%;">${opts}</select>
+        <button class="btn-secondary btn-small mt" id="stimmeTest" style="width:100%;">▶️ Probehören</button>
+        ${stimmen.length?"":`<p class="muted" style="margin-top:8px;">⚠️ Dieses Gerät meldet gerade keine deutschen Stimmen – ggf. die Seite neu laden oder in den Geräte-Einstellungen eine deutsche Stimme installieren.</p>`}
+      `:`<p class="muted">⚠️ Dieser Browser unterstützt keine Sprachausgabe.</p>`}
+      <div class="lvl-note" id="vorlesenStatus" style="text-align:left; display:none;">✅ <b>Gespeichert.</b></div>
+    </div>
+    <div class="card">
+      <h3>⏩ Tempo</h3>
+      <p class="muted">Langsameres Vorlesen hilft beim Mitlesen und Verstehen –
+        das vorgelesene Wort leuchtet dabei im Text auf.</p>
+      <div class="seg-line"><span class="seg-label">Tempo</span>
+        <div class="seg-row">${tempoBtns}</div></div>
+    </div>`;
+  admBindTabs(c);
+  const gespeichert=()=>{ const st=c.querySelector("#vorlesenStatus"); if(st) st.style.display="block"; };
+  const sel=c.querySelector("#stimmeWahl");
+  if(sel) sel.onchange=()=>{ store.stimme=sel.value; save(); gespeichert(); };
+  const test=c.querySelector("#stimmeTest");
+  if(test) test.onclick=()=>speak("Hallo Felix! So klinge ich. Viel Spaß beim Lernen!");
+  c.querySelectorAll(".seg[data-tempo]").forEach(b=>b.onclick=()=>{
+    store.leseTempo=b.dataset.tempo;
+    save(); gespeichert();
+    const y=window.scrollY; renderAdminVorlesen(c); window.scrollTo(0,y);
+    c.querySelector("#vorlesenStatus").style.display="block";
+  });
 }
 
 /* --- Tab „Spiele & Zeit": Spiele einzeln deaktivieren und die
@@ -6443,6 +6622,8 @@ let store = {
   zeitLimit:20,                 // Time-Boxing: Lernzeit pro Tag in Minuten (0 = aus)
   zeit:{ tag:"", sek:0 },       // heute verbrauchte Lernzeit
   leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" (Stichprobe) | "aus"
+  stimme:"",                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
+  leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -6500,6 +6681,8 @@ function load(){
     }
     if("zeitLimit" in d){ const v=parseInt(d.zeitLimit,10); if(v>=0 && v<=180) store.zeitLimit=v; }
     if(["immer","mix","aus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
+    if(typeof d.stimme==="string") store.stimme=d.stimme;
+    if(["langsam","normal","schnell"].includes(d.leseTempo)) store.leseTempo=d.leseTempo;
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
     if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.blockwelt && typeof d.blockwelt==="object"){

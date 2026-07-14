@@ -351,6 +351,48 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
   await openMod("Subjekte", null);
   check("Vorlesen-Knöpfe auf Erklär-Seite", (await page.locator(".speak-btn").count()) > 0);
+  // Neue Sprachausgabe (v1.45): Chunks, Stimmen-Rang, Mitlese-Markierung, Start/Stopp
+  check("speakChunks: langer Text vollständig + an Satzenden geteilt", await page.evaluate(() => {
+    const text = "Der kleine Fuchs läuft über die große Wiese und sucht seine Freunde. ".repeat(20).trim();
+    const ch = speakChunks(text);
+    return ch.length > 3
+      && ch.map(c => c.text).join(" ") === text
+      && ch.every(c => c.text.length <= 180)
+      && ch.slice(0, -1).every(c => /[.!?:]$/.test(c.text))
+      && ch.every((c, i) => i === 0 || ch[i - 1].w0 + ch[i - 1].text.split(" ").length === c.w0);
+  }));
+  check("Stimmen-Rangfolge: Natural ⭐ vor Google vor Standard-Stimme", await page.evaluate(() =>
+    stimmenRang({ name: "Microsoft Katja Online (Natural)" }) < stimmenRang({ name: "Google Deutsch" })
+    && stimmenRang({ name: "Google Deutsch" }) < stimmenRang({ name: "Irgendeine Stimme" })));
+  check("Mitlese-Markierung: hüllen, markieren, rückstandslos entfernen", await page.evaluate(() => {
+    const div = document.createElement("div");
+    div.innerHTML = "Der <b>kleine</b> Fuchs läuft.";
+    document.body.appendChild(div);
+    const vorher = div.textContent;
+    karaokeAn(div);
+    const spans = div.querySelectorAll(".kar-wort").length;
+    karaokeWort(div, 2);
+    const ok1 = spans === 4 && div.textContent === vorher
+      && div.querySelector(".kar-wort.an") && div.querySelector(".kar-wort.an").textContent === "Fuchs";
+    karaokeWort(div, 3);
+    const nurEins = div.querySelectorAll(".kar-wort.an").length === 1;
+    karaokeAus(div);
+    const ok2 = div.querySelectorAll(".kar-wort").length === 0 && div.textContent === vorher && !!div.querySelector("b");
+    div.remove();
+    return ok1 && nurEins && ok2;
+  }));
+  // Start/Stopp-Umschalter (Sprachausgabe gestubbt, damit ohne Audio deterministisch)
+  await page.evaluate(() => { window.speechSynthesis.speak = () => {}; window.speechSynthesis.cancel = () => {}; });
+  await page.locator(".speak-btn").first().click(); await page.waitForTimeout(80);
+  check("🔊-Knopf wird zum ⏹️-Stopp-Knopf, Wörter sind gehüllt", await page.evaluate(() => {
+    const b = document.querySelector(".speak-btn");
+    return b.textContent.includes("Stopp") && b.classList.contains("an")
+      && document.querySelectorAll(".kar-wort").length > 0; }));
+  await page.locator(".speak-btn").first().click(); await page.waitForTimeout(80);
+  check("Zweites Tippen stoppt: Knopf und Text wieder normal", await page.evaluate(() => {
+    const b = document.querySelector(".speak-btn");
+    return b.textContent.includes("Vorlesen") && !b.classList.contains("an")
+      && document.querySelectorAll(".kar-wort").length === 0; }));
   check("Lernen-Seite: Thema wird nur angezeigt, nicht mehr gewählt", await page.evaluate(() =>
     !document.getElementById("subjThemes") && !!document.querySelector("[data-thema-zeile]")
     && document.querySelector("[data-thema-zeile]").textContent.includes("Dein Thema")));
@@ -362,6 +404,20 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("CTA frei nach Bestätigung", !(await page.locator("#toUeben").isDisabled()));
   await page.locator("#toUeben").click(); await page.waitForTimeout(90);
   check("Übung erreichbar nach Gate", (await page.locator("#sbox").count()) > 0);
+  // Elternbereich-Tab „🔊 Vorlesen": Stimme wählen + Tempo einstellen
+  await page.evaluate(() => goHome()); await page.waitForTimeout(120);
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator('.chip[data-tab="vorlesen"]').click(); await page.waitForTimeout(120);
+  check("Eltern-Tab Vorlesen: Stimmen-Auswahl, Probehören, 3 Tempi", await page.evaluate(() => {
+    const sel = document.getElementById("stimmeWahl");
+    return sel && sel.options[0].value === "" && sel.options[0].textContent.includes("Automatisch")
+      && !!document.getElementById("stimmeTest")
+      && document.querySelectorAll(".seg[data-tempo]").length === 3; }));
+  await page.locator('.seg[data-tempo="langsam"]').click(); await page.waitForTimeout(100);
+  check("Tempo „Langsam“ gespeichert (Rate 0,75)", await page.evaluate(() =>
+    store.leseTempo === "langsam" && speakRate() === 0.75));
+  await page.reload(); await page.waitForTimeout(300);
+  check("Tempo bleibt nach Neuladen erhalten", await page.evaluate(() => store.leseTempo === "langsam"));
 
   // ---------- Lese-Check gegen Schummeln ----------
   section("Lese-Check (Anti-Schummel)");
