@@ -302,6 +302,12 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
   await openMod("Subjekte", null);
   check("Vorlesen-Knöpfe auf Erklär-Seite", (await page.locator(".speak-btn").count()) > 0);
+  check("Lernen-Seite: Thema wird nur angezeigt, nicht mehr gewählt", await page.evaluate(() =>
+    !document.getElementById("subjThemes") && !!document.querySelector("[data-thema-zeile]")
+    && document.querySelector("[data-thema-zeile]").textContent.includes("Dein Thema")));
+  check("Keine Themen-Auswahl mehr in den Lernfeldern (alle 10 Raster weg)", await page.evaluate(() =>
+    ["subjThemes","praedThemes","sgThemes","redeThemes","zeitThemes","gkThemes","ddThemes","waThemes","faelleThemes","doppelThemes"]
+      .every(id => !document.getElementById(id)) && typeof themeCards === "undefined"));
   check("CTA gesperrt vor Bestätigung", await page.locator("#toUeben").isDisabled());
   await passGate();
   check("CTA frei nach Bestätigung", !(await page.locator("#toUeben").isDisabled()));

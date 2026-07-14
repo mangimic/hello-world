@@ -430,8 +430,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.38.0";
+const APP_VERSION = "1.39.0";
 const RELEASE_NOTES = [
+  {v:"1.39.0", datum:"13.07.2026", punkte:[
+    "📋 Thema nur noch EINMAL wählen: Die doppelte Themen-Auswahl auf den Lernen-Seiten der Lernfelder ist weg – gewählt wird das Thema allein in der Lernfeld-Übersicht, die Lernen-Seiten zeigen nur noch an, welches Thema gerade gilt.",
+    "✏️ Klarer benannt: Der erste Tab der Vorgangsbeschreibung heißt jetzt „Ablauf“ (dort wählst du, worüber du schreibst – z. B. Waffelrezept), damit er nicht mit dem Übungs-Thema verwechselt wird.",
+  ]},
   {v:"1.38.0", datum:"13.07.2026", punkte:[
     "📗 Die Startseite beginnt jetzt mit dem Fach (Deutsch – Mathe und Sachkunde folgen als Ausblick). Die Thema-Wahl ist von der Startseite in die Lernfeld-Gruppen gewandert – dort, wo sie gebraucht wird.",
   ]},
@@ -1323,7 +1327,7 @@ let vgWritten = [false,false,false,false,false];
 // --- Bereich „Thema" ---
 function vgThema(c){
   c.innerHTML = `
-    <div class="card"><h2>📋 Thema wählen</h2>
+    <div class="card"><h2>📋 Ablauf wählen</h2>
       <p class="muted">Wähle, worüber du eine Vorgangsbeschreibung schreibst.</p>
       <div class="choice-grid" id="recipeChoices"></div></div>
     <div class="card"><h2>So geht's</h2>
@@ -1805,9 +1809,7 @@ let frageIdx = 0;
 // --- Bereich „Lernen" ---
 function sjLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="subjThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Was ist das Subjekt?</h2>
       ${illu("subjekt")}
       <p>Das <b>Subjekt</b> ist die Person oder Sache, <b>über die</b> im Satz etwas gesagt wird.
@@ -1825,16 +1827,6 @@ function sjLernen(c){
       <p><b>Wer oder was</b> singt? → <b>der Vogel</b>.</p></div>
     <div class="card"><div class="hint">💡 Tipp: Bei <b>Personen</b> fragst du „<b>Wer?</b>“, bei <b>Dingen und Tieren</b> „<b>Was?</b>“.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  // Themenauswahl (analog zu den Rezept-Themen der Vorgangsbeschreibung)
-  const grid=c.querySelector("#subjThemes");
-  Object.keys(SUBJ_THEMEN).forEach(key=>{
-    const t=SUBJ_THEMEN[key];
-    const div=document.createElement("div");
-    div.className="choice"+(key===store.thema?" selected":"");
-    div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
-    div.onclick=()=>{ store.thema=key; subjIdx=0; frageIdx=0; save(); sjLernen(c); };
-    grid.appendChild(div);
-  });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 
@@ -2056,9 +2048,7 @@ let praedIdx = 0;
 // --- Bereich „Lernen" ---
 function pjLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="praedThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Was ist das Prädikat?</h2>
       ${illu("praedikat")}
       <p>Das <b>Prädikat</b> ist die <b>Satzaussage</b>. Es sagt, <b>was passiert</b> oder
@@ -2073,15 +2063,6 @@ function pjLernen(c){
       <div class="sentence-box">Der Angler <span class="word selp">wirft</span> die Schnur <span class="word selp">aus</span>.</div>
       <p>→ <b>wirft … aus</b> gehört zusammen.</p></div>
     <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  const grid=c.querySelector("#praedThemes");
-  Object.keys(PRAED_THEMEN).forEach(key=>{
-    const t=PRAED_THEMEN[key];
-    const div=document.createElement("div");
-    div.className="choice"+(key===store.thema?" selected":"");
-    div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
-    div.onclick=()=>{ store.thema=key; praedIdx=0; save(); pjLernen(c); };
-    grid.appendChild(div);
-  });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 
@@ -2167,16 +2148,12 @@ function praedWorksheetHTML(){
 function pjFlower(c){ renderFlower(c, MODULES.praedikat.self, store.praedikat.self); }
 
 // Kleine Hilfe: Themen-Auswahlkarten bauen (für die neuen Module)
-function themeCards(containerId, themen, current, onPick){
-  const grid=document.getElementById(containerId); grid.innerHTML="";
-  Object.keys(themen).forEach(key=>{
-    const t=themen[key];
-    const div=document.createElement("div");
-    div.className="choice"+(key===current?" selected":"");
-    div.innerHTML=`<span class="emoji">${t.emoji}</span>${t.name}`;
-    div.onclick=()=>onPick(key);
-    grid.appendChild(div);
-  });
+/* Kompakte Anzeige des aktiven Themas: Die WAHL liegt seit v1.38 nur
+   noch in der Lernfeld-Gruppe – auf den Lernen-Seiten wird das Thema
+   lediglich angezeigt, damit man nichts doppelt auswählen muss. */
+function themaZeile(){
+  const t=THEMEN.find(x=>x.id===store.thema)||THEMEN[0];
+  return `<div class="hint" data-thema-zeile="1" style="margin-bottom:10px;">📋 Dein Thema: <b>${t.emoji} ${t.name}</b> <span class="muted">– Wechsel in der Lernfeld-Übersicht.</span></div>`;
 }
 
 /* ============================================================
@@ -2243,9 +2220,7 @@ const KRIT_SATZGLIED_FORM = [
 let sgIdx=0, sgPhase=0;
 function sgLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="sgThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Subjekt + Prädikat</h2>
       ${illu("satzglieder")}
       <p>Jeder Satz hat einen <b>Satzkern</b>: das <b>Subjekt</b> und das <b>Prädikat</b>.</p></div>
@@ -2255,7 +2230,6 @@ function sgLernen(c){
       <b>Was tut</b> er? → <b>spielt</b> (Prädikat, rot).</p></div>
     <div class="card"><div class="hint">💡 Subjekt = <b>blau</b>, Prädikat = <b>rot</b>.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("sgThemes", SATZGLIED_THEMEN, store.thema, key=>{ store.thema=key; sgIdx=0; sgPhase=0; save(); sgLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function sgUeben(c){
@@ -2432,9 +2406,7 @@ const KRIT_REDE_FORM = [
 let redeIdx=0;
 function redeLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="redeThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Die wörtliche Rede</h2>
       ${illu("rede")}
       <p>Was jemand <b>genau sagt</b>, kommt in <b>Anführungszeichen</b> „ … “.
@@ -2444,7 +2416,6 @@ function redeLernen(c){
       <p><b>Begleitsatz:</b> Der Angler ruft:<br><b>Wörtliche Rede:</b> „Ich habe einen Zander!“</p></div>
     <div class="card"><div class="hint">💡 Das Satzzeichen (! ? .) steht <b>innerhalb</b> der Anführungszeichen.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("redeThemes", REDE_THEMEN, store.thema, key=>{ store.thema=key; redeIdx=0; save(); redeLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function redeUeben(c){
@@ -2581,9 +2552,7 @@ const KRIT_ZEIT_FORM = [
 let zeitIdx=0;
 function zeitLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="zeitThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Die vier Zeitformen</h2>
       ${illu("zeit")}
       <div class="example-box">
@@ -2594,7 +2563,6 @@ function zeitLernen(c){
       </div></div>
     <div class="card"><div class="hint">💡 Achte auf das <b>Zeitwort</b>: <b>habe/bin</b> → Perfekt, <b>werde</b> → Futur.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("zeitThemes", ZEIT_THEMEN, store.thema, key=>{ store.thema=key; zeitIdx=0; save(); zeitLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function zeitUeben(c){
@@ -2725,9 +2693,7 @@ const KRIT_GK_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe nachgedacht
 let gkIdx=0;
 function gkLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="gkThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Groß oder klein?</h2>
       ${illu("grossklein")}
       <p>Groß schreibt man:</p>
@@ -2737,7 +2703,6 @@ function gkLernen(c){
       <div class="sentence-box"><b>Der</b> kleine <b>Junge</b> spielt mit dem <b>Ball</b>.</div>
       <p>Groß: <b>Der</b> (Satzanfang), <b>Junge</b> und <b>Ball</b> (Nomen).</p></div>
     <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("gkThemes", GK_THEMEN, store.thema, key=>{ store.thema=key; gkIdx=0; save(); gkLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function gkUeben(c){
@@ -2860,9 +2825,7 @@ const KRIT_DD_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe die Ersatzp
 let ddIdx=0;
 function ddLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="ddThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 das oder dass?</h2>
       ${illu("dassdas")}
       <p><b>das</b> (ein s) ist ein <b>Artikel</b> oder <b>Fürwort</b>: <i>das Boot</i>.<br>
@@ -2870,7 +2833,6 @@ function ddLernen(c){
     <div class="card"><h3>Der Trick 🪄</h3>
       <div class="hint">Kannst du <b>dieses</b>, <b>jenes</b> oder <b>welches</b> einsetzen? → <b>das</b>.<br>Wenn nicht → <b>dass</b>.</div></div>
     <div class="card"><button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("ddThemes", DD_THEMEN, store.thema, key=>{ store.thema=key; ddIdx=0; save(); ddLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function ddUeben(c){
@@ -3020,9 +2982,7 @@ const KRIT_WA_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe nachgedacht
 let waIdx=0;
 function waLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="waThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Wortarten</h2>
       ${illu("wortarten")}
       <div class="example-box">🏷️ <b>Nomen</b> (Namenwort): der/die/das davor – <i>der Hund</i><br>
@@ -3030,7 +2990,6 @@ function waLernen(c){
       🌈 <b>Adjektiv</b> (Wie-Wort): wie etwas ist – <i>schnell, groß</i></div></div>
     <div class="card"><div class="hint">💡 Frag dich: Kann ich der/die/das davorsetzen? → Nomen. Was tut man? → Verb. Wie ist es? → Adjektiv.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("waThemes", WA_THEMEN, store.thema, key=>{ store.thema=key; waIdx=0; save(); waLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function waUeben(c){
@@ -3159,9 +3118,7 @@ const KRIT_FAELLE_FORM = ["Ich habe die Sätze genau gelesen.","Ich habe die Fra
 let faelleIdx=0;
 function faelleLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Sätzen möchtest du üben?</p>
-      <div class="choice-grid" id="faelleThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Die vier Fälle</h2>
       ${illu("faelle")}
       <div class="example-box">
@@ -3172,7 +3129,6 @@ function faelleLernen(c){
       </div></div>
     <div class="card"><div class="hint">💡 Stelle die passende Frage – die Antwort zeigt dir den Fall.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("faelleThemes", FAELLE_THEMEN, store.thema, key=>{ store.thema=key; faelleIdx=0; save(); faelleLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function faelleUeben(c){
@@ -3306,16 +3262,13 @@ const KRIT_DOPPEL_FORM = ["Ich habe genau hingehört.","Ich habe die Wörter lan
 let doppelIdx=0;
 function doppelLernen(c){
   c.innerHTML = `
-    <div class="card"><h3>📋 Wähle dein Thema</h3>
-      <p class="muted">Mit welchen Wörtern möchtest du üben?</p>
-      <div class="choice-grid" id="doppelThemes"></div></div>
+    ${themaZeile()}
     <div class="card"><h2>📖 Doppelte Mitlaute</h2>
       ${illu("doppel")}
       <p>Nach einem <b>kurz gesprochenen Selbstlaut</b> folgt oft ein <b>doppelter Mitlaut</b>.</p>
       <div class="example-box">So<b>nn</b>e · Ba<b>ll</b> · Wa<b>ss</b>er · Mu<b>tt</b>er</div></div>
     <div class="card"><div class="hint">💡 Sprich das Wort langsam: Ist der Selbstlaut <b>kurz</b>? → oft doppelter Mitlaut.</div>
       <button class="btn-primary" id="toUeben">Los: Selber üben</button></div>`;
-  themeCards("doppelThemes", DOPPEL_THEMEN, store.thema, key=>{ store.thema=key; doppelIdx=0; save(); doppelLernen(c); });
   c.querySelector("#toUeben").onclick=()=>goSection("ueben");
 }
 function doppelUeben(c){
@@ -5839,7 +5792,7 @@ const MODULES = {
   vorgang:{
     id:"vorgang", name:"Vorgangs­beschreibung", emoji:"📝",
     sections:[
-      {id:"thema",   icon:"📋", label:"Thema",  render:vgThema},
+      {id:"thema",   icon:"📋", label:"Ablauf", render:vgThema},
       {id:"ueben",   icon:"📖", label:"Üben",   render:vgBasics},
       {id:"blatt",   icon:"🖨️", label:"Blatt",  render:vgSheet},
       {id:"loesung", icon:"🔑", label:"Lösung", render:vgSolution},
