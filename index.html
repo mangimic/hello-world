@@ -272,6 +272,7 @@ button.chip.on{background:var(--primary); color:#fff;}
 .gate-opts .gate-opt{flex:1; min-width:90px; font-size:17px;}
 .gate-row.frage{flex-direction:column; align-items:stretch;}
 .choice.gruppe{border-width:2.5px;}
+.fach-bald{opacity:0.5; cursor:default;}
 .choice.gruppe .card-lvl{letter-spacing:2px;}
 .choice.spielhalle{background:linear-gradient(135deg,#fdf3d7,#fde8c8); border-color:#e0b23e;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
@@ -360,9 +361,12 @@ button.locked{opacity:.45; pointer-events:none;}
       <p id="muenzInfo" class="muted" style="font-weight:700; margin:2px 0 0;"></p>
     </div>
     <div class="card">
-      <h2>Thema</h2>
-      <p class="muted" style="margin-bottom:4px;">Gilt für alle Übungen mit Sätzen.</p>
-      <div class="theme-grid" id="themeRow"></div>
+      <h2>Dein Fach</h2>
+      <div class="level-row" id="fachRow">
+        <button class="level-btn active" type="button">📗 Deutsch</button>
+        <button class="level-btn fach-bald" type="button" disabled>🔢 Mathe – bald</button>
+        <button class="level-btn fach-bald" type="button" disabled>🌍 Sachkunde – bald</button>
+      </div>
     </div>
 
     <div class="card">
@@ -426,8 +430,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.37.0";
+const APP_VERSION = "1.38.0";
 const RELEASE_NOTES = [
+  {v:"1.38.0", datum:"13.07.2026", punkte:[
+    "📗 Die Startseite beginnt jetzt mit dem Fach (Deutsch – Mathe und Sachkunde folgen als Ausblick). Die Thema-Wahl ist von der Startseite in die Lernfeld-Gruppen gewandert – dort, wo sie gebraucht wird.",
+  ]},
   {v:"1.37.0", datum:"13.07.2026", punkte:[
     "✏️ Die App heißt jetzt „Lernprofi“ – neuer Name überall: App-Titel, Installations-Name auf dem Homescreen und Projektseite.",
   ]},
@@ -6111,16 +6118,9 @@ function resetAllIdx(){
   vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null; tennis=null; fussball=null; schach=null; schAufIdx=0; schLekStep=0;
   scoreRuns={};
 }
-function buildThemeRow(){
-  const row=$("themeRow"); row.innerHTML="";
-  THEMEN.forEach(t=>{
-    const b=document.createElement("button");
-    b.className="level-btn"+(t.id===store.thema?" active":"");
-    b.innerHTML=`${t.emoji} ${t.name}`;
-    b.onclick=()=>{ store.thema=t.id; resetAllIdx(); save(); buildThemeRow(); };
-    row.appendChild(b);
-  });
-}
+/* Thema wird jetzt direkt in der Lernfeld-Gruppe gewählt (nicht mehr
+   auf der Startseite) – die Startseite zeigt stattdessen das Fach
+   (Deutsch aktiv; Mathe/Sachkunde als Ausblick auf weitere Fächer). */
 /* ============================================================
    SPIELE AN/AUS + TIME-BOXING (Elternbereich)
    Spiele lassen sich einzeln deaktivieren. Die tägliche Lernzeit
@@ -6238,14 +6238,21 @@ function openGruppe(gid){
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
   $("screen-content").classList.add("active");
+  const themaChips=THEMEN.map(t=>
+    `<button class="chip${t.id===store.thema?" on":""}" data-thema="${t.id}" type="button">${t.emoji} ${t.name}</button>`).join("");
   $("moduleContent").innerHTML=`
     <div class="card">
       <h2 style="margin:0 0 2px;">${g.emoji} ${g.titel}</h2>
       <p class="muted" style="margin:0 0 10px;">${g.text}</p>
       <div class="choice-grid" id="gruppenGrid"></div>
+      <p class="muted" style="margin:12px 0 4px;"><b>Thema</b> für die Übungssätze:</p>
+      <div class="chip-row" id="gruppenThema">${themaChips}</div>
     </div>`;
   const grid=$("gruppenGrid");
   gruppenModule(g).forEach(id=>grid.appendChild(moduleTile(id)));
+  $("moduleContent").querySelectorAll("[data-thema]").forEach(b=>b.onclick=()=>{
+    store.thema=b.dataset.thema; resetAllIdx(); save(); openGruppe(gid);
+  });
   renderNav(); window.scrollTo(0,0);
 }
 // Spielhalle: eigener Bereich für alle Spiele
@@ -6361,7 +6368,6 @@ function navItem(icon,label,onclick,active){
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
   load();
-  buildThemeRow();
   buildLevelRow();
   buildModuleChooser();
   const ni=$("nameInput");
