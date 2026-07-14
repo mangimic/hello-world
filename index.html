@@ -380,6 +380,7 @@ button.locked{opacity:.45; pointer-events:none;}
     </div>
     <p style="text-align:center; margin:4px 0 2px;">
       <button class="linklike" id="adminLink">🔧 Elternbereich</button>
+      <button class="linklike" id="feedbackLink">💬 Beta-Feedback</button>
     </p>
     <p style="text-align:center; margin:0 0 12px;" class="muted">
       <span id="versionInfo" style="font-size:13px;"></span>
@@ -430,8 +431,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.40.0";
+const APP_VERSION = "1.41.0";
 const RELEASE_NOTES = [
+  {v:"1.41.0", datum:"13.07.2026", punkte:[
+    "💬 Beta-Feedback: Auf der Startseite gibt es jetzt einen Feedback-Knopf für Eltern – 2 Minuten, strukturiert (Sterne + 3 Fragen), Versand per E-Mail oder Kopieren. Ohne Server, ohne persönliche Daten; die anonyme Nutzungs-Zusammenfassung ist freiwillig (Häkchen).",
+  ]},
   {v:"1.40.0", datum:"13.07.2026", punkte:[
     "⬅️ Der Zurück-Knopf geht jetzt immer nur EINE Ebene zurück: aus einem Lernfeld in seine Gruppe, aus einem Spiel in die Spielhalle – und erst von dort zur Startseite. Kein verwirrendes Springen mehr.",
   ]},
@@ -5471,6 +5475,119 @@ function schSpielen(c){
 }
 
 /* ============================================================
+   BETA-FEEDBACK (für Eltern): strukturiertes Formular, das ohne
+   Server auskommt. Erzeugt einen lesbaren Bericht + maschinenlesbaren
+   Datenblock (##LP-FEEDBACK##…##ENDE##) und verschickt ihn per
+   E-Mail (mailto) oder Zwischenablage. Ausgewertet wird gesammelt
+   mit tools/feedback-auswerten.js. Keine persönlichen Daten,
+   Nutzungs-Zusammenfassung nur mit Häkchen (Opt-in).
+   ============================================================ */
+const FEEDBACK_MAIL="michele.mangieri@gmail.com";
+const FB_FRAGEN=[
+  {id:"bedienung", frage:"Wie leicht kommt dein Kind allein zurecht?"},
+  {id:"spass",     frage:"Wie viel Spaß hat dein Kind?"},
+  {id:"lernen",    frage:"Wie schätzt du den Lerneffekt ein?"},
+  {id:"eltern",    frage:"Wie hilfreich ist der Elternbereich?"}
+];
+let fbForm=null;
+function feedbackNutzung(){
+  const runden={};
+  Object.keys(store.progress||{}).forEach(k=>{ const r=store.progress[k].runs||0; if(r>0) runden[k]=r; });
+  return { version:APP_VERSION, klasse:store.level, muenzen:store.muenzen||0,
+    zeitHeuteMin:Math.round(zeitHeute().sek/60), leseKontrolle:store.leseKontrolle,
+    spieleAktiv:SPIELE_IDS.filter(spielAktiv), runden:runden };
+}
+function feedbackText(){
+  const f=fbForm||{sterne:{},texte:{}};
+  const sterneZeilen=FB_FRAGEN.map(q=>`${q.frage} ${f.sterne[q.id]?"★".repeat(f.sterne[q.id])+"☆".repeat(5-f.sterne[q.id]):"(keine Angabe)"}`).join("\n");
+  const daten={ v:1, datum:new Date().toISOString().slice(0,10), klasseKind:f.klasse||null,
+    nutzung:f.nutzung||null, sterne:f.sterne, texte:f.texte,
+    app:(f.mitDaten!==false)?feedbackNutzung():{version:APP_VERSION} };
+  return `LERNPROFI BETA-FEEDBACK (Version ${APP_VERSION})
+=====================================
+Klasse des Kindes: ${f.klasse||"(keine Angabe)"}
+Wie oft genutzt: ${f.nutzung||"(keine Angabe)"}
+
+${sterneZeilen}
+
+Was gefällt am besten?
+${f.texte.gut||"-"}
+
+Was stört oder fehlt?
+${f.texte.stoert||"-"}
+
+Fehler entdeckt?
+${f.texte.fehler||"-"}
+
+--- Datenblock für die Auswertung (bitte nicht verändern) ---
+##LP-FEEDBACK##${JSON.stringify(daten)}##ENDE##`;
+}
+function openFeedback(){
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null;
+  fbForm={sterne:{}, texte:{}, mitDaten:true};
+  document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  const sterne=FB_FRAGEN.map(q=>`
+    <div class="seg-line"><span class="seg-label">${q.frage}</span>
+      <div class="seg-row" data-sterne="${q.id}">${[1,2,3,4,5].map(n=>`<button class="seg" data-n="${n}" type="button">★</button>`).join("")}</div>
+    </div>`).join("");
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2 style="margin:0 0 4px;">💬 Beta-Feedback (für Eltern)</h2>
+      <p class="muted" style="margin:0 0 10px;">Danke fürs Testen! 2 Minuten – hilft uns enorm.
+        Es werden keine persönlichen Daten übertragen.</p>
+      <div class="seg-line"><span class="seg-label">Klasse des Kindes</span>
+        <div class="seg-row" data-wahl="klasse">${[1,2,3,4].map(k=>`<button class="seg" data-w="${k}" type="button">${k}</button>`).join("")}</div></div>
+      <div class="seg-line"><span class="seg-label">Wie oft genutzt?</span>
+        <div class="seg-row" data-wahl="nutzung">${["1×","mehrmals","täglich"].map(k=>`<button class="seg" data-w="${k}" type="button">${k}</button>`).join("")}</div></div>
+      ${sterne}
+      <p class="muted" style="margin:12px 0 4px;"><b>Was gefällt am besten?</b></p>
+      <textarea id="fbGut" rows="2" style="width:100%;"></textarea>
+      <p class="muted" style="margin:10px 0 4px;"><b>Was stört oder fehlt?</b></p>
+      <textarea id="fbStoert" rows="2" style="width:100%;"></textarea>
+      <p class="muted" style="margin:10px 0 4px;"><b>Fehler entdeckt? (Was, wo, welches Gerät?)</b></p>
+      <textarea id="fbFehler" rows="2" style="width:100%;"></textarea>
+      <label style="display:flex; gap:8px; align-items:flex-start; margin:12px 0; font-size:14px;">
+        <input type="checkbox" id="fbDaten" checked style="margin-top:3px;">
+        <span>Anonyme Nutzungs-Zusammenfassung anhängen (App-Version, geübte Runden – keine Namen, keine Texte des Kindes)</span>
+      </label>
+      <button class="btn-primary" id="fbMail" style="width:100%;">📧 Per E-Mail senden</button>
+      <button class="btn-secondary btn-small mt" id="fbKopie" style="width:100%;">📋 Bericht kopieren (z. B. für WhatsApp)</button>
+      <div id="fbOk"></div>
+    </div>`;
+  const c=$("moduleContent");
+  c.querySelectorAll("[data-sterne]").forEach(row=>row.querySelectorAll(".seg").forEach(b=>b.onclick=()=>{
+    const n=parseInt(b.dataset.n,10);
+    fbForm.sterne[row.dataset.sterne]=n;
+    row.querySelectorAll(".seg").forEach(x=>x.classList.toggle("on", parseInt(x.dataset.n,10)<=n));
+  }));
+  c.querySelectorAll("[data-wahl]").forEach(row=>row.querySelectorAll(".seg").forEach(b=>b.onclick=()=>{
+    if(row.dataset.wahl==="klasse") fbForm.klasse=b.dataset.w; else fbForm.nutzung=b.dataset.w;
+    row.querySelectorAll(".seg").forEach(x=>x.classList.toggle("on", x===b));
+  }));
+  const einsammeln=()=>{
+    fbForm.texte={ gut:$("fbGut").value.trim(), stoert:$("fbStoert").value.trim(), fehler:$("fbFehler").value.trim() };
+    fbForm.mitDaten=$("fbDaten").checked;
+  };
+  c.querySelector("#fbMail").onclick=()=>{
+    einsammeln();
+    const url="mailto:"+FEEDBACK_MAIL+"?subject="+encodeURIComponent("Lernprofi Beta-Feedback "+APP_VERSION)
+      +"&body="+encodeURIComponent(feedbackText());
+    location.href=url;
+    $("fbOk").innerHTML=`<div class="feedback ok">📧 Dein E-Mail-Programm öffnet sich – einfach absenden. Danke!</div>`;
+  };
+  c.querySelector("#fbKopie").onclick=()=>{
+    einsammeln();
+    const t=feedbackText();
+    const fertig=()=>{ $("fbOk").innerHTML=`<div class="feedback ok">📋 Kopiert! Einfach in WhatsApp oder eine Mail einfügen. Danke!</div>`; };
+    if(navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(fertig, fertig);
+    else fertig();
+  };
+  renderNav(); window.scrollTo(0,0);
+}
+
+/* ============================================================
    ELTERNBEREICH: Grundwortschatz-Wörter verwalten
    Eigene Wörter je Regel-Gruppe eintragen/ändern/löschen.
    Zeigt außerdem die Rotation (Pakete), damit klar ist,
@@ -6348,6 +6465,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   // Zurück-Button + Elternbereich + Release Notes
   $("backBtn").onclick=goBack;
   $("adminLink").onclick=openAdmin;
+  $("feedbackLink").onclick=openFeedback;
   $("versionInfo").textContent="Version "+APP_VERSION+" ·";
   $("notesLink").onclick=openNotes;
   // letztes Lernfeld für die Navigation vormerken, aber auf der Startseite bleiben

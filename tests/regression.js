@@ -140,6 +140,37 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.locator("#backBtn").click(); await page.waitForTimeout(120);
   check("Zurück aus Spielhalle → Startseite", (await page.locator("#screen-home.active").count()) === 1);
 
+  // ---------- 1c) Beta-Feedback-Formular ----------
+  section("Beta-Feedback");
+  await fresh(); await setLevel(3);
+  check("Feedback-Knopf auf der Startseite", (await page.locator("#feedbackLink").count()) === 1);
+  await page.locator("#feedbackLink").click(); await page.waitForTimeout(120);
+  check("Formular: 4 Sterne-Fragen + 3 Freitexte", (await page.locator("[data-sterne]").count()) === 4
+    && (await page.locator("#fbGut, #fbStoert, #fbFehler").count()) === 3);
+  await page.locator('[data-sterne="spass"] .seg[data-n="4"]').click();
+  await page.locator('[data-wahl="klasse"] .seg[data-w="3"]').click();
+  await page.evaluate(() => { document.getElementById("fbGut").value = "Coach Leo ist super"; });
+  const bericht = await page.evaluate(() => {
+    fbForm.texte = { gut: document.getElementById("fbGut").value, stoert: "", fehler: "" };
+    return feedbackText(); });
+  check("Bericht enthält Datenblock + Angaben", bericht.includes("##LP-FEEDBACK##")
+    && bericht.includes("Coach Leo ist super") && bericht.includes("★★★★☆"));
+  check("Datenblock ist gültiges JSON mit Version", await page.evaluate(() => {
+    const m = feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/);
+    const d = JSON.parse(m[1]);
+    return d.v === 1 && d.sterne.spass === 4 && d.klasseKind === "3" && d.app.version === APP_VERSION; }));
+  check("Zurück vom Feedback zur Startseite", await page.evaluate(() => { goBack(); return document.getElementById("screen-home").classList.contains("active"); }));
+  // Auswertungs-Werkzeug mit Beispieldaten prüfen
+  {
+    const os = require("os");
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "lpfb-"));
+    fs.writeFileSync(path.join(tmp, "a.txt"), 'Hallo!\n##LP-FEEDBACK##{"v":1,"klasseKind":"3","nutzung":"täglich","sterne":{"spass":5,"bedienung":4},"texte":{"gut":"Spiele!","stoert":"nichts","fehler":""},"app":{"version":"1.41.0","runden":{"subj":3}}}##ENDE##');
+    fs.writeFileSync(path.join(tmp, "b.txt"), '##LP-FEEDBACK##{"v":1,"klasseKind":"4","nutzung":"mehrmals","sterne":{"spass":3},"texte":{"gut":"","stoert":"Mehr Themen","fehler":"-"},"app":{"version":"1.41.0"}}##ENDE##');
+    const out = require("child_process").execSync("node " + path.resolve(__dirname, "..", "tools", "feedback-auswerten.js") + " " + tmp).toString();
+    check("Auswertungs-Werkzeug: 2 Rückmeldungen erkannt + Ø-Sterne", out.includes("Rückmeldungen: 2")
+      && out.includes("Ø 4.0") && out.includes("Mehr Themen") && out.includes("subj"));
+  }
+
   // ---------- 2) Antwort-Pflicht & Feedback (alle 10 Lernfelder) ----------
   section("Antwort-Pflicht & korrektes Feedback");
   const MODS = [
