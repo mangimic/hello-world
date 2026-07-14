@@ -430,8 +430,21 @@ function section(t) { console.log("\n== " + t + " =="); }
       && !!document.getElementById("stimmeTest")
       && document.querySelectorAll(".seg[data-tempo]").length === 3; }));
   await page.locator('.seg[data-tempo="langsam"]').click(); await page.waitForTimeout(100);
-  check("Tempo „Langsam“ gespeichert (Rate 0,75)", await page.evaluate(() =>
-    store.leseTempo === "langsam" && speakRate() === 0.75));
+  check("Tempo „Langsam“ gespeichert (Rate 0,6 – fast Diktier-Tempo)", await page.evaluate(() =>
+    store.leseTempo === "langsam" && speakRate() === 0.6));
+  check("Tempo-Stufen deutlich gesenkt (0,6 / 0,8 / 1,0)", await page.evaluate(() => {
+    const alt = store.leseTempo, werte = {};
+    ["langsam", "normal", "schnell"].forEach(t => { store.leseTempo = t; werte[t] = speakRate(); });
+    store.leseTempo = alt;
+    return werte.langsam === 0.6 && werte.normal === 0.8 && werte.schnell === 1.0
+      && werte.langsam < werte.normal && werte.normal < werte.schnell;
+  }));
+  check("„Langsam“ liest in kürzeren Stücken (Atempausen)", await page.evaluate(() => {
+    const text = "Der kleine Fuchs läuft über die große Wiese und sucht seine Freunde. ".repeat(10).trim();
+    const kurz = speakChunks(text, 90), lang = speakChunks(text, 180);
+    return kurz.length > lang.length && kurz.every(c => c.text.length <= 90)
+      && kurz.map(c => c.text).join(" ") === text;
+  }));
   await page.reload(); await page.waitForTimeout(300);
   check("Tempo bleibt nach Neuladen erhalten", await page.evaluate(() => store.leseTempo === "langsam"));
 

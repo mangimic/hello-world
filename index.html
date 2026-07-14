@@ -452,8 +452,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.46.0";
+const APP_VERSION = "1.47.0";
 const RELEASE_NOTES = [
+  {v:"1.47.0", datum:"14.07.2026", punkte:[
+    "🐢 Vorlesen deutlich langsamer: Alle Tempo-Stufen wurden gesenkt – „Langsam“ ist jetzt fast Diktier-Tempo (vorher zu schnell zum Mitlesen), „Normal“ ist gemütlicher, „Schnell“ entspricht dem alten Normal.",
+    "😮‍💨 Atempausen bei „Langsam“: Lange Texte werden in kürzeren Stücken vorgelesen – die kleinen Pausen dazwischen geben Zeit, mit den Augen zu folgen.",
+  ]},
   {v:"1.46.0", datum:"14.07.2026", punkte:[
     "🎲 Schluss mit dem Ratespiel: Bei allen „Welches Wort ist richtig?“-Fragen ist die Position der Lösung jetzt überall echt zufällig – vorher war sie in einigen Übungen abwechselnd links/rechts und damit vorhersagbar.",
     "3️⃣ Drei statt zwei Antworten: Wo es sicher möglich ist, erzeugt die App eine dritte falsche Schreibweise (nach typischen Fehlermustern wie „spiehlen“, „Zuker“ oder „hund“). Damit sinkt die Ratechance von 50 % auf 33 % – genaues Hinschauen lohnt sich wieder!",
@@ -788,17 +792,20 @@ function speakStimme(){
   if(store.stimme){ const w=alle.find(v=>v.voiceURI===store.stimme); if(w) return w; }
   return alle.slice().sort((a,b)=>stimmenRang(a)-stimmenRang(b))[0];
 }
-function speakRate(){ return {langsam:0.75, normal:0.9, schnell:1.1}[store.leseTempo||"normal"]||0.9; }
+/* Tempo-Stufen: bewusst deutlich langsamer als Browser-Standard (1.0).
+   „Langsam" ist fürs Mitlesen-Lernen gedacht – fast Diktier-Tempo. */
+function speakRate(){ return {langsam:0.6, normal:0.8, schnell:1.0}[store.leseTempo||"normal"]||0.8; }
 // Text in Stücke aus GANZEN Wörtern teilen (bevorzugt an Satzenden,
 // max. ~180 Zeichen). Lange Texte werden so komplett vorgelesen
 // (vorher: nach 600 Zeichen abgeschnitten) und Chrome friert bei
 // langen Ansagen nicht mehr mitten im Satz ein.
-function speakChunks(plain){
+function speakChunks(plain, maxLen){
+  maxLen=maxLen||180;
   const woerter=String(plain).split(" ").filter(Boolean);
   const chunks=[]; let start=0;
   while(start<woerter.length){
     let len=0, ende=start, satzEnde=-1;
-    while(ende<woerter.length && len+woerter[ende].length+1<=180){
+    while(ende<woerter.length && len+woerter[ende].length+1<=maxLen){
       len+=woerter[ende].length+1;
       if(/[.!?:]$/.test(woerter[ende])) satzEnde=ende;
       ende++;
@@ -820,8 +827,10 @@ function speak(text, onEnd, onWort){
     const lauf=++sprechLauf;
     const plain=String(text).replace(/\s+/g," ").trim().slice(0,4000);
     if(!plain){ if(onEnd) onEnd(); return; }
-    const chunks=speakChunks(plain);
     const stimme=speakStimme(), rate=speakRate();
+    // Bei „Langsam" kleinere Stücke: die Pausen dazwischen wirken wie
+    // Atempausen beim Diktieren und geben Zeit zum Mitlesen.
+    const chunks=speakChunks(plain, rate<0.7?90:180);
     let fertig=false; const einmal=()=>{ if(!fertig){ fertig=true; if(onEnd) onEnd(); } };
     chunks.forEach((ch,ci)=>{
       const u=new SpeechSynthesisUtterance(ch.text);
