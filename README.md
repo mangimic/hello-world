@@ -1,10 +1,10 @@
-# ✏️ Schreibprofi
+# ✏️ Lernprofi
 
 Eine kostenlose, werbefreie Deutsch-Lern-App für die 3./4. Klasse
 (Baden-Württemberg) – als Einzeldatei-PWA gebaut, läuft komplett
 offline im Browser oder installiert wie eine echte App.
 
-**🚀 [App direkt öffnen](https://mangimic.github.io/hello-world/)**
+**🚀 [App direkt öffnen](https://mangimic.github.io/lernprofi/)**
 
 Keine Anmeldung, keine Werbung, keine Server-Anbindung – alle
 Fortschritte bleiben ausschließlich auf dem Gerät (`localStorage`).
