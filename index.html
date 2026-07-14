@@ -430,8 +430,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.39.0";
+const APP_VERSION = "1.40.0";
 const RELEASE_NOTES = [
+  {v:"1.40.0", datum:"13.07.2026", punkte:[
+    "⬅️ Der Zurück-Knopf geht jetzt immer nur EINE Ebene zurück: aus einem Lernfeld in seine Gruppe, aus einem Spiel in die Spielhalle – und erst von dort zur Startseite. Kein verwirrendes Springen mehr.",
+  ]},
   {v:"1.39.0", datum:"13.07.2026", punkte:[
     "📋 Thema nur noch EINMAL wählen: Die doppelte Themen-Auswahl auf den Lernen-Seiten der Lernfelder ist weg – gewählt wird das Thema allein in der Lernfeld-Übersicht, die Lernen-Seiten zeigen nur noch an, welches Thema gerade gilt.",
     "✏️ Klarer benannt: Der erste Tab der Vorgangsbeschreibung heißt jetzt „Ablauf“ (dort wählst du, worüber du schreibst – z. B. Waffelrezept), damit er nicht mit dem Übungs-Thema verwechselt wird.",
@@ -6271,6 +6274,18 @@ function openModule(id){
   scoreRuns={};
   goSection(MODULES[id].sections[0].id);
 }
+/* Zurück-Knopf: immer nur EINE Ebene zurück.
+   Lernfeld -> seine Gruppe · Spiel -> Spielhalle ·
+   Gruppe/Spielhalle/Elternbereich/Notes -> Startseite. */
+function goBack(){
+  if(activeModuleId && $("screen-content").classList.contains("active")){
+    const id=activeModuleId;
+    if(SPIELE_IDS.includes(id)) return openSpielhalle();
+    const g=MODUL_GRUPPEN.find(x=>x.module.includes(id));
+    if(g) return openGruppe(g.id);
+  }
+  goHome();
+}
 function goHome(){
   stopSpeak();
   zeitPruefen();
@@ -6331,7 +6346,7 @@ document.addEventListener("DOMContentLoaded",()=>{
   $("lvlupClose").onclick=hideLevelUp;
   $("levelUp").addEventListener("click",e=>{ if(e.target.id==="levelUp") hideLevelUp(); });
   // Zurück-Button + Elternbereich + Release Notes
-  $("backBtn").onclick=goHome;
+  $("backBtn").onclick=goBack;
   $("adminLink").onclick=openAdmin;
   $("versionInfo").textContent="Version "+APP_VERSION+" ·";
   $("notesLink").onclick=openNotes;

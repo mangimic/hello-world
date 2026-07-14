@@ -124,6 +124,22 @@ function section(t) { console.log("\n== " + t + " =="); }
     check(`Klassenfilter ${l === 0 ? "Alle" : "Klasse " + l}: ${shown} Felder in Gruppen+Spielhalle`, shown === expect, `erwartet ${expect}`);
   }
 
+  // ---------- 1b) Zurück-Navigation: immer nur eine Ebene ----------
+  section("Zurück-Navigation (eine Ebene)");
+  await fresh(); await setLevel(3);
+  await page.evaluate(() => { store.muenzen = 5; save(); });
+  await openMod("Subjekte", null);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Zurück aus Lernfeld → Gruppen-Seite", (await page.locator("#gruppenGrid").count()) === 1
+    && (await page.locator("#moduleContent").textContent()).includes("Sätze & Grammatik"));
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Zurück aus Gruppe → Startseite", (await page.locator("#screen-home.active").count()) === 1);
+  await openMod("Tennis-Match", null);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Zurück aus Spiel → Spielhalle", (await page.locator("#spielhalleGrid").count()) === 1);
+  await page.locator("#backBtn").click(); await page.waitForTimeout(120);
+  check("Zurück aus Spielhalle → Startseite", (await page.locator("#screen-home.active").count()) === 1);
+
   // ---------- 2) Antwort-Pflicht & Feedback (alle 10 Lernfelder) ----------
   section("Antwort-Pflicht & korrektes Feedback");
   const MODS = [
@@ -250,7 +266,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   await setLevel(3); await openMod("Subjekte", "Üben");
   const badge2 = (await page.locator("#moduleContent .lvl-badge").first().textContent());
   check("Übung zeigt „Aktive Stufe 3/3 📌“", /Aktive Stufe 3\/3/.test(badge2) && badge2.includes("📌"), badge2);
-  // Bereichs-Override schlägt Global
+  // Bereichs-Override schlägt Global (zur Startseite: 2× eine Ebene zurück)
+  await page.locator("#backBtn").click(); await page.waitForTimeout(90);
   await page.locator("#backBtn").click(); await page.waitForTimeout(90);
   await page.locator("#adminLink").click(); await page.waitForTimeout(140);
   await page.locator('.seg[data-scope="feld:gws:dopp"][data-v="1"]').click(); await page.waitForTimeout(90);
