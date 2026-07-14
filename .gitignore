@@ -1,1 +1,4 @@
 node_modules
+# Beta-Feedback-Rohdaten (lokal, nicht veröffentlichen)
+feedback/
+node_modules/

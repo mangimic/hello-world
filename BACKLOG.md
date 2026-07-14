@@ -91,6 +91,14 @@ genutzt werden.
   Bundesland-Wahl beim Onboarding + „Deutschland-Basispaket" als
   Fallback + VERA-3-Training als bundesweiter Kompass-Ersatz.
   Details: PLANUNG-STORE.md Abschnitt 4.5.
+- 🚀 **Klasse-5-Booster (Gymnasium-Start)**: Erweiterung nach oben für
+  Fünftklässler, die mit Gymnasial-Empfehlung gestartet sind, aber im
+  Übergang straucheln. Die App als Wiederholungs-„Booster" für den
+  Grundschul-Stoff (Grammatik, Rechtschreibung, Grundwortschatz) in
+  reiferer Ansprache („Auffrischen für Profis" statt Grundschul-Optik),
+  plus Brücken-Themen der 5. Klasse. Passt zum Abo-Modell: verlängert
+  die Kundenbeziehung um 1–2 Jahre über die Grundschule hinaus und
+  hebt die Verlängerungsquote (Annahme bisher 55–60 %).
 - ⏱️ **Timeboxing**: Fokus-/Pausen-Timer (8 min / 2 min / 5 min), Pausen-Overlay
 - ⭐ **Gamification**: Sterne, Punkte, Level (Satz-Starter … Schreib-Champion),
   Fortschrittsbalken
