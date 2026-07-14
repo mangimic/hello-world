@@ -84,6 +84,13 @@ genutzt werden.
   Seit v1.38/1.39 ist die Themen-Wahl zentralisiert (nur in der
   Lernfeld-Übersicht) – ein neues Themenfeld müsste sich also nur noch
   an EINER Stelle einhängen.
+- 🇩🇪 **Bundesland-Wortschatzpakete** (für den Deutschland-Rollout):
+  Grundwortschatz-Listen unterscheiden sich je Bundesland (500–900
+  Wörter, teils keine verbindliche Liste). Lösung: Wortschatz-Paket pro
+  Land als Daten-JSON (Mapping auf unsere 12 Regel-Gruppen) +
+  Bundesland-Wahl beim Onboarding + „Deutschland-Basispaket" als
+  Fallback + VERA-3-Training als bundesweiter Kompass-Ersatz.
+  Details: PLANUNG-STORE.md Abschnitt 4.5.
 - ⏱️ **Timeboxing**: Fokus-/Pausen-Timer (8 min / 2 min / 5 min), Pausen-Overlay
 - ⭐ **Gamification**: Sterne, Punkte, Level (Satz-Starter … Schreib-Champion),
   Fortschrittsbalken
