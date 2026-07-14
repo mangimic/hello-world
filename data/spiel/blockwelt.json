@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kommentar": "Blockwelt: vereinfachtes Minecraft-artiges Bau-Spiel. Blöcke werden mit Grundwortschatz-Fragen verdient (leicht = 3 normale Blöcke, schwer = 2 normale + 1 seltener). Die Welt wird dauerhaft gespeichert.",
+  "kommentar": "Blockwelt: vereinfachtes Minecraft-artiges Bau-Spiel. Blöcke werden mit Grundwortschatz-Fragen verdient (leicht = 3 normale Blöcke, schwer = 2 normale + 1 seltener). Extras werden in der Werkstatt aus Blöcken gebaut (kosten) und schalten sich über verdiente Blöcke frei (ab = Meilenstein). Die Welt wird dauerhaft gespeichert.",
   "bloecke": [
     { "id": "gras",    "name": "Gras",     "farbe": "#6bbf59" },
     { "id": "erde",    "name": "Erde",     "farbe": "#8a6242" },
@@ -14,6 +14,20 @@
     { "id": "fackel",  "name": "Fackel",   "farbe": "#fdf0d0", "emoji": "🔥" },
     { "id": "gold",    "name": "Gold",     "farbe": "#ffd94d", "emoji": "✨", "selten": true },
     { "id": "diamant", "name": "Diamant",  "farbe": "#8ff0e8", "emoji": "💎", "selten": true }
+  ],
+  "extras": [
+    { "id": "tuer",    "name": "Tür",       "emoji": "🚪", "farbe": "#e8d9c4", "kosten": { "holz": 2 },              "ab": 0,  "info": "Für dein erstes Haus." },
+    { "id": "fenster", "name": "Fenster",   "emoji": "🪟", "farbe": "#eaf5fc", "kosten": { "glas": 1, "holz": 1 },   "ab": 0,  "info": "Licht rein, Regen raus." },
+    { "id": "schaf",   "name": "Schaf",     "emoji": "🐑", "farbe": "#f3f3ee", "kosten": { "gras": 2 },              "ab": 10, "info": "Dein erstes Tier – es liebt Graswiesen." },
+    { "id": "huhn",    "name": "Huhn",      "emoji": "🐔", "farbe": "#fdf3dd", "kosten": { "gras": 1, "sand": 1 },   "ab": 15, "info": "Gackert fröhlich auf deinem Hof." },
+    { "id": "kuh",     "name": "Kuh",       "emoji": "🐄", "farbe": "#f0e8e0", "kosten": { "gras": 2, "erde": 1 },   "ab": 20, "info": "Braucht eine große Weide." },
+    { "id": "bett",    "name": "Bett",      "emoji": "🛏️", "farbe": "#fbe3e3", "kosten": { "holz": 2, "blume": 1 },  "ab": 25, "info": "Zum Ausruhen nach dem Bauen." },
+    { "id": "hund",    "name": "Hund",      "emoji": "🐕", "farbe": "#f0e4d2", "kosten": { "holz": 1, "stein": 1 },  "ab": 30, "info": "Dein treuer Begleiter." },
+    { "id": "boot",    "name": "Boot",      "emoji": "🛶", "farbe": "#dcecf8", "kosten": { "holz": 3 },              "ab": 35, "info": "Setze es auf dein Wasser!" },
+    { "id": "katze",   "name": "Katze",     "emoji": "🐈", "farbe": "#f4ead9", "kosten": { "holz": 1, "gras": 1 },   "ab": 40, "info": "Schleicht durch deine Welt." },
+    { "id": "tnt",     "name": "TNT",       "emoji": "🧨", "farbe": "#f8d3c8", "kosten": { "sand": 2, "stein": 1 },  "ab": 50, "wirkung": "sprengt", "info": "Räumt beim Setzen 3×3 Felder frei – die Blöcke sind dann weg!" },
+    { "id": "schatz",  "name": "Schatztruhe","emoji": "🎁", "farbe": "#f5e2b8", "kosten": { "gold": 1, "holz": 1 },  "ab": 60, "info": "Verstecke deine Schätze." },
+    { "id": "drache",  "name": "Drache",    "emoji": "🐉", "farbe": "#e3f2df", "kosten": { "gold": 1, "diamant": 1 },"ab": 75, "info": "Das seltenste Wesen der Blockwelt!" }
   ],
   "start": {
     "breite": 16,

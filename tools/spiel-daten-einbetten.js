@@ -112,7 +112,24 @@ if (!(bwS.breite >= 8 && bwS.breite <= 24 && bwS.hoehe >= 6 && bwS.hoehe <= 16))
 (bwS.boden || []).forEach(id => { if (!bwIds.has(id)) fail("blockwelt: boden verweist auf unbekannten Block " + id); });
 Object.keys(bwS.inventar || {}).forEach(id => { if (!bwIds.has(id)) fail("blockwelt: inventar verweist auf unbekannten Block " + id); });
 if (!(blockwelt.belohnung && blockwelt.belohnung.leicht >= 1 && blockwelt.belohnung.schwer >= 1)) fail("blockwelt: belohnung.leicht/schwer fehlt");
-console.log("✅ blockwelt gültig · " + blockwelt.bloecke.length + " Blocktypen · Welt " + bwS.breite + "×" + bwS.hoehe);
+// Extras (Werkstatt): aus Blöcken gebaut, per Meilenstein (ab) freigeschaltet
+const bwExtras = blockwelt.extras || [];
+if (bwExtras.length < 8) fail("blockwelt: mindestens 8 Extras für die Werkstatt nötig");
+for (const x of bwExtras) {
+  if (bwIds.has(x.id)) fail("blockwelt: Extra-id kollidiert mit Block oder doppelt: " + x.id);
+  bwIds.add(x.id);
+  if (!x.name || !x.emoji || !/^#[0-9a-fA-F]{6}$/.test(x.farbe || "")) fail("blockwelt/extras/" + x.id + ": name/emoji/farbe (Hex) fehlt");
+  if (!(Number.isInteger(x.ab) && x.ab >= 0)) fail("blockwelt/extras/" + x.id + ": ab (Meilenstein) fehlt");
+  if (x.wirkung && x.wirkung !== "sprengt") fail("blockwelt/extras/" + x.id + ": unbekannte wirkung " + x.wirkung);
+  const kosten = Object.entries(x.kosten || {});
+  if (!kosten.length) fail("blockwelt/extras/" + x.id + ": kosten fehlen");
+  kosten.forEach(([id, n]) => {
+    if (!blockwelt.bloecke.some(b => b.id === id)) fail("blockwelt/extras/" + x.id + ": kosten verweisen auf unbekannten Block " + id);
+    if (!(Number.isInteger(n) && n >= 1)) fail("blockwelt/extras/" + x.id + ": kosten." + id + " muss ganze Zahl >= 1 sein");
+  });
+}
+if (!bwExtras.some(x => x.ab === 0)) fail("blockwelt: mindestens 1 Extra muss ab 0 verfügbar sein");
+console.log("✅ blockwelt gültig · " + blockwelt.bloecke.length + " Blocktypen · " + bwExtras.length + " Extras · Welt " + bwS.breite + "×" + bwS.hoehe);
 console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + welten.welten[0].spots.length + " Spots · Besatz-Pool: " + welten.welten[0].besatz.length + " Fische (pro Runde wird je Spot ein Fisch gezogen)");
 
 // ---------- Bilder einbetten (optional, verkleinert über Chromium) ----------
@@ -156,7 +173,7 @@ console.log("✅ Daten gültig · Welt „" + welten.welten[0].id + "“ · " + 
     tennis: { gegner: tennis.gegner, fakten: tennis.fakten, mental: tennis.mental },
     fussball: { gegner: fussball.gegner, fakten: fussball.fakten, mental: fussball.mental },
     schach: { lektionen: schach.lektionen, aufgaben: schach.aufgaben },
-    blockwelt: { bloecke: blockwelt.bloecke, start: blockwelt.start, belohnung: blockwelt.belohnung },
+    blockwelt: { bloecke: blockwelt.bloecke, extras: blockwelt.extras, start: blockwelt.start, belohnung: blockwelt.belohnung },
     bilder: bilder };
   const block = MARK_A + "\nconst SPIEL_DATEN = " + JSON.stringify(daten) + ";\n" + MARK_B;
   let html = fs.readFileSync(INDEX, "utf8");

@@ -797,6 +797,43 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.reload(); await page.waitForTimeout(300);
   check("Welt bleibt nach Neuladen gespeichert", await page.evaluate(() =>
     store.blockwelt && store.blockwelt.welt && store.blockwelt.welt[21] === "stein"));
+  // Werkstatt: Extras aus Blöcken bauen (Crafting), Meilensteine schalten frei
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; store.muenzen = 9; save(); });
+  await openMod("Blockwelt", null);
+  check("Werkstatt-Daten: 12 Extras, Drache kostet Gold+Diamant", await page.evaluate(() => {
+    const X = SpielRepo.blockwelt().extras, d = X.find(x => x.id === "drache");
+    return X.length === 12 && X.some(x => x.ab === 0) && d && d.kosten.gold === 1 && d.kosten.diamant === 1; }));
+  // Meilenstein-Meldung: von 8 auf 11+ verdient schaltet das Schaf (ab 10) frei
+  await page.evaluate(() => { const st = bwWelt(); st.verdient = 8; st.zaehler = 0; save(); });
+  await page.locator("#bwVerdienen").click(); await page.waitForTimeout(100);
+  const bwR2 = await page.evaluate(() => bw.frage.w.richtig);
+  await page.locator(`.bw-opt[data-w="${bwR2}"]`).click(); await page.waitForTimeout(120);
+  check("Meilenstein erreicht: Freischalt-Meldung in der Antwort", (await page.locator("#bwfb").textContent()).includes("Neu in der Werkstatt"));
+  await page.locator("#bwWeiter").click(); await page.waitForTimeout(80);
+  // Deterministisch: genau 3 Rezepte baubar (Tür, Fenster, Schaf), Rest fehlt/gesperrt
+  await page.evaluate(() => { const st = bwWelt(); st.inv = { holz: 3, gras: 2, glas: 1 }; st.verdient = 10; save(); bwWerkstatt(); });
+  check("Werkstatt: 12 Rezepte gelistet, 3 baubar, Gesperrte mit 🔒", await page.evaluate(() =>
+    document.querySelectorAll(".bw-rezept").length === 12
+    && document.querySelectorAll(".bw-craft").length === 3
+    && document.querySelectorAll(".bw-rezept.zu").length === 9
+    && $("bwQ").textContent.includes("🔒")));
+  await page.locator('.bw-craft[data-x="schaf"]').click(); await page.waitForTimeout(100);
+  check("Rezept gebaut: Schaf im Inventar, 2 Gras verbraucht", await page.evaluate(() =>
+    bwWelt().inv.schaf === 1 && bwWelt().inv.gras === 0));
+  await page.locator('.bw-zelle[data-i="40"]').click(); await page.waitForTimeout(80);
+  check("Extra steht in der Welt (🐑)", await page.evaluate(() =>
+    bwWelt().welt[40] === "schaf"
+    && document.querySelector('.bw-zelle[data-i="40"]').textContent === "🐑"));
+  check("Gesperrtes Rezept nicht baubar (Drache ab 75)", await page.evaluate(() => bwCraft("drache") === false));
+  // TNT: freischalten, bauen, setzen -> räumt 3×3 frei (Blöcke weg, nicht zurück)
+  check("TNT gebaut (ab 50, Sand+Stein)", await page.evaluate(() => {
+    const st = bwWelt(); st.verdient = 50; st.inv.sand = 2; st.inv.stein = 1; save();
+    return bwCraft("tnt") && st.inv.tnt === 1; }));
+  await page.locator('.bw-zelle[data-i="101"]').click(); await page.waitForTimeout(100);
+  check("🧨 TNT räumt 3×3 frei, Reihe darunter bleibt", await page.evaluate(() => {
+    const w = bwWelt().welt;
+    return w[7 * 16 + 4] === "" && w[7 * 16 + 5] === "" && w[7 * 16 + 6] === ""
+      && w[8 * 16 + 5] === "erde" && bwWelt().inv.tnt === 0; }));
 
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
