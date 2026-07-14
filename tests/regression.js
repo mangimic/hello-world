@@ -94,6 +94,19 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Aufgeräumte Startseite: 3 Gruppen + Spielhalle statt Kachelwand",
     (await page.locator("#moduleChooser .choice").count()) === 4
     && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1);
+  check("Startseite: Fach-Einstieg statt Thema-Wahl", await page.evaluate(() =>
+    !!document.getElementById("fachRow")
+    && document.getElementById("fachRow").textContent.includes("Deutsch")
+    && !document.getElementById("themeRow")));
+  check("Thema wird in der Lernfeld-Gruppe gewählt", await page.evaluate(() => {
+    openGruppe("grammatik");
+    const chips = document.querySelectorAll("#gruppenThema .chip");
+    if (!chips.length) { goHome(); return false; }
+    const ziel = [...chips].find(c => c.dataset.thema !== store.thema);
+    ziel.click();
+    const ok = store.thema === ziel.dataset.thema && !!document.querySelector("#gruppenThema .chip.on");
+    store.thema = "alltag"; save(); goHome();
+    return ok; }));
   for (const l of [3, 4, 0]) {
     await setLevel(l);
     const shown = await page.evaluate(lv => {
