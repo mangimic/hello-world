@@ -166,7 +166,53 @@ Basis: Statistisches Landesamt BW, Schuljahr 2025/26.
 bei Geschwistern im Grundschulalter liegt die Zahl der Käufe ca.
 15–20 % unter der Zahl erreichter Kinder.)*
 
-### 4.5 Alternativen zum Einmalkauf (zur Diskussion)
+### 4.5 Deutschland-Rollout: Grundwortschatz je Bundesland
+
+**Befund (recherchiert):** Die Grundwortschatz-Listen unterscheiden
+sich zwischen den Bundesländern erheblich – im Namen, im Umfang
+(je nach Land ca. **500–900 Wörter**) und in der Auswahllogik
+(rechtschriftliche Muster vs. Häufigkeit). Beispiele: NRW 533 Wörter
+(verbindlich seit 2019), Bayern ~700, Berlin/Brandenburg eigene
+Listen mit Handreichungen, BW die amtliche Liste des ZSL (unsere
+Basis: 246 kuratierte Wörter daraus). **Einige Länder haben gar keine
+verbindliche Liste** – dort entscheiden Schulen/Lehrkräfte selbst.
+
+**Konsequenz für die Architektur (gute Nachricht):** Genau dafür ist
+die App schon gebaut. Der Grundwortschatz ist datengetrieben
+(12 Regel-Gruppen, leicht/schwer-Stufen, Eltern können Wörter
+tauschen). Für den Deutschland-Rollout wird daraus ein
+**Wortschatz-Paket pro Bundesland**:
+
+1. **Bundesland-Wahl beim Onboarding** (ein Tap, Teil von Phase 1) –
+   steuert Wortschatz-Paket und ggf. landesspezifische Module.
+2. **Paket-Format** wie heute `data/`-JSON: amtliche Liste beschaffen,
+   auf unsere 12 Regel-Gruppen mappen, Falsch-Schreibweisen kuratieren,
+   durch die bestehende Werkzeug-Validierung + Regressionstests.
+3. **„Deutschland-Basispaket“** als Fallback für Länder ohne
+   verbindliche Liste (Schnittmenge der großen Listen + bewährte
+   Rechtschreib-Muster).
+4. **Kompass 4 verallgemeinern:** Der BW-spezifische Kompass-Bereich
+   wird als BW-Modul markiert; bundesweiter Anker ist stattdessen
+   **VERA 3** (Vergleichsarbeiten Klasse 3, in allen Ländern) – ein
+   eigenes Übungsmodul „VERA-Training“ wäre das deutschlandweite
+   Pendant.
+
+**Aufwand:** pro Bundesland-Paket ca. **2–4 PT** (Beschaffung,
+Kategorisierung, Kuratierung, QA). Priorisierter Rollout nach
+Marktgröße: **NRW (~660.000 Grundschüler) → Bayern (~470.000) →
+Niedersachsen/Hessen → Rest + Basispaket**. Mit BW zusammen decken
+die ersten vier Länder bereits über die Hälfte der ~3,1 Mio.
+Grundschüler ab. Gesamtaufwand Vollausbau: ~25–40 PT, gut
+inkrementell lieferbar (jedes Paket ist ein eigenes Release).
+
+**Empfohlene Rollout-Strategie:** Start in den Stores trotzdem
+**bundesweit sichtbar** mit BW-Paket + Basispaket (die App ist auch
+ohne landesspezifische Liste voll nutzbar – Lernfelder und Spiele
+sind lehrplanähnlich in allen Ländern); Bundesland-Pakete dann als
+kostenlose Updates nachliefern. So verschenkt man keine Downloads,
+weckt aber auch keine falschen Erwartungen („dein Bundesland folgt").
+
+### 4.6 Alternativen zum Einmalkauf (zur Diskussion)
 
 1. **9,99 €/Jahr Familien-Abo** – ANTON-Plus-Anker, wiederkehrender
    Umsatz, finanziert später die KI-Kosten. Nachteil: Abo-Müdigkeit.
