@@ -135,7 +135,38 @@ Alleinstellungsmerkmal wird. Downloads kommen nicht von allein:
 Eltern-Blogs, Lehrer-Empfehlungen und Schul-Communities sind der
 wirksamste (und günstigste) Kanal.
 
-### 4.4 Alternativen zum Einmalkauf (zur Diskussion)
+### 4.4 Marktpotenzial Baden-Württemberg (Schüler-Abschätzung)
+
+Basis: Statistisches Landesamt BW, Schuljahr 2025/26.
+
+| Stufe | Anzahl | Erläuterung |
+|---|---|---|
+| Grundschüler BW gesamt (Kl. 1–4) | **≈ 445.000** | 412.900 an öffentlichen Schulen + ≈ 30.000 an Privatschulen; steigend auf ≈ 470.000 bis 2028/29 |
+| davon heute von der App abgedeckt (Kl. 3/4) | **≈ 220.000** | ungefähr die Hälfte; Kl. 1/2 kommt erst mit Phase 1 |
+| Familien mit Lern-Nutzung auf Tablet/Handy (≈ 85 %) | ≈ 378.000 Kinder | Geräteausstattung/Bereitschaft, digital zu üben |
+| davon zahlungsbereit für eine Lern-App (≈ 8 %) | **≈ 30.000 Kinder** | harte Obergrenze der Käuferschicht in BW (ANTON-Effekt: die Mehrheit bleibt bei Gratis-Angeboten) |
+| realistisch erreichbar in Jahr 1 ohne Werbebudget (2–5 % davon) | **≈ 600–1.500 Verkäufe** | über Eltern-Blogs, Lehrer, Mundpropaganda |
+
+**Drei Konsequenzen daraus:**
+
+1. **Das BW-Potenzial passt exakt zum Break-even** (620–1.600 Verkäufe,
+   Abschnitt 4.3): Baden-Württemberg allein kann das Projekt tragen –
+   aber ohne Puffer. Jeder Prozentpunkt mehr Bekanntheit wirkt direkt.
+2. **Der Pool erneuert sich jährlich:** ≈ 110.000 Einschulungen pro
+   Jahr in BW bedeuten beim Einmalkauf-Modell jedes Jahr einen frischen
+   Jahrgang potenzieller Käufer – der Markt „verbraucht" sich nicht.
+3. **BW ist nur der Startmarkt:** Die BW-Spezifika (amtlicher
+   Grundwortschatz, Kompass 4) sind Stärke UND Grenze. Deutschlandweit
+   gibt es ≈ 3,1 Mio. Grundschüler (Faktor ~7); der Deutsch-Lehrplan
+   ist ähnlich genug, dass eine spätere Öffnung (Grundwortschatz-Listen
+   anderer Länder als Daten-Pakete) den Käuferpool auf ≈ 200.000
+   zahlungsbereite Kinder heben würde.
+
+*(Hinweis Familienlizenz: Verkäufe zählen pro Familie, nicht pro Kind –
+bei Geschwistern im Grundschulalter liegt die Zahl der Käufe ca.
+15–20 % unter der Zahl erreichter Kinder.)*
+
+### 4.5 Alternativen zum Einmalkauf (zur Diskussion)
 
 1. **9,99 €/Jahr Familien-Abo** – ANTON-Plus-Anker, wiederkehrender
    Umsatz, finanziert später die KI-Kosten. Nachteil: Abo-Müdigkeit.
