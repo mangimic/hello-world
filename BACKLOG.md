@@ -26,6 +26,52 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 - **„Meine Blume"**: einfache Selbst-Einschätzung mit der **Blumentopf-Skala der
   Lehrerin** (4 Stufen), **ohne Noten** – zeigt dem Kind, wo es gerade steht
 
+## 🌍 Große Idee: KI-Onboarding & individuelle Lernpfade (öffentliche Version)
+Status: **Konzept / noch nicht entschieden.** Bevor die App öffentlich
+(z. B. per GitHub Pages) bereitgestellt wird, wird überlegt, sie vom
+Einzelkind-Prototyp (aktuell auf Felix, Klasse 3, zugeschnitten) zu
+einem Produkt für **Klasse 1–4** weiterzuentwickeln:
+
+- **KI-gestütztes Onboarding für Eltern**: Vor dem ersten Nutzen
+  durchlaufen Eltern einen Dialog, in dem sie ihr Kind beschreiben
+  (Klassenstufe, Stärken/Schwächen, Interessen, Besonderheiten wie
+  Konzentration/Leseunlust – vgl. die Recherche zum Mutmacher-Format).
+- **Automatische Lernfeld-Erstellung**: Aus der Beschreibung generiert
+  die App passende Lernfelder und Lernstrategien statt der aktuell
+  fest codierten Module – d. h. Inhalt/Schwierigkeit/Ansprache passen
+  sich individuell an, nicht nur über die Klassenstufen-Auswahl.
+- **Spiele-Auswahl statt Fest-Set**: Eltern/Kind wählen aus einem
+  Angebot an Lern-Spielen (heutige vier – See, Tennis, Fußball, Schach
+  – als Startpunkt), orientiert am typischen Grundschulalter, statt
+  dass alle vier immer aktiv sind.
+- **Zielgruppen-Erweiterung**: Klasse 1–4 statt bisher nur 3/4 (siehe
+  ROADMAP.md, Abschnitt „Pädagogische Kerninhalte" – Klasse 1/2 fehlt
+  bisher auch inhaltlich, nicht nur als Filter).
+
+**Offene Fragen, bevor das umgesetzt wird** (bewusst nicht beantwortet,
+nur festgehalten):
+- Die App ist heute *bewusst* 100 % offline und serverlos (keine
+  externen Requests, keine Kinderdaten verlassen das Gerät – stärkste
+  Datenschutz-Eigenschaft laut ROADMAP.md). Ein „KI-Onboarding" braucht
+  vermutlich einen LLM-Aufruf – das bricht dieses Versprechen und
+  erfordert eine bewusste, DSGVO-konforme Lösung (z. B. keine
+  Speicherung der Kind-Beschreibung serverseitig, klare
+  Eltern-Einwilligung, ggf. On-Device-Verarbeitung statt Cloud-LLM).
+- Automatisch generierte Übungsinhalte (Wörter, Sätze, Regeln) brauchen
+  eine Qualitätssicherung, damit z. B. keine falschen
+  Rechtschreib-Paare oder altersunpassenden Inhalte entstehen – anders
+  als der heutige, von Hand kuratierte/recherchierte Content
+  (amtlicher Grundwortschatz BW, geprüfte Sport-/Schach-Fakten).
+- Wie viel bleibt weiterhin fest kuratiert (z. B. amtlicher
+  Grundwortschatz, Schach-Regeln) vs. was die KI wirklich neu
+  generiert?
+
+**Konsequenz für aktuelle Planung:** Die für GitHub Pages vorbereitete
+Veröffentlichung (Repo public + Pages aktivieren) ist **pausiert**,
+bis diese Produktrichtung geklärt ist – die technische Vorbereitung
+(`.nojekyll`, relative Pfade) bleibt aber bestehen und kann jederzeit
+genutzt werden.
+
 ## Zurückgestellt (Backlog)
 - ⏱️ **Timeboxing**: Fokus-/Pausen-Timer (8 min / 2 min / 5 min), Pausen-Overlay
 - ⭐ **Gamification**: Sterne, Punkte, Level (Satz-Starter … Schreib-Champion),
