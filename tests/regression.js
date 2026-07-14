@@ -206,9 +206,7 @@ function section(t) { console.log("\n== " + t + " =="); }
       await page.locator(mo.map[v]).click(); await page.waitForTimeout(60);
     } else if (mo.doppel) {
       const richtig = await page.evaluate(() => doppelWoerter()[doppelIdx].richtig);
-      const opts = page.locator("#linksBtn, #rechtsBtn");
-      const t0 = (await opts.nth(0).textContent()).trim();
-      await (t0 === richtig ? opts.nth(0) : opts.nth(1)).click(); await page.waitForTimeout(60);
+      await page.locator(`.do-opt[data-w="${richtig}"]`).click(); await page.waitForTimeout(60);
     }
     const fb2 = (await page.locator(mo.fb).textContent()).trim();
     check(mo.label + ": richtige Antwort erkannt", /Richtig|Geschafft|🌟/.test(fb2), fb2.slice(0, 40));
@@ -251,10 +249,28 @@ function section(t) { console.log("\n== " + t + " =="); }
   await fresh(); await setLevel(3); await openMod("Grundwortschatz", "Üben");
   let st = await page.evaluate(() => ({ lvl: fieldLevel("gws:dopp"), n: fieldPool("gws:dopp").length, w: fieldPool("gws:dopp")[0].richtig }));
   check("Stufe 1 = leichte amtliche Wörter (33)", st.lvl === 1 && st.n === 33 && st.w === "bitten", JSON.stringify(st));
+  // Anti-Raten (v1.46): dritte Fehler-Variante + zufällige Antwort-Plätze
+  check("Dritte Fehler-Variante wird sicher erzeugt", await page.evaluate(() =>
+    drittesFalsch({ richtig: "Zucker", falsch: "Zuker" }) === "zucker"
+    && drittesFalsch({ richtig: "spielen", falsch: "spilen" }) === "spiehlen"
+    && drittesFalsch({ richtig: "kommen", falsch: "komen" }) === null));
+  check("Antwort-Reihenfolge zufällig: Lösung wandert über alle 3 Plätze", await page.evaluate(() => {
+    const plaetze = new Set();
+    for (let k = 0; k < 60; k++) {
+      const o = spielOptionen({ richtig: "Zucker", falsch: "Zuker" });
+      if (o.length !== 3) return false;
+      plaetze.add(o.indexOf("Zucker"));
+    }
+    return plaetze.size === 3;
+  }));
+  check("GWS-Übung: gemischte Antwort-Knöpfe enthalten die Lösung", await page.evaluate(() => {
+    const btns = [...document.querySelectorAll(".gws-opt")];
+    const w = gwsChunk("gws:" + GWS_KATEGORIEN[gwsCatIdx].id).S[gwsIdx];
+    return btns.length >= 2 && btns.some(b => b.dataset.w === w.richtig);
+  }));
   const solveChunk = async () => { let g = 0; while (g++ < 15) { if (await page.locator("#runAgain").count()) break;
     const richtig = await page.evaluate(() => gwsChunk("gws:" + GWS_KATEGORIEN[gwsCatIdx].id).S[gwsIdx].richtig);
-    const opts = page.locator(".gws-opt"); const t0 = (await opts.nth(0).textContent()).trim();
-    await (t0 === richtig ? opts.nth(0) : opts.nth(1)).click(); await page.waitForTimeout(18);
+    await page.locator(`.gws-opt[data-w="${richtig}"]`).click(); await page.waitForTimeout(18);
     await page.locator("#gwsNext").click(); await page.waitForTimeout(22); } };
   await solveChunk();
   ovl = await closeOverlay();
@@ -482,8 +498,7 @@ function section(t) { console.log("\n== " + t + " =="); }
       const meta = await page.evaluate(() => ({ richtig: spiel.frage.w.richtig, schwer: spiel.frage.schwer, bild: !!document.querySelector('#spielQ svg[aria-label]') }));
       if (st === 0 && !meta.bild) check("Fisch-Bild in der Frage", false);
       if (st > 0 && !meta.schwer) check("Steigerung: Folgefrage ist schwer", false);
-      const so = page.locator(".spiel-opt"); const t0 = (await so.nth(0).textContent()).trim();
-      await (t0 === meta.richtig ? so.nth(0) : so.nth(1)).click();
+      await page.locator(`.spiel-opt[data-w="${meta.richtig}"]`).click();
       await page.waitForFunction(() => { const w2 = document.getElementById("spielWeiter"); return w2 && !w2.disabled; }, null, { timeout: 9000 });
       await page.locator("#spielWeiter").click();
       await page.waitForTimeout(90);
@@ -494,8 +509,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   // Hinweis bleibt stehen: einmal absichtlich falsch antworten
   await page.waitForFunction(() => spiel.aktiv === 2 && !spiel.busy && document.querySelector(".spiel-opt:not([disabled])"), null, { timeout: 9000 });
   const falsch = await page.evaluate(() => spiel.frage.w.falsch);
-  const soX = page.locator(".spiel-opt"); const tX = (await soX.nth(0).textContent()).trim();
-  await (tX === falsch ? soX.nth(0) : soX.nth(1)).click();
+  await page.locator(`.spiel-opt[data-w="${falsch}"]`).click();
   await page.waitForTimeout(2000); // früher verschwand der Hinweis nach 1,5 s
   const fbDa = (await page.locator("#spielfb").textContent()).includes("richtig wäre");
   check("Lösungshinweis bleibt stehen (kein Auto-Ausblenden)", fbDa);
@@ -544,11 +558,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Mut-Satz angetippt → Start frei", !(await page.locator("#tennisStart").isDisabled()));
   await page.locator("#tennisStart").click(); await page.waitForTimeout(150);
   check("Tennisplatz sichtbar", (await page.locator("#tennisFeld").count()) > 0);
-  check("Frage aus dem Grundwortschatz (2 Wörter)", (await page.locator(".tennis-opt").count()) === 2);
+  check("Frage aus dem Grundwortschatz (2–3 Wörter)", (await page.locator(".tennis-opt").count()) >= 2);
   // Falsche Antwort: Punkt für den Gegner, Lösung + Mentaltrainer bleiben stehen
   const falschT = await page.evaluate(() => tennis.frage.w.falsch);
-  const toT = page.locator(".tennis-opt"); const tT = (await toT.nth(0).textContent()).trim();
-  await (tT === falschT ? toT.nth(0) : toT.nth(1)).click();
+  await page.locator(`.tennis-opt[data-w="${falschT}"]`).click();
   await page.waitForFunction(() => { const w = document.getElementById("tennisWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
   await page.waitForTimeout(1600);
   const fbT = await page.locator("#tennisfb").textContent();
@@ -563,8 +576,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   async function tennisBall() {
     await page.waitForFunction(() => tennis && tennis.phase === "ball" && document.querySelector(".tennis-opt:not([disabled])"), null, { timeout: 9000 });
     const richtig = await page.evaluate(() => tennis.frage.w.richtig);
-    const o = page.locator(".tennis-opt"); const t0 = (await o.nth(0).textContent()).trim();
-    await (t0 === richtig ? o.nth(0) : o.nth(1)).click();
+    await page.locator(`.tennis-opt[data-w="${richtig}"]`).click();
     await page.waitForFunction(() => { const w = document.getElementById("tennisWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
     await page.locator("#tennisWeiter").click();
     await page.waitForTimeout(70);
@@ -615,8 +627,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Fußballplatz mit Tor sichtbar", (await page.locator("#fbFeld").count()) > 0 && (await page.locator("#fbKeeper").count()) > 0);
   // Erster Ball absichtlich falsch: Konter-Tor + Mentaltrainer bleibt stehen
   const falschF = await page.evaluate(() => fussball.frage.w.falsch);
-  const foT = page.locator(".fb-opt"); const fT = (await foT.nth(0).textContent()).trim();
-  await (fT === falschF ? foT.nth(0) : foT.nth(1)).click();
+  await page.locator(`.fb-opt[data-w="${falschF}"]`).click();
   await page.waitForFunction(() => { const w = document.getElementById("fbWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
   await page.waitForTimeout(1600);
   const fbF = await page.locator("#fbfb").textContent();
@@ -627,8 +638,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   async function fbBall() {
     await page.waitForFunction(() => fussball && (fussball.phase === "ball" || fussball.phase === "elfmeter") && document.querySelector(".fb-opt:not([disabled])"), null, { timeout: 9000 });
     const richtig = await page.evaluate(() => fussball.frage.w.richtig);
-    const o = page.locator(".fb-opt"); const t0 = (await o.nth(0).textContent()).trim();
-    await (t0 === richtig ? o.nth(0) : o.nth(1)).click();
+    await page.locator(`.fb-opt[data-w="${richtig}"]`).click();
     await page.waitForFunction(() => { const w = document.getElementById("fbWeiter"); return w && !w.disabled; }, null, { timeout: 9000 });
     await page.locator("#fbWeiter").click();
     await page.waitForTimeout(70);

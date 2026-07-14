@@ -452,8 +452,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.45.0";
+const APP_VERSION = "1.46.0";
 const RELEASE_NOTES = [
+  {v:"1.46.0", datum:"14.07.2026", punkte:[
+    "🎲 Schluss mit dem Ratespiel: Bei allen „Welches Wort ist richtig?“-Fragen ist die Position der Lösung jetzt überall echt zufällig – vorher war sie in einigen Übungen abwechselnd links/rechts und damit vorhersagbar.",
+    "3️⃣ Drei statt zwei Antworten: Wo es sicher möglich ist, erzeugt die App eine dritte falsche Schreibweise (nach typischen Fehlermustern wie „spiehlen“, „Zuker“ oder „hund“). Damit sinkt die Ratechance von 50 % auf 33 % – genaues Hinschauen lohnt sich wieder!",
+  ]},
   {v:"1.45.0", datum:"14.07.2026", punkte:[
     "👀 Mitlese-Markierung: Beim Vorlesen leuchtet jetzt das gerade gesprochene Wort im Text gelb auf – so kannst du mit den Augen mitlesen, während du zuhörst!",
     "🗣️ Bessere Stimme: Die App wählt automatisch die natürlichste deutsche Stimme deines Geräts. Im Elternbereich (neuer Tab „🔊 Vorlesen“) kann eine Stimme fest gewählt und probegehört werden.",
@@ -3443,20 +3447,13 @@ function doppelUeben(c){
   const W=doppelWoerter(); runGet("doppel", W.length);
   if(doppelIdx>=W.length){ return renderRunResult(c, "doppel", ()=>{ doppelIdx=0; doppelUeben(c); }); }
   const w=W[doppelIdx];
-  // richtige Antwort abwechselnd links/rechts, aber deterministisch
-  const richtigLinks = doppelIdx%2===0;
-  const links = richtigLinks ? w.richtig : w.falsch;
-  const rechts = richtigLinks ? w.falsch : w.richtig;
   c.innerHTML=`
     <div class="card">
       <h2>🔡 Doppelte Mitlaute</h2>
       <p class="muted">Wort ${doppelIdx+1} von ${W.length}</p>
       <div class="lvl-row">${fieldBadge("doppel")}</div>
       <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
-      <div style="display:flex; gap:10px;">
-        <button class="btn-secondary" id="linksBtn" style="flex:1; font-size:22px;">${links}</button>
-        <button class="btn-secondary" id="rechtsBtn" style="flex:1; font-size:22px;">${rechts}</button>
-      </div>
+      <div style="display:flex; gap:10px; flex-wrap:wrap;">${spielOptionenHTML(w, "do-opt", "font-size:20px;")}</div>
       <div id="dofb"></div>
       <button class="btn-primary mt" id="nextBtn">Nächstes Wort</button>
     </div>`;
@@ -3472,8 +3469,7 @@ function doppelUeben(c){
     const fb=c.querySelector("#dofb"); fb.innerHTML=""; fb.appendChild(d);
     focusFeedback(d, correct?null:c.querySelector("#nextBtn"));
   };
-  c.querySelector("#linksBtn").onclick=()=>check(links);
-  c.querySelector("#rechtsBtn").onclick=()=>check(rechts);
+  c.querySelectorAll(".do-opt").forEach(b=>b.onclick=()=>check(b.dataset.w));
   c.querySelector("#nextBtn").onclick=()=>{
     if(!doAnswered){ needAnswer(c.querySelector("#dofb")); return; }
     doppelIdx=doppelIdx+1; doppelUeben(c); window.scrollTo(0,0); };
@@ -4265,18 +4261,12 @@ function renderSpellPaged(host, K, key){
   runGet(key, S.length);
   if(gwsIdx>=S.length){ return renderRunResult(host, key, ()=>{ gwsIdx=0; goSection("ueben"); }); }
   const i=gwsIdx, w=S[i];
-  const richtigLinks = i%2===0;
-  const a = richtigLinks?w.richtig:w.falsch;
-  const b = richtigLinks?w.falsch:w.richtig;
   let answered=false;
   host.innerHTML=`
     <p class="muted">Wort ${i+1} von ${S.length}${ch.n>1?` · Paket ${ch.ci+1} von ${ch.n}`:``}</p>
     <button type="button" class="speak-btn" id="gwsSpeak">🔊 Vorlesen</button>
     <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
-    <div style="display:flex; gap:10px;">
-      <button class="btn-secondary gws-opt" data-w="${a}" style="flex:1; font-size:22px;">${a}</button>
-      <button class="btn-secondary gws-opt" data-w="${b}" style="flex:1; font-size:22px;">${b}</button>
-    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">${spielOptionenHTML(w, "gws-opt", "font-size:20px;")}</div>
     <div id="gwsfb"></div>
     <button class="btn-primary btn-small mt" id="gwsNext" style="width:100%;">Weiter</button>`;
   const gsp=host.querySelector("#gwsSpeak");
@@ -4370,6 +4360,40 @@ function spielFrage(schwer){
   const pool = schwer ? (e.schwer.length?e.schwer:e.leicht) : (e.leicht.length?e.leicht:e.schwer);
   const w=pool[Math.floor(Math.random()*pool.length)];
   return {w:w, tipp:k.tipp, schwer:!!schwer};
+}
+/* Gegen das Raten: Für „Welches Wort ist richtig?"-Fragen wird – wenn
+   sicher möglich – eine DRITTE falsche Schreibweise erzeugt (typische
+   Fehlermuster der Grundschule) und die Reihenfolge ZUFÄLLIG gemischt.
+   Die Position verrät also nichts mehr, und mit 3 Antworten sinkt die
+   Ratechance von 50 % auf 33 %. Muster, deren Ergebnis ein echtes Wort
+   sein könnte (z. B. Ofen→offen, viel→fiel), sind bewusst ausgelassen. */
+function drittesFalsch(w){
+  const r=w.richtig, f=w.falsch, kand=[];
+  const push=v=>{ if(v && v!==r && v!==f && !kand.includes(v)) kand.push(v); };
+  if(r.includes("ie")){ push(r.replace("ie","i")); push(r.replace("ie","ieh")); }   // spielen → spilen/spiehlen
+  const dm=r.match(/(mm|nn|ll|tt|pp|ff|rr|dd|bb|gg)/); if(dm) push(r.replace(dm[1],dm[1][0])); // kommen → komen
+  push(r.replace(/([aeiouäöü])h(?=[lmnrt])/,"$1"));   // Dehnungs-h weg: fahren → faren
+  push(r.replace("ck","k"));                          // Zucker → Zuker
+  push(r.replace("tz","z"));                          // Katze → Kaze
+  push(r.replace("ß","ss"));                          // Straße → Strasse
+  push(r.replace("ss","ß"));                          // Wasser → Waßer
+  push(r.replace(/([^aeiouäöü])i([^aeiouäöü])/,"$1ie$2")); // Tiger → Tieger
+  // Kleinschreibung eines Nomens (nicht bei -en: „Essen/essen" wären beide echt)
+  const art=r.match(/^((?:der|die|das) )([A-ZÄÖÜ])(.*)$/);
+  if(art) push(art[1]+art[2].toLowerCase()+art[3]);
+  else if(/^[A-ZÄÖÜ]/.test(r) && !/en$/.test(r)) push(r.charAt(0).toLowerCase()+r.slice(1));
+  return kand.length?kand[0]:null;
+}
+// Antwort-Knöpfe: richtig + falsch (+ evtl. dritte Variante), zufällig gemischt
+function spielOptionen(w){
+  const opts=[w.richtig, w.falsch];
+  const d=drittesFalsch(w); if(d) opts.push(d);
+  for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=opts[i]; opts[i]=opts[j]; opts[j]=t; }
+  return opts;
+}
+function spielOptionenHTML(w, klasse, stil){
+  return spielOptionen(w).map(o=>
+    `<button class="btn-secondary ${klasse}" data-w="${o}" style="flex:1 1 30%; min-width:0; ${stil||"font-size:18px;"}">${o}</button>`).join("");
 }
 // Naturgetreue Fisch-Illustrationen (Körperform + Färbung der echten Arten)
 function spielFischBild(art, w){
@@ -4650,15 +4674,10 @@ function spielFragBox(){
   const bild = foto
     ? `<img src="${foto}" alt="${f.name}" style="max-width:170px; width:70%; border-radius:10px; border:2px solid #cfe0f5;">`
     : spielFischBild(f.zeichnung, 120);
-  const richtigLinks=Math.random()<0.5;
-  const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
     <div style="text-align:center;">${bild}</div>
     <div class="hint">${kopf}<br><span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn-secondary spiel-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
-      <button class="btn-secondary spiel-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
-    </div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "spiel-opt")}</div>
     <div id="spielfb"></div>`;
   box.querySelectorAll(".spiel-opt").forEach(btn=>btn.onclick=()=>{
     if(spiel.busy || spiel.aktiv!==i) return;
@@ -4931,17 +4950,12 @@ function tennisFragBox(){
   const mentalOben = entscheidung ? mutMini(tennisMental("tiebreak"), tennis.balls)
     : tennis.balls===0 ? tennisMentalKompakt("aufschlag")
     : tennis.balls===1 ? tennisMentalKompakt("return") : "";
-  const richtigLinks=Math.random()<0.5;
-  const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
     ${entscheidung?`<div class="feedback tip">⚡ <b>40:40 – Entscheidungsball!</b> Der nächste Punkt holt das Spiel.</div>`:""}
     ${mentalOben}
     <div class="hint">${kopf} gegen ${tennis.gegner.emoji} <b>${tennis.gegner.name}</b><br>
       <span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn-secondary tennis-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
-      <button class="btn-secondary tennis-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
-    </div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "tennis-opt")}</div>
     <div id="tennisfb"></div>`;
   box.querySelectorAll(".tennis-opt").forEach(btn=>btn.onclick=()=>{
     if(!tennis || tennis.phase!=="ball" || btn.disabled) return;
@@ -5160,16 +5174,11 @@ function fbFragBox(){
     : fussball.balls===0 ? fbMentalKompakt("torschuss")
     : fussball.balls===1 ? fbMentalKompakt("abwehr")
     : fussball.balls===2 ? fbMentalKompakt("torwart") : "";
-  const richtigLinks=Math.random()<0.5;
-  const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
     ${mentalOben}
     <div class="hint">${kopf} gegen ${fussball.gegner.emoji} <b>${fussball.gegner.name}</b><br>
       <span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn-secondary fb-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
-      <button class="btn-secondary fb-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
-    </div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "fb-opt")}</div>
     <div id="fbfb"></div>`;
   box.querySelectorAll(".fb-opt").forEach(btn=>btn.onclick=()=>{
     if(!fussball || btn.disabled) return;
@@ -5815,15 +5824,10 @@ function bwFrage(){
   const schwer=(st.zaehler%3)===2;
   const q=spielFrage(schwer);
   bw.frage=q;
-  const richtigLinks=Math.random()<0.5;
-  const a=richtigLinks?q.w.richtig:q.w.falsch, b2=richtigLinks?q.w.falsch:q.w.richtig;
   box.innerHTML=`
     <div class="hint">${schwer?"🔥 <b>Schwere Frage</b> – es winkt ein seltener Block!":"🌱 Leichte Frage"}<br>
       Welches Wort ist <b>richtig</b> geschrieben?</div>
-    <div style="display:flex; gap:8px; margin-top:8px;">
-      <button class="btn-secondary bw-opt" data-w="${a}" style="flex:1; font-size:18px;">${a}</button>
-      <button class="btn-secondary bw-opt" data-w="${b2}" style="flex:1; font-size:18px;">${b2}</button>
-    </div>
+    <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "bw-opt")}</div>
     <div id="bwfb"></div>`;
   box.querySelectorAll(".bw-opt").forEach(btn=>btn.onclick=()=>{
     if(btn.disabled) return;
