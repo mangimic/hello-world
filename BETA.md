@@ -9,13 +9,14 @@ Auf der Startseite gibt es **„💬 Beta-Feedback“** (für Eltern):
 - 2-Minuten-Formular: Klasse des Kindes, Nutzungshäufigkeit,
   **4 Sterne-Fragen** (Bedienung, Spaß, Lerneffekt, Elternbereich)
   und 3 Freitexte (gefällt / stört / Fehler).
-- Versand per **WhatsApp-Knopf** (öffnet WhatsApp mit dem fertigen
-  Bericht – Ziel-Nummer in `index.html` als `FEEDBACK_WHATSAPP`
-  hinterlegen, internationales Format ohne „+“, z. B.
-  `4917612345678`; solange sie leer ist, wählt der Tester den
-  Empfänger selbst), per **E-Mail-Knopf** (Adresse in
-  `FEEDBACK_MAIL`) oder **Kopieren**.
-- WhatsApp-Nachrichten für die Auswertung einfach markieren,
+- Versand über **einen Knopf** („📤 Feedback senden“) mit gestaffelten
+  Sicherheitsnetzen: natives **Teilen-Menü** des Geräts (Nutzer wählt
+  WhatsApp, E-Mail, Signal …) → sonst **Zwischenablage** → zusätzlich
+  steht der Bericht immer **sichtbar in einem Textfeld** (inkl.
+  Ziel-Adresse aus `FEEDBACK_MAIL`). Die früheren wa.me-/mailto-Wege
+  scheiterten je nach Gerät stumm (Android-PWA, Popup-Blocker, kein
+  Mail-Programm) und wurden entfernt.
+- Eingehende Nachrichten (egal über welchen Weg) einfach markieren,
   kopieren und wie Mails als Textdatei in `feedback/` legen –
   der Datenblock bleibt dabei erhalten.
 - Ohne Server, keine persönlichen Daten. Die **anonyme

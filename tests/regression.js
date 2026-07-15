@@ -163,18 +163,38 @@ function section(t) { console.log("\n== " + t + " =="); }
     const m = feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/);
     const d = JSON.parse(m[1]);
     return d.v === 1 && d.sterne.spass === 4 && d.klasseKind === "3" && d.app.version === APP_VERSION; }));
-  check("WhatsApp-Knopf zuerst + Click-to-Chat-Link mit Bericht", await page.evaluate(() => {
-    const wa = document.getElementById("fbWhatsApp");
-    const url = feedbackWhatsAppURL();
-    return !!wa && !!document.getElementById("fbMail") && !!document.getElementById("fbKopie")
-      && wa.compareDocumentPosition(document.getElementById("fbMail")) & Node.DOCUMENT_POSITION_FOLLOWING
-      && url.startsWith("https://wa.me/") && url.includes(encodeURIComponent("##LP-FEEDBACK##")); }));
-  check("WhatsApp ist echter Link (target=_blank), Klick befüllt die URL", await page.evaluate(() => {
-    const wa = document.getElementById("fbWhatsApp");
-    if (wa.tagName !== "A" || wa.target !== "_blank" || wa.rel !== "noopener") return false;
-    wa.onclick.call(wa);
-    return wa.href.startsWith("https://wa.me/") && wa.href.includes(encodeURIComponent("##LP-FEEDBACK##"));
-  }));
+  check("Nur EIN Sende-Knopf (wa.me/mailto entfernt)", await page.evaluate(() =>
+    !!document.getElementById("fbSenden")
+    && !document.getElementById("fbWhatsApp") && !document.getElementById("fbMail") && !document.getElementById("fbKopie")
+    && !document.documentElement.outerHTML.includes("wa.me")));
+  // Netz 2+3 (Desktop/Headless ohne Teilen-Menü): kopieren + sichtbarer Bericht
+  check("Ohne Teilen-Menü: Bericht kopiert + sichtbar im Textfeld", await page.evaluate(async () => {
+    const kopiert = [];
+    navigator.clipboard.writeText = t => { kopiert.push(t); return Promise.resolve(); };
+    document.getElementById("fbSenden").click();
+    await new Promise(r => setTimeout(r, 150));
+    const box = document.getElementById("fbManuell");
+    return !navigator.share
+      && kopiert.length === 1 && kopiert[0].includes("##LP-FEEDBACK##")
+      && box.style.display === "block" && box.querySelector("textarea").value === kopiert[0]
+      && document.getElementById("fbOk").textContent.includes("kopiert"); }));
+  // Netz 1 (Android/iOS simuliert): natives Teilen-Menü bekommt den Bericht
+  check("Mit Teilen-Menü (Android simuliert): share erhält den Bericht", await page.evaluate(async () => {
+    const geteilt = [];
+    navigator.share = d => { geteilt.push(d); return Promise.resolve(); };
+    document.getElementById("fbSenden").click();
+    await new Promise(r => setTimeout(r, 150));
+    delete navigator.share;
+    return geteilt.length === 1 && geteilt[0].text.includes("##LP-FEEDBACK##")
+      && geteilt[0].title.includes("Lernprofi")
+      && document.getElementById("fbOk").textContent.includes("unterwegs"); }));
+  // Teilen-Menü geschlossen (AbortError): freundlich, kein Fehler
+  check("Teilen-Menü abgebrochen: freundlicher Hinweis statt Fehler", await page.evaluate(async () => {
+    navigator.share = () => Promise.reject(Object.assign(new Error("abbruch"), { name: "AbortError" }));
+    document.getElementById("fbSenden").click();
+    await new Promise(r => setTimeout(r, 150));
+    delete navigator.share;
+    return document.getElementById("fbOk").textContent.includes("Kein Problem"); }));
   check("Fehler-Bereiche als Chips: antippen landet in Bericht + JSON", await page.evaluate(() => {
     const chips = document.querySelectorAll("#fbBereiche .chip");
     if (chips.length !== FB_BEREICHE.length) return false;
