@@ -9,13 +9,16 @@ Auf der Startseite gibt es **„💬 Beta-Feedback“** (für Eltern):
 - 2-Minuten-Formular: Klasse des Kindes, Nutzungshäufigkeit,
   **4 Sterne-Fragen** (Bedienung, Spaß, Lerneffekt, Elternbereich)
   und 3 Freitexte (gefällt / stört / Fehler).
-- Versand über **einen Knopf** („📤 Feedback senden“) mit gestaffelten
-  Sicherheitsnetzen: natives **Teilen-Menü** des Geräts (Nutzer wählt
-  WhatsApp, E-Mail, Signal …) → sonst **Zwischenablage** → zusätzlich
-  steht der Bericht immer **sichtbar in einem Textfeld** (inkl.
-  Ziel-Adresse aus `FEEDBACK_MAIL`). Die früheren wa.me-/mailto-Wege
-  scheiterten je nach Gerät stumm (Android-PWA, Popup-Blocker, kein
-  Mail-Programm) und wurden entfernt.
+- Versand über **zwei Knöpfe**:
+  **💬 WhatsApp** öffnet plattformgerecht die App (Android: direkte
+  intent://-URL statt der Web-Zwischenseite, an der es früher
+  scheiterte; iOS: whatsapp://-Schema; Desktop: WhatsApp Web) –
+  der Bericht wird davor immer kopiert und sichtbar angezeigt,
+  öffnet sich nichts, sagt es die App nach 2,5 s.
+  **📤 Teilen oder Kopieren** nutzt das native Teilen-Menü des Geräts
+  (E-Mail, Signal …) bzw. die Zwischenablage; der Bericht steht
+  zusätzlich immer sichtbar in einem Textfeld (Ziel-Adresse aus
+  `FEEDBACK_MAIL`).
 - Eingehende Nachrichten (egal über welchen Weg) einfach markieren,
   kopieren und wie Mails als Textdatei in `feedback/` legen –
   der Datenblock bleibt dabei erhalten.
