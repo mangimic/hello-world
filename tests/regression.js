@@ -1065,8 +1065,9 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Profil bleibt nach Neuladen erhalten", await page.evaluate(() =>
     store.profil && store.profil.r === 2 && store.progress["subj"].unlocked === 3));
   // Historie der Schatzsuchen
-  check("Historie: erste Schatzsuche gespeichert", await page.evaluate(() =>
-    store.profilHistorie.length === 1 && store.profilHistorie[0].r === 2 && !!store.profilHistorie[0].datum));
+  check("Historie: erste Schatzsuche mit Datum + Uhrzeit gespeichert", await page.evaluate(() =>
+    store.profilHistorie.length === 1 && store.profilHistorie[0].r === 2
+    && /\d{2}\.\d{2}\.\d{4}, \d{2}:\d{2} Uhr/.test(store.profilHistorie[0].datum)));
   // Zweite Schatzsuche: alles falsch -> 🐣, aber Stufen sinken NICHT
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
