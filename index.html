@@ -461,8 +461,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.57.0";
+const APP_VERSION = "1.58.0";
 const RELEASE_NOTES = [
+  {v:"1.58.0", datum:"15.07.2026", punkte:[
+    "💬 Der WhatsApp-Knopf ist zurück – und öffnet auf Android jetzt die WhatsApp-App DIREKT (ohne die Web-Zwischenseite, an der es vorher scheiterte). iPhone und PC haben ihre eigenen Wege. Zur Sicherheit ist der Bericht beim Tippen immer schon kopiert und sichtbar – falls WhatsApp fehlt, sagt es die App nach kurzer Zeit ehrlich.",
+    "📤 „Teilen oder Kopieren“ bleibt als zweiter Weg für alle anderen Apps (E-Mail, Signal …).",
+  ]},
   {v:"1.57.0", datum:"15.07.2026", punkte:[
     "📤 Feedback senden jetzt mit EINEM Knopf, der überall funktioniert: Auf dem Handy öffnet sich das Teilen-Menü deines Geräts (du wählst WhatsApp, E-Mail oder etwas anderes). Wo es kein Teilen-Menü gibt, wird der Bericht automatisch kopiert – und er steht immer sichtbar zum Selbst-Kopieren bereit. Die alten WhatsApp-/E-Mail-Knöpfe, die auf manchen Geräten stumm scheiterten, sind entfernt.",
   ]},
@@ -6324,7 +6328,8 @@ function openFeedback(){
         <input type="checkbox" id="fbDaten" checked style="margin-top:3px;">
         <span>Anonyme Nutzungs-Zusammenfassung anhängen (App-Version, geübte Runden – keine Namen, keine Texte des Kindes)</span>
       </label>
-      <button class="btn-primary" id="fbSenden" style="width:100%;">📤 Feedback senden</button>
+      <button class="btn-primary" id="fbWhatsApp" style="width:100%; background:#25d366;">💬 Per WhatsApp senden</button>
+      <button class="btn-secondary btn-small mt" id="fbSenden" style="width:100%;">📤 Teilen oder Kopieren</button>
       <div id="fbOk"></div>
       <div id="fbManuell" style="display:none; margin-top:10px;">
         <p class="muted" style="margin:0 0 4px; font-size:13.5px;">Dein Bericht (zum Nachlesen oder selbst Kopieren):</p>
@@ -6350,18 +6355,55 @@ function openFeedback(){
     if(i>=0) fbForm.bereiche.splice(i,1); else fbForm.bereiche.push(id);
     b.classList.toggle("on", i<0);
   });
+  c.querySelector("#fbWhatsApp").onclick=()=>{ einsammeln(); feedbackWhatsApp(); };
   c.querySelector("#fbSenden").onclick=()=>{ einsammeln(); feedbackSenden(); };
   renderNav(); window.scrollTo(0,0);
 }
-/* EIN Sende-Weg mit gestaffelten Sicherheitsnetzen (v1.57):
+/* WhatsApp-Weg je Plattform (v1.58) – der alte Einheits-Link scheiterte
+   auf Android-PWAs an der Web-Zwischenseite:
+   - Android: intent://-URL öffnet die WhatsApp-APP direkt (Chrome),
+     mit Web-Fallback, falls die App fehlt
+   - iOS: whatsapp://-App-Schema
+   - Desktop: Web-Chat (wa.me) im neuen Tab
+   Sicherheitsnetz: Der Bericht wird VOR dem Öffnen kopiert und sichtbar
+   angezeigt – öffnet sich nichts, sagt das die Meldung nach 2,5 s und
+   Einfügen von Hand bleibt ein Fingertipp. */
+function feedbackWhatsAppURL(ua){
+  ua=ua||navigator.userAgent;
+  const t=encodeURIComponent(feedbackText());
+  if(/android/i.test(ua))
+    return "intent://send?text="+t+"#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url="
+      +encodeURIComponent("https://wa.me/?text=")+t+";end";
+  if(/iphone|ipad|ipod/i.test(ua)) return "whatsapp://send?text="+t;
+  return "https://wa.me/?text="+t;
+}
+async function feedbackWhatsApp(){
+  const text=feedbackText();
+  feedbackManuellZeigen(text);
+  try{ if(navigator.clipboard && navigator.clipboard.writeText) await navigator.clipboard.writeText(text); }catch(e){}
+  const url=feedbackWhatsAppURL();
+  if(/android|iphone|ipad|ipod/i.test(navigator.userAgent)){
+    location.href=url; // App-Schema/Intent: öffnet die App, Seite bleibt bestehen
+  } else {
+    window.open(url,"_blank"); // Desktop: WhatsApp Web im neuen Tab
+  }
+  $("fbOk").innerHTML=`<div class="feedback ok">💬 WhatsApp öffnet sich mit deinem Bericht.
+    Er ist außerdem schon <b>kopiert</b> und steht unten – Einfügen geht also immer. Danke!</div>`;
+  setTimeout(()=>{
+    // Seite nach 2,5 s noch sichtbar? Dann hat sich vermutlich nichts geöffnet.
+    if(document.visibilityState==="visible" && $("fbOk") && $("fbOk").textContent.includes("öffnet sich")){
+      $("fbOk").innerHTML=`<div class="feedback tip">WhatsApp hat sich nicht geöffnet? Kein Problem:
+        Dein Bericht ist <b>kopiert</b> – öffne WhatsApp selbst und füge ihn ein.
+        Oder nutze 📤 Teilen oder Kopieren.</div>`;
+    }
+  }, 2500);
+}
+/* Teilen/Kopieren-Weg mit gestaffelten Sicherheitsnetzen:
    1) navigator.share -> natives Teilen-Menü (Handy: WhatsApp, E-Mail,
-      Signal ... wählt der Nutzer; zuverlässigster Weg auf Android/iOS).
+      Signal ... wählt der Nutzer).
    2) Sonst: in die Zwischenablage kopieren.
    3) IMMER: Bericht sichtbar in einem Textfeld anzeigen (markieren +
-      kopieren geht damit selbst, wenn 1 und 2 scheitern).
-   Die früheren WhatsApp-Link- und mailto-Wege wurden entfernt - beide
-   scheiterten je nach Gerät stumm (Android-PWA, Popup-Blocker,
-   fehlendes Mail-Programm). */
+      kopieren geht damit selbst, wenn 1 und 2 scheitern). */
 function feedbackManuellZeigen(text){
   const box=$("fbManuell"); if(!box) return;
   box.style.display="block";

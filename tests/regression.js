@@ -163,10 +163,29 @@ function section(t) { console.log("\n== " + t + " =="); }
     const m = feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/);
     const d = JSON.parse(m[1]);
     return d.v === 1 && d.sterne.spass === 4 && d.klasseKind === "3" && d.app.version === APP_VERSION; }));
-  check("Nur EIN Sende-Knopf (wa.me/mailto entfernt)", await page.evaluate(() =>
-    !!document.getElementById("fbSenden")
-    && !document.getElementById("fbWhatsApp") && !document.getElementById("fbMail") && !document.getElementById("fbKopie")
-    && !document.documentElement.outerHTML.includes("wa.me")));
+  check("Zwei Wege: WhatsApp (primär) + Teilen/Kopieren", await page.evaluate(() =>
+    !!document.getElementById("fbWhatsApp") && !!document.getElementById("fbSenden")
+    && !document.getElementById("fbMail") && !document.getElementById("fbKopie")
+    && (document.getElementById("fbWhatsApp").compareDocumentPosition(document.getElementById("fbSenden")) & Node.DOCUMENT_POSITION_FOLLOWING) > 0));
+  check("WhatsApp-URL je Plattform: Android-Intent / iOS-Schema / Web", await page.evaluate(() => {
+    const android = feedbackWhatsAppURL("Mozilla/5.0 (Linux; Android 14; Pixel 8) Chrome/126 Mobile");
+    const ios = feedbackWhatsAppURL("Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) Safari");
+    const web = feedbackWhatsAppURL("Mozilla/5.0 (Windows NT 10.0; Win64) Chrome/126");
+    const block = encodeURIComponent("##LP-FEEDBACK##");
+    return android.startsWith("intent://send?text=") && android.includes("package=com.whatsapp")
+      && android.includes("S.browser_fallback_url=") && android.includes(block)
+      && ios.startsWith("whatsapp://send?text=") && ios.includes(block)
+      && web.startsWith("https://wa.me/?text=") && web.includes(block); }));
+  check("WhatsApp-Klick (Desktop): kopiert + öffnet Web-Chat + Bericht sichtbar", await page.evaluate(async () => {
+    const kopiert = [], geoeffnet = [];
+    navigator.clipboard.writeText = t => { kopiert.push(t); return Promise.resolve(); };
+    window.open = u => { geoeffnet.push(u); return {}; };
+    document.getElementById("fbWhatsApp").click();
+    await new Promise(r => setTimeout(r, 150));
+    return kopiert.length === 1 && kopiert[0].includes("##LP-FEEDBACK##")
+      && geoeffnet.length === 1 && geoeffnet[0].startsWith("https://wa.me/")
+      && document.getElementById("fbManuell").style.display === "block"
+      && document.getElementById("fbOk").textContent.includes("kopiert"); }));
   // Netz 2+3 (Desktop/Headless ohne Teilen-Menü): kopieren + sichtbarer Bericht
   check("Ohne Teilen-Menü: Bericht kopiert + sichtbar im Textfeld", await page.evaluate(async () => {
     const kopiert = [];
