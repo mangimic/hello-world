@@ -72,6 +72,36 @@ bis diese Produktrichtung geklärt ist – die technische Vorbereitung
 (`.nojekyll`, relative Pfade) bleibt aber bestehen und kann jederzeit
 genutzt werden.
 
+## 🧭 Nächster großer Schritt: Selbst-Einstufung & adaptives Profil (ohne KI!)
+Status: **Konzept steht, Umsetzung entschieden sinnvoll vor breiter Beta.**
+Kern-Problem der Testphase: Das Niveau fremder Kinder ist unbekannt –
+die App könnte über- oder unterfordern. Lösung komplett offline:
+
+1. **Spielerischer Einwertungstest** beim ersten Start (~3–4 Min,
+   „Schatzsuche mit Coach Leo"): 10–12 Fragen im Treppen-Prinzip
+   (richtig → schwerer, falsch → leichter). Kalibriert über die
+   Leicht/Mittel/Schwer-Einteilung der 246 GWS-Wörter (siehe
+   Niveau-Assessment vom 15.07.2026: 94 L / 88 M / 64 S; heutige
+   2er-Einteilung folgt der Klassenstufe, nicht der Schwierigkeit).
+2. **Kindgerechtes Profil ohne Noten**: Ergebnis = Start-Stufen je
+   Bereich („🐣 Entdecker / 🦊 Kenner / 🦁 Profi"), technisch über das
+   VORHANDENE Stufen-System (store.stufen); Eltern-Override bleibt.
+3. **Anpassung mit der Zeit**: Hochstufen existiert (ab ~60 % richtig).
+   Neu: sanftes Runterstufen („Aufwärmrunde") bei wiederholt <40 %
+   und eine Fehlerkartei (falsche Wörter kommen öfter wieder –
+   leichtes Spaced Repetition, lokal).
+4. **Beta-Nutzen**: Nutzungs-Zusammenfassung im Feedback enthält
+   Start- und aktuelles Niveau → Rückmeldungen sind einordenbar.
+
+Voraussetzung/Schritt 0: 3-Stufen-Wortdaten aus dem Niveau-Assessment
+in die App übernehmen (Spiele: leicht=L, jede 3.=M, Belohnung=S;
+Trainer: Stufe 1=L, 2=L+M, 3=alle). Entschärft auch den Befund
+„leichte Frage fällt auf Schwer-Pool zurück" (Stilles h: 0 leichte).
+
+Die große KI-Onboarding-Idee (unten) bleibt bestehen, ist damit aber
+nicht mehr kritischer Pfad: Messen schlägt Beschreiben, und es bricht
+das Offline-/Datenschutz-Versprechen nicht.
+
 ## Zurückgestellt (Backlog)
 - 🤖📚 **Eigene Themenfelder im Elternbereich (KI-gestützt)**: Eltern können
   im Elternbereich neue Themen anlegen (z. B. „Weltraum", „Pferde",
