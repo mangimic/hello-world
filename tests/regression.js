@@ -971,6 +971,25 @@ function section(t) { console.log("\n== " + t + " =="); }
     return st.welt[40] === "" && st.welt[9 * 16 + 3] === "erde"
       && st.verdient === v && !!st.sicherung; }, bwVorher));
 
+  // ---------- 7fx) Kein fest eingebauter Name mehr ----------
+  section("Neutraler Spielername");
+  await fresh(); await setLevel(3);
+  check("Kein „Felix“ mehr in App-Quelltext und Spieldaten", await page.evaluate(() =>
+    !document.documentElement.outerHTML.includes("Felix")
+    && !JSON.stringify(SPIEL_DATEN).includes("Felix")
+    && !JSON.stringify(RELEASE_NOTES).includes("Felix")));
+  check("Spielername: eingegebener Name, sonst „Du“ (XML-sicher, max 10)", await page.evaluate(() => {
+    store.name = ""; const a = spielerName();
+    store.name = "Mia"; const b = spielerName();
+    store.name = '<b>"Superlangername"</b>'; const c = spielerName();
+    store.name = ""; save();
+    return a === "Du" && b === "Mia" && !/[<>&"']/.test(c) && c.length <= 10; }));
+  await page.evaluate(() => { store.name = "Mia"; store.muenzenAktiv = false; save(); });
+  await openMod("Tennis-Match", null);
+  await tapDialog("#tennisHost");
+  await page.locator("#tennisStart").click(); await page.waitForTimeout(150);
+  check("Tennisfeld zeigt den Namen des Kindes", (await page.locator("#tennisFeld").textContent()).includes("Mia"));
+
   // ---------- 7g) Einwertung: Schatzsuche mit Leo ----------
   section("Einwertung (Schatzsuche mit Leo)");
   await fresh(); await setLevel(3);
@@ -989,8 +1008,15 @@ function section(t) { console.log("\n== " + t + " =="); }
     return true; }));
   check("Startseite lädt zur Schatzsuche ein", (await page.locator("#ewLos").count()) === 1);
   await page.locator("#ewSpaeter").click(); await page.waitForTimeout(100);
-  check("„Später“: Einladung weg, Merker gespeichert", await page.evaluate(() =>
-    !document.getElementById("ewLos") && store.profilSkip === true));
+  check("„Später“ blendet nur für diese Sitzung aus", !(await page.locator("#ewLos").count()));
+  await page.reload(); await page.waitForTimeout(300);
+  check("Nach Neustart: Einladung wieder da (bis Test abgeschlossen)", (await page.locator("#ewLos").count()) === 1);
+  check("Klassen-Start: Klasse 3 wärmt leicht auf, Klasse 4 startet mittel", await page.evaluate(() => {
+    const alt = store.level;
+    store.level = 3; const k3 = ewStartStufe();
+    store.level = 4; const k4 = ewStartStufe();
+    store.level = alt; save();
+    return k3 === 0 && k4 === 1; }));
   // Start über den Elternbereich (Stufen-Tab)
   await page.locator("#adminLink").click(); await page.waitForTimeout(120);
   check("Elternbereich: Einwertungs-Karte mit Start-Knopf", (await page.locator("#ewNeu").count()) === 1
@@ -1008,7 +1034,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     await page.locator(`.ew-opt[data-w="${richtig}"]`).click();
     await page.waitForTimeout(260);
   }
-  check("Treppen-Prinzip: startet mittel, steigt bis schwer", ewStufen[0] === 1 && ewStufen.includes(2)
+  check("Treppen-Prinzip: Klasse 3 startet leicht, steigt bis schwer", ewStufen[0] === 0 && ewStufen.includes(2)
     && ewStufen.every((s, i) => i === 0 || s >= ewStufen[i - 1]));
   // 3 Grammatik-Fragen, immer richtig
   for (let i = 0; i < 3; i++) {

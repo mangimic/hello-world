@@ -29,7 +29,7 @@ Sie sind in der Git-Historie erhalten und können später zurückgeholt werden.
 ## 🌍 Große Idee: KI-Onboarding & individuelle Lernpfade (öffentliche Version)
 Status: **Konzept / noch nicht entschieden.** Bevor die App öffentlich
 (z. B. per GitHub Pages) bereitgestellt wird, wird überlegt, sie vom
-Einzelkind-Prototyp (aktuell auf Felix, Klasse 3, zugeschnitten) zu
+Einzelkind-Prototyp (aktuell auf ein einzelnes Kind, Klasse 3, zugeschnitten) zu
 einem Produkt für **Klasse 1–4** weiterzuentwickeln:
 
 - **KI-gestütztes Onboarding für Eltern**: Vor dem ersten Nutzen

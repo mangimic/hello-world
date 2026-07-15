@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kommentar": "Schach für Felix (9): Lektionen knüpfen an die Spanische Eröffnung an (kennt er schon) und bauen Taktik-Wissen auf (Italienisch, Rochade, Gabel, Fesselung, Schäfermatt-Abwehr, Grundreihen-Matt). Züge im Format 'e2e4' (werden von der Regel-Engine geprüft). FEN-Stellungen ohne Zugzähler.",
+  "kommentar": "Schach für Grundschulkinder: Lektionen knüpfen an die Spanische Eröffnung an und bauen Taktik-Wissen auf (Italienisch, Rochade, Gabel, Fesselung, Schäfermatt-Abwehr, Grundreihen-Matt). Züge im Format 'e2e4' (werden von der Regel-Engine geprüft). FEN-Stellungen ohne Zugzähler.",
   "lektionen": [
     {
       "id": "spanisch",

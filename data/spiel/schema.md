@@ -71,7 +71,7 @@ Grundwortschatz.
 | `lektionen` | Liste | Schach-Schule: `id`, `titel`, `emoji`, `intro`, optional `fen` (Start-Stellung) und `marks` (markierte Felder), `schritte` = Züge in Langnotation (`e2e4`) mit Erklärtext – jeder Zug wird von der Regel-Engine geprüft |
 | `aufgaben` | Liste | Taktik-Rätsel: `fen`-Stellung, `frage`, `ziel` (anzutippendes Feld wie `b5`), `tipp`, `erfolg` |
 
-Die Lektionen knüpfen an Felix' Wissen an (Spanische Eröffnung) und
+Die Lektionen knüpfen an die Spanische Eröffnung an und
 bauen auf: Italienisch, goldene Eröffnungsregeln, Rochade, Gabel,
 Fesselung, Schäfermatt-Abwehr. Das freie Spielen nutzt die eingebaute
 Regel-Engine (Rochade, en passant, Umwandlung, Matt/Patt).

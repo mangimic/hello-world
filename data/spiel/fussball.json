@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kommentar": "Fußball-Match: Gegner, Fußball-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Gleiche Mentaltrainer-Regeln wie beim Tennis: kurze Sätze, Kinderbilder, Rituale, kein Gewinn-Druck. Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de, owayo.de. Extra: Torwart-Karte (id 'torwart') und Torwart-Wissen, weil Felix gerne im Tor steht.",
+  "kommentar": "Fußball-Match: Gegner, Fußball-Wissen (Fun Facts) und Mentaltrainer-Karten für Grundschulkinder (Klasse 3/4). Gleiche Mentaltrainer-Regeln wie beim Tennis: kurze Sätze, Kinderbilder, Rituale, kein Gewinn-Druck. Fun Facts recherchiert: fussballbasis.de, fussball-hub.de, spielregeln.de, owayo.de. Extra: Torwart-Karte (id 'torwart') und Torwart-Wissen für Kinder, die gerne im Tor stehen.",
   "gegner": [
     {
       "id": "torwand",
@@ -75,7 +75,7 @@
       "mission": "Schieß heute zehn Bälle richtig mutig aufs Tor. Mit vollem Schwung – auch wenn mal einer daneben geht.",
       "mut": "Trau dich – der Ball darf fliegen!",
       "punkt": "Kurz aufstampfen, tief ausatmen: Nächster Ball.",
-      "schluss": "Mit jedem mutigen Schuss wirst du stärker. Fehlschüsse? Die gehören zum Lernen dazu. Viel Spaß beim Training, Felix!"
+      "schluss": "Mit jedem mutigen Schuss wirst du stärker. Fehlschüsse? Die gehören zum Lernen dazu. Viel Spaß beim Training, Champion!"
     },
     {
       "id": "match",
@@ -195,7 +195,7 @@
       "mission": "Nenn drei Dinge, die dir heute gut gelungen sind. Sag sie laut oder denk sie dir.",
       "mut": "Ich habe gekämpft. Ich bin stolz auf mich.",
       "punkt": "Kurz aufstampfen, lächeln: Das war stark.",
-      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Felix!"
+      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Champion!"
     }
   ]
 }
