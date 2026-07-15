@@ -452,8 +452,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.48.0";
+const APP_VERSION = "1.49.0";
 const RELEASE_NOTES = [
+  {v:"1.49.0", datum:"14.07.2026", punkte:[
+    "💬 Feedback per WhatsApp: Der Feedback-Bogen hat jetzt einen grünen WhatsApp-Knopf – ein Tipp, und WhatsApp öffnet sich mit dem fertigen Bericht. Nur noch abschicken! (E-Mail und Kopieren gibt es weiterhin.)",
+  ]},
   {v:"1.48.0", datum:"14.07.2026", punkte:[
     "🐌 Vorlesen nochmal langsamer: „Langsam“ ist jetzt echtes Diktier-Tempo (0,5 – langsamer geht bei den meisten Stimmen nicht), auch „Normal“ und „Schnell“ wurden gesenkt. Die gelbe Mitlese-Markierung wandert dadurch gemütlich von Wort zu Wort.",
     "😮‍💨 Noch mehr Atempausen bei „Langsam“: Die Sprech-Stücke sind kürzer geworden – nach fast jedem Satzteil gibt es eine kleine Pause zum Mitlesen.",
@@ -5977,11 +5980,19 @@ function bwRender(c){
    BETA-FEEDBACK (für Eltern): strukturiertes Formular, das ohne
    Server auskommt. Erzeugt einen lesbaren Bericht + maschinenlesbaren
    Datenblock (##LP-FEEDBACK##…##ENDE##) und verschickt ihn per
-   E-Mail (mailto) oder Zwischenablage. Ausgewertet wird gesammelt
+   WhatsApp (wa.me Click-to-Chat), E-Mail (mailto) oder
+   Zwischenablage. Ausgewertet wird gesammelt
    mit tools/feedback-auswerten.js. Keine persönlichen Daten,
    Nutzungs-Zusammenfassung nur mit Häkchen (Opt-in).
    ============================================================ */
 const FEEDBACK_MAIL="michele.mangieri@gmail.com";
+/* WhatsApp-Nummer für Feedback (Click-to-Chat), internationales Format
+   OHNE "+" und ohne Leerzeichen, z. B. "4917612345678".
+   Leer = WhatsApp öffnet sich mit Kontakt-Auswahl statt Direkt-Chat. */
+const FEEDBACK_WHATSAPP="";
+function feedbackWhatsAppURL(){
+  return "https://wa.me/"+(FEEDBACK_WHATSAPP||"")+"?text="+encodeURIComponent(feedbackText());
+}
 const FB_FRAGEN=[
   {id:"bedienung", frage:"Wie leicht kommt dein Kind allein zurecht?"},
   {id:"spass",     frage:"Wie viel Spaß hat dein Kind?"},
@@ -6051,8 +6062,9 @@ function openFeedback(){
         <input type="checkbox" id="fbDaten" checked style="margin-top:3px;">
         <span>Anonyme Nutzungs-Zusammenfassung anhängen (App-Version, geübte Runden – keine Namen, keine Texte des Kindes)</span>
       </label>
-      <button class="btn-primary" id="fbMail" style="width:100%;">📧 Per E-Mail senden</button>
-      <button class="btn-secondary btn-small mt" id="fbKopie" style="width:100%;">📋 Bericht kopieren (z. B. für WhatsApp)</button>
+      <button class="btn-primary" id="fbWhatsApp" style="width:100%; background:#25d366;">💬 Per WhatsApp senden</button>
+      <button class="btn-secondary btn-small mt" id="fbMail" style="width:100%;">📧 Per E-Mail senden</button>
+      <button class="btn-secondary btn-small mt" id="fbKopie" style="width:100%;">📋 Bericht nur kopieren</button>
       <div id="fbOk"></div>
     </div>`;
   const c=$("moduleContent");
@@ -6068,6 +6080,12 @@ function openFeedback(){
   const einsammeln=()=>{
     fbForm.texte={ gut:$("fbGut").value.trim(), stoert:$("fbStoert").value.trim(), fehler:$("fbFehler").value.trim() };
     fbForm.mitDaten=$("fbDaten").checked;
+  };
+  c.querySelector("#fbWhatsApp").onclick=()=>{
+    einsammeln();
+    const url=feedbackWhatsAppURL();
+    const w=window.open(url,"_blank"); if(!w) location.href=url;
+    $("fbOk").innerHTML=`<div class="feedback ok">💬 WhatsApp öffnet sich mit dem fertigen Bericht – nur noch abschicken. Danke!</div>`;
   };
   c.querySelector("#fbMail").onclick=()=>{
     einsammeln();
