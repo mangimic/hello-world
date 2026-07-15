@@ -971,6 +971,70 @@ function section(t) { console.log("\n== " + t + " =="); }
     return st.welt[40] === "" && st.welt[9 * 16 + 3] === "erde"
       && st.verdient === v && !!st.sicherung; }, bwVorher));
 
+  // ---------- 7g) Einwertung: Schatzsuche mit Leo ----------
+  section("Einwertung (Schatzsuche mit Leo)");
+  await fresh(); await setLevel(3);
+  check("Niveau-Daten: 246 Wörter · 94 L / 88 M / 64 S + Stichproben", await page.evaluate(() => {
+    const werte = Object.values(GWS_NIVEAU);
+    const z = { L: 0, M: 0, S: 0 }; werte.forEach(t => z[t]++);
+    return werte.length === 246 && z.L === 94 && z.M === 88 && z.S === 64
+      && gwsNiveau("das Bett") === "L" && gwsNiveau("gehen") === "M"
+      && gwsNiveau("vielleicht") === "S" && gwsNiveau("die Stadt") === "M"
+      && gwsNiveau("Fantasiewort") === "M"; }));
+  check("Spiel-Fragen: leicht zieht nur L, schwer nur M/S", await page.evaluate(() => {
+    for (let i = 0; i < 30; i++) {
+      if (gwsNiveau(spielFrage(false).w.richtig) !== "L") return false;
+      if (!["M", "S"].includes(gwsNiveau(spielFrage(true).w.richtig))) return false;
+    }
+    return true; }));
+  check("Startseite lädt zur Schatzsuche ein", (await page.locator("#ewLos").count()) === 1);
+  await page.locator("#ewSpaeter").click(); await page.waitForTimeout(100);
+  check("„Später“: Einladung weg, Merker gespeichert", await page.evaluate(() =>
+    !document.getElementById("ewLos") && store.profilSkip === true));
+  // Start über den Elternbereich (Stufen-Tab)
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  check("Elternbereich: Einwertungs-Karte mit Start-Knopf", (await page.locator("#ewNeu").count()) === 1
+    && (await page.locator("#moduleContent").textContent()).includes("Noch keine Einwertung"));
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await page.locator("#ewNeu").click(); await page.waitForTimeout(120);
+  check("Intro: Leo erklärt, es gibt kein Falsch", (await page.locator("#ewStart").count()) === 1
+    && (await page.locator("#moduleContent").textContent()).includes("kein Falsch"));
+  await page.locator("#ewStart").click(); await page.waitForTimeout(150);
+  // 8 Wort-Fragen, immer richtig -> Treppe steigt bis Schwer
+  const ewStufen = [];
+  for (let i = 0; i < 8; i++) {
+    ewStufen.push(await page.evaluate(() => ew.stufe));
+    const richtig = await page.evaluate(() => ew.frage.richtig);
+    await page.locator(`.ew-opt[data-w="${richtig}"]`).click();
+    await page.waitForTimeout(260);
+  }
+  check("Treppen-Prinzip: startet mittel, steigt bis schwer", ewStufen[0] === 1 && ewStufen.includes(2)
+    && ewStufen.every((s, i) => i === 0 || s >= ewStufen[i - 1]));
+  // 3 Grammatik-Fragen, immer richtig
+  for (let i = 0; i < 3; i++) {
+    await page.locator('.ew-opt[data-ok="1"]').click();
+    await page.waitForTimeout(260);
+  }
+  check("Ergebnis: Profil 🦁 Profi in beiden Bereichen gespeichert", await page.evaluate(() =>
+    store.profil && store.profil.r === 2 && store.profil.g === 2 && !!store.profil.datum));
+  check("Ergebnis-Schirm: Schatz + Tiere + Eltern-Hinweis", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Schatz gefunden") && t.includes("Profi") && t.includes("Elternbereich"); }));
+  check("Start-Stufen angehoben (Auto bleibt, Max-Klammer greift)", await page.evaluate(() =>
+    store.progress["subj"].unlocked === 3 && store.progress["gws:dopp"].unlocked === 3
+    && fieldLevel("subj") === 3 && fieldLevel("doppel") === 2));
+  await page.locator("#ewFertig").click(); await page.waitForTimeout(150);
+  check("Danach: Startseite ohne Einladung", await page.evaluate(() =>
+    document.getElementById("screen-home").classList.contains("active") && !document.getElementById("ewLos")));
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  check("Elternbereich zeigt Einwertung + „Neu einwerten“", (await page.locator("#moduleContent").textContent()).includes("Einwertung vom")
+    && (await page.locator("#ewNeu").textContent()).includes("Neu einwerten"));
+  check("Feedback-Nutzungsdaten enthalten das Profil", await page.evaluate(() =>
+    feedbackNutzung().profil && feedbackNutzung().profil.r === 2));
+  await page.reload(); await page.waitForTimeout(300);
+  check("Profil bleibt nach Neuladen erhalten", await page.evaluate(() =>
+    store.profil && store.profil.r === 2 && store.progress["subj"].unlocked === 3));
+
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
   await fresh(); await setLevel(3);
