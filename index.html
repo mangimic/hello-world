@@ -287,6 +287,15 @@ button.chip.on{background:var(--primary); color:#fff;}
 .bw-farbe{display:inline-flex; align-items:center; justify-content:center; width:20px; height:20px;
   border-radius:5px; border:1px solid rgba(0,0,0,0.15); font-size:12px;}
 .seg-gross.on{background:var(--primary); color:#fff;}
+/* Einwertung („Schatzsuche mit Leo") */
+.ew-leo{display:flex; gap:10px; align-items:flex-start; margin-bottom:10px;}
+.ew-kopf{font-size:30px; flex:none; background:#fdf0d0; border-radius:50%; width:48px; height:48px;
+  display:flex; align-items:center; justify-content:center; border:2px solid #f4b942;}
+.ew-leo .bubble{background:var(--soft); border-radius:4px 16px 16px 16px; padding:10px 13px; font-size:15.5px; margin:0;}
+.ew-pfad{display:flex; align-items:center; gap:4px; margin:2px 0 12px;}
+.ew-schritt{flex:1; height:8px; background:#d3e0f0; border-radius:4px; transition:background .3s;}
+.ew-schritt.an{background:#f4b942;}
+.ew-karte{grid-column:1 / -1; text-align:left; background:linear-gradient(120deg,#fdf0d0,#fbe6b7); border:2px solid #f4b942;}
 .bw-rezept{display:flex; align-items:center; gap:8px; padding:7px 8px; border-radius:10px;
   background:var(--soft); margin-bottom:6px;}
 .bw-rezept.zu{opacity:.55;}
@@ -452,8 +461,14 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.51.0";
+const APP_VERSION = "1.52.0";
 const RELEASE_NOTES = [
+  {v:"1.52.0", datum:"15.07.2026", punkte:[
+    "🧭 Schatzsuche mit Leo: Beim ersten Start lädt Coach Leo zu einer 3-Minuten-Schatzsuche ein und findet spielerisch heraus, wo du startest – richtig beantwortet wird’s kniffliger, daneben wird’s leichter. Es gibt kein Falsch!",
+    "🐣🦊🦁 Dein Start-Profil: Am Ende bekommst du dein Profil (Entdecker, Kenner oder Profi) für Rechtschreibung und Grammatik – die App stellt alle Lernfelder automatisch auf dein Niveau ein und wird mit dir schwerer.",
+    "🔧 Eltern: Das Ergebnis steht im Elternbereich unter „Stufen“ (mit „Neu einwerten“-Knopf) und kann jederzeit angepasst werden. Die anonyme Feedback-Zusammenfassung enthält das Niveau – Rückmeldungen sind damit einordenbar.",
+    "🎲 Fragen-Niveau neu vermessen: Alle 246 Grundwortschatz-Wörter wurden in Leicht/Mittel/Schwer eingeteilt. Leichte Fragen in den Spielen sind jetzt wirklich leicht (vorher konnten sie aus dem Schwer-Topf kommen), schwere Fragen decken Mittel + Schwer ab.",
+  ]},
   {v:"1.51.0", datum:"14.07.2026", punkte:[
     "📨 Lesbarer Feedback-Bericht: Die Nachricht enthält nur noch ausgefüllte Felder (kein „(keine Angabe)“ mehr) und beginnt mit einer Kurz-Zeile zum Überfliegen (Ø-Sterne, Klasse, Fehler-Bereiche). Der technische Datenblock steht klar beschriftet ganz am Ende.",
   ]},
@@ -4378,12 +4393,35 @@ function spielT(ms){ return window.__SPIEL_SCHNELL__ ? Math.max(15, ms/12) : ms;
 /* Frage aus dem amtlichen Grundwortschatz – mit Steigerung:
    leichte Wörter (Klasse 1/2) für den Einstieg, schwere (Klasse 3/4)
    für die weiteren Fragen großer Fische. */
+/* Niveau je Grundwortschatz-Wort (Assessment 15.07.2026): L=leicht (hörbar +
+   Alltagswort), M=mittel (Regel nicht hörbar / häufiges Merkwort), S=schwer
+   (reines Merkwort, Fremdwort, mehrere Fehlerstellen). Unbekannte Wörter
+   (z. B. von Eltern ergänzte) gelten als M. */
+const GWS_NIVEAU=(()=>{const m={};
+  ["bitten","die Butter","essen","fallen","der Füller","der Himmel","kennen","das Kissen","die Klasse","können","der Koffer","kommen","lassen","der Löffel","das Messer","müssen","die Mutter","die Puppe","rennen","sollen","die Sonne","die Spinne","die Suppe","der Teller","treffen","die Treppe","das Wasser","das Wetter","wissen","wollen","das Zimmer","besser","das Bett","dünn","dumm","der Fluss","hell","der Mann","nass","nett","offen","satt","das Schiff","das Schloss","schnell","schwimmen","stellen","still","toll","backen","die Decke","die Jacke","kicken","lecker","packen","schicken","schmecken","die Schnecke","die Socke","die Hitze","die Katze","die Mütze","sitzen","die Spitze","dick","das Glück","der Rock","das Stück","der Wecker","der Zucker","der Platz","der Satz","sparen","der Spaten","der Spiegel","das Spiel","spielen","spülen","staunen","der Stein","der Stempel","der Stern","der Stiefel","der Stift","stören","die Stufe","die Stunde","die Sprache","sprechen","springen","der Dachs","der Fuchs","der Luchs","wachsen"].forEach(w=>m[w]="L");
+  ["der Schlitten","der Schlüssel","beginnen","brennen","die Brille","brüllen","donnern","doppelt","die Flosse","fressen","füttern","gefallen","gewinnen","glatt","der Herr","hoffen","kaputt","klettern","krumm","küssen","die Mitte","der Müll","die Nuss","öffnen","passen","retten","sammeln","schaffen","schlimm","der Schluss","stimmen","der Stoff","stumm","die Brücke","drücken","erschrecken","der Fleck","nicken","pflücken","der Rücken","der Schreck","trocken","blitzen","kratzen","die Pfütze","der Schatz","schwitzen","der Spatz","spritzen","der Witz","drehen","früh","gehen","die Kuh","die Ruhe","der Schuh","sehen","der Fuß","weiß","groß","heiß","der Bär","der Käse","der Vater","vier","der Vogel","vom","von","vor","voll","vorbei","vorher","vorne","boxen","die Hexe","das Taxi","das Baby","das Handy","das Pony","der Sprung","die Strafe","streicheln","streichen","der Streifen","streiten","streng","der Strom","die Stadt"].forEach(w=>m[w]="M");
+  ["blühen","leihen","die Mühe","das Reh","die Reihe","stehen","der Zeh","ziehen","fließen","draußen","der Gruß","heißen","schließen","die Straße","süß","die Säge","ändern","ärgern","erklären","der Käfer","der Käfig","der Lärm","das Mädchen","das Märchen","nächste","nämlich","das Rätsel","spät","die Träne","die Vase","der Vulkan","der Advent","das Silvester","der Verein","das Virus","die Axt","das Lexikon","der Text","das Hobby","die Party","die Pyramide","der Teddy","der Zylinder","bequem","quaken","der Qualm","das Aquarium","der Quader","das Quadrat","der Quatsch","die Quelle","quer","der Cent","der Hai","der Kaiser","der Mais","die Pizza","das Theater","das Thema","das Thermometer","verwandt","vielleicht","während","der Clown"].forEach(w=>m[w]="S");
+  return m;})();
+function gwsNiveau(wort){ return GWS_NIVEAU[wort]||"M"; }
+/* Alle Wörter eines Niveaus über ALLE Regel-Gruppen (inkl. Eltern-Wörter,
+   die als M gelten). Behebt den alten Fallback: eine „leichte Frage" kam
+   in Gruppen ohne leichte Wörter aus dem Schwer-Pool. */
+function gwsNiveauPool(stufen){
+  const alle=[];
+  GWS_KATEGORIEN.forEach(k=>{
+    const e=gwsLists(k);
+    e.leicht.concat(e.schwer).forEach(w=>{
+      if(stufen.includes(gwsNiveau(w.richtig))) alle.push({w:w, tipp:k.tipp});
+    });
+  });
+  return alle;
+}
 function spielFrage(schwer){
-  const k=GWS_KATEGORIEN[Math.floor(Math.random()*GWS_KATEGORIEN.length)];
-  const e=gwsLists(k);
-  const pool = schwer ? (e.schwer.length?e.schwer:e.leicht) : (e.leicht.length?e.leicht:e.schwer);
-  const w=pool[Math.floor(Math.random()*pool.length)];
-  return {w:w, tipp:k.tipp, schwer:!!schwer};
+  // leicht = nur L-Wörter · schwer = M- und S-Wörter (echte Steigerung)
+  let pool=gwsNiveauPool(schwer?["M","S"]:["L"]);
+  if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
+  const t=pool[Math.floor(Math.random()*pool.length)];
+  return {w:t.w, tipp:t.tipp, schwer:!!schwer};
 }
 /* Gegen das Raten: Für „Welches Wort ist richtig?"-Fragen wird – wenn
    sicher möglich – eine DRITTE falsche Schreibweise erzeugt (typische
@@ -5984,6 +6022,168 @@ function bwRender(c){
 }
 
 /* ============================================================
+   EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
+   Beim ersten Start (oder über den Elternbereich) ermittelt die App
+   das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
+   Frage, falsch -> leichtere. 8 Wort-Fragen (kalibriert über
+   GWS_NIVEAU) + 3 Grammatik-Fragen. Ergebnis = Start-Stufen über
+   das VORHANDENE Stufen-System (store.progress[key].unlocked, nur
+   anheben, nie absenken). Kindgerecht ohne Noten: 🐣/🦊/🦁.
+   ============================================================ */
+const EW_TIERE=[{e:"🐣",n:"Entdecker"},{e:"🦊",n:"Kenner"},{e:"🦁",n:"Profi"}];
+const EW_WORT_ANZ=8, EW_GRAM_ANZ=3;
+// Grammatik-Fragen je Niveau (0=leicht, 1=mittel, 2=schwer), je 2 zur Auswahl
+const EW_GRAM={
+  0:[{t:"Welches Wort ist ein Nomen (Namenwort)?", o:[["der Hund",1],["laufen",0],["schön",0]]},
+     {t:"Welches Wort ist ein Verb (Tun-Wort)?", o:[["singen",1],["die Blume",0],["blau",0]]}],
+  1:[{t:"Finde das Verb im Satz:", satz:"Der Hund läuft schnell über die Wiese.", o:[["läuft",1],["Hund",0],["schnell",0]]},
+     {t:"Welches Wort ist ein Adjektiv (Wie-Wort)?", satz:"Das kleine Kind lacht laut.", o:[["kleine",1],["Kind",0],["lacht",0]]}],
+  2:[{t:"Finde das Subjekt:", satz:"Am Morgen füttert Lena die Katze.", o:[["Lena",1],["die Katze",0],["Am Morgen",0]]},
+     {t:"In welcher Zeitform steht der Satz? „Wir haben gestern gespielt.“", o:[["Perfekt",1],["Präsens",0],["Futur",0]]}]
+};
+// Welche Lernfelder das Ergebnis anhebt
+const EW_FELDER_RECHT=["doppel","gk","dd"].concat(GWS_KATEGORIEN.map(k=>"gws:"+k.id));
+const EW_FELDER_GRAM=["subj","praed","satzglied","rede","zeit","wa","faelle"];
+let ew=null;
+function openEinwertung(){
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null;
+  ew={phase:"intro", nr:0, stufe:1, punkte:[], gramNr:0, gramStufe:1, gramPunkte:[], benutzt:[], frage:null};
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  ewIntro();
+  renderNav(); window.scrollTo(0,0);
+}
+function ewLeo(text){ return `<div class="ew-leo"><span class="ew-kopf">🦁</span><div class="bubble">${text}</div></div>`; }
+function ewIntro(){
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2 style="margin:0 0 4px;">🧭 Deine Schatzsuche!</h2>
+      <p class="muted" style="margin:0 0 12px;">Bevor es losgeht, finden wir heraus, wo du startest.</p>
+      ${ewLeo("<b>Hallo, ich bin Leo!</b> 👋")}
+      ${ewLeo("Ich zeige dir ein paar Wörter und Sätze – du zeigst mir, was du schon kannst.")}
+      ${ewLeo("Es gibt kein Falsch! Jede Antwort bringt uns näher zum 💎 Schatz.")}
+      <button class="btn-primary" id="ewStart" style="width:100%;">Schatzsuche starten! 🗺️</button>
+      <p class="muted" style="text-align:center; font-size:13px; margin:10px 0 0;">Dauert ca. 3 Minuten · Eltern können das Ergebnis im Elternbereich ändern</p>
+    </div>`;
+  const s=$("moduleContent").querySelector("#ewStart");
+  s.onclick=()=>{ ew.phase="wort"; ewFrage(); };
+  addSpeakButtons($("moduleContent"));
+}
+function ewPfadHTML(){
+  const gesamt=EW_WORT_ANZ+EW_GRAM_ANZ, fertig=ew.nr+ew.gramNr;
+  return `<div class="ew-pfad">${Array.from({length:gesamt},(_,i)=>
+    `<div class="ew-schritt${i<fertig?" an":""}"></div>`).join("")}<span style="font-size:22px;">${fertig>=gesamt?"💎":"🎁"}</span></div>`;
+}
+function ewMut(){ return ["Du schaffst das!","Schau ganz genau hin! 🔍","Gleich haben wir den Schatz!","Weiter so!","Prima – bleib dran!"][(ew.nr+ew.gramNr)%5]; }
+function ewFrage(){
+  const c=$("moduleContent");
+  if(ew.phase==="wort" && ew.nr>=EW_WORT_ANZ){ ew.phase="gram"; }
+  if(ew.phase==="gram" && ew.gramNr>=EW_GRAM_ANZ){ return ewErgebnis(); }
+  if(ew.phase==="wort"){
+    const NIV=["L","M","S"][ew.stufe];
+    let pool=gwsNiveauPool([NIV]).filter(t=>!ew.benutzt.includes(t.w.richtig));
+    if(!pool.length) pool=gwsNiveauPool(["L","M","S"]).filter(t=>!ew.benutzt.includes(t.w.richtig));
+    const t=pool[Math.floor(Math.random()*pool.length)];
+    ew.benutzt.push(t.w.richtig);
+    ew.frage={art:"wort", richtig:t.w.richtig, w:t.w};
+    c.innerHTML=`${ewPfadHTML()}
+      <div class="card">
+        <p class="muted" style="margin:0; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">Frage ${ew.nr+ew.gramNr+1} von ${EW_WORT_ANZ+EW_GRAM_ANZ}</p>
+        <h2 style="margin:6px 0 4px;">Welches Wort ist <u>richtig</u> geschrieben?</h2>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">${spielOptionenHTML(t.w, "ew-opt", "font-size:19px; padding:16px 6px;")}</div>
+        <div id="ewfb"></div>
+      </div>
+      ${ewLeo(ewMut())}`;
+    c.querySelectorAll(".ew-opt").forEach(b=>b.onclick=()=>ewAntwort(b.dataset.w===t.w.richtig, t.w.richtig, b));
+  } else {
+    const fragen=EW_GRAM[ew.gramStufe];
+    const q=fragen[Math.floor(Math.random()*fragen.length)];
+    ew.frage={art:"gram", q:q};
+    const opts=q.o.slice().sort(()=>Math.random()-0.5);
+    c.innerHTML=`${ewPfadHTML()}
+      <div class="card">
+        <p class="muted" style="margin:0; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">Frage ${ew.nr+ew.gramNr+1} von ${EW_WORT_ANZ+EW_GRAM_ANZ}</p>
+        <h2 style="margin:6px 0 4px;">${q.t}</h2>
+        ${q.satz?`<div class="example-box">${q.satz}</div>`:""}
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">${opts.map(([w,ok])=>
+          `<button class="btn-secondary ew-opt" data-ok="${ok}" style="flex:1 1 30%; min-width:0; font-size:17px; padding:14px 6px;">${w}</button>`).join("")}</div>
+        <div id="ewfb"></div>
+      </div>
+      ${ewLeo(ewMut())}`;
+    c.querySelectorAll(".ew-opt").forEach(b=>b.onclick=()=>ewAntwort(b.dataset.ok==="1", (q.o.find(o=>o[1])||[])[0], b));
+  }
+  addSpeakButtons(c); window.scrollTo(0,0);
+}
+function ewAntwort(ok, richtig, btn){
+  const c=$("moduleContent");
+  if(btn.disabled) return;
+  c.querySelectorAll(".ew-opt").forEach(b=>{ b.disabled=true;
+    if((ew.frage.art==="wort" && b.dataset.w===richtig) || (ew.frage.art==="gram" && b.dataset.ok==="1")) b.style.background="#d9f0dd"; });
+  const fb=c.querySelector("#ewfb");
+  if(ew.phase==="wort"){
+    ew.punkte.push({stufe:ew.stufe, ok:ok});
+    fb.innerHTML=`<div class="feedback ${ok?"ok":"tip"}">${ok
+      ? "🌟 Super!"+(ew.stufe<2?" Die nächste wird kniffliger … 😉":" Du knackst sogar die schweren!")
+      : "Kein Problem – richtig ist <b>„"+richtig+"“</b>. Die nächste passt besser zu dir!"}</div>`;
+    if(ok && ew.stufe<2) ew.stufe++; else if(!ok && ew.stufe>0) ew.stufe--;
+    ew.nr++;
+  } else {
+    ew.gramPunkte.push({stufe:ew.gramStufe, ok:ok});
+    fb.innerHTML=`<div class="feedback ${ok?"ok":"tip"}">${ok
+      ? "🌟 Genau richtig!"
+      : "Kein Problem – die Lösung ist grün markiert. Weiter geht’s!"}</div>`;
+    if(ok && ew.gramStufe<2) ew.gramStufe++; else if(!ok && ew.gramStufe>0) ew.gramStufe--;
+    ew.gramNr++;
+  }
+  save();
+  setTimeout(()=>{ if(ew) ewFrage(); }, window.__SPIEL_SCHNELL__?100:1400);
+}
+function ewStufeAus(punkte, proFrage){
+  // Punkte: richtig auf Stufe s zählt s+1 · Anteil am Maximum -> 0/1/2
+  const max=punkte.length*3;
+  if(!max) return 0;
+  const s=punkte.reduce((a,p)=>a+(p.ok?p.stufe+1:0),0)/max;
+  return s>0.62?2 : s>0.3?1 : 0;
+}
+function ewAnwenden(r, g){
+  store.profil={ r:r, g:g, datum:new Date().toLocaleDateString("de-DE") };
+  EW_FELDER_RECHT.forEach(k=>{ const p=fieldProg(k); p.unlocked=Math.max(p.unlocked||1, r+1); });
+  EW_FELDER_GRAM.forEach(k=>{ const p=fieldProg(k); p.unlocked=Math.max(p.unlocked||1, g+1); });
+  save();
+}
+function ewPunkteHTML(stufe){
+  return `<div style="display:flex; gap:5px; margin-top:4px;">${[0,1,2].map(i=>
+    `<span style="width:12px; height:12px; border-radius:50%; display:inline-block; background:${i<=stufe?"#f4b942":"var(--soft, #e7eefb)"};"></span>`).join("")}</div>`;
+}
+function ewErgebnis(){
+  const r=ewStufeAus(ew.punkte), g=ewStufeAus(ew.gramPunkte);
+  ewAnwenden(r, g);
+  const zeile=(emoji, name, stufe)=>`
+    <div style="display:flex; align-items:center; gap:12px; background:var(--soft, #e7eefb); border-radius:14px; padding:12px; margin-bottom:8px;">
+      <span style="font-size:34px;">${EW_TIERE[stufe].e}</span>
+      <div style="flex:1;"><b>${emoji} ${name}</b><br><span class="muted">${EW_TIERE[stufe].n}</span>${ewPunkteHTML(stufe)}</div>
+    </div>`;
+  $("moduleContent").innerHTML=`
+    <div class="card" style="text-align:center;">
+      <div style="font-size:42px; margin:4px 0;">🎉 💎 🎉</div>
+      <h2 style="margin:0;">Schatz gefunden!</h2>
+      <p class="muted">Jetzt ist Lernprofi genau richtig für dich eingestellt.</p>
+    </div>
+    <div class="card">
+      <h3 style="margin:0 0 8px;">Dein Start-Profil</h3>
+      ${zeile("🔤","Rechtschreibung", r)}
+      ${zeile("🧩","Grammatik", g)}
+      ${ewLeo("Stark! Wir starten genau auf deinem Level – und wenn du besser wirst, wird die App mit dir schwerer. 💪")}
+    </div>
+    <button class="btn-primary" id="ewFertig" style="width:100%;">Los geht’s! 🚀</button>
+    <p class="muted" style="text-align:center; font-size:13px; margin:10px 0 0;">🔧 Eltern: Das Ergebnis steht im Elternbereich unter „Stufen“ und kann dort geändert werden.</p>`;
+  $("moduleContent").querySelector("#ewFertig").onclick=()=>{ ew=null; goHome(); };
+  addSpeakButtons($("moduleContent"));
+  renderNav(); window.scrollTo(0,0);
+}
+
+/* ============================================================
    BETA-FEEDBACK (für Eltern): strukturiertes Formular, das ohne
    Server auskommt. Erzeugt einen lesbaren Bericht + maschinenlesbaren
    Datenblock (##LP-FEEDBACK##…##ENDE##) und verschickt ihn per
@@ -6023,7 +6223,8 @@ function feedbackNutzung(){
   Object.keys(store.progress||{}).forEach(k=>{ const r=store.progress[k].runs||0; if(r>0) runden[k]=r; });
   return { version:APP_VERSION, klasse:store.level, muenzen:store.muenzen||0,
     zeitHeuteMin:Math.round(zeitHeute().sek/60), leseKontrolle:store.leseKontrolle,
-    spieleAktiv:SPIELE_IDS.filter(spielAktiv), runden:runden };
+    spieleAktiv:SPIELE_IDS.filter(spielAktiv), runden:runden,
+    profil:store.profil?{r:store.profil.r, g:store.profil.g}:null };
 }
 /* Lesbarer Bericht: NUR ausgefüllte Felder, oben eine Kurz-Zeile
    zum schnellen Überfliegen, der maschinenlesbare Datenblock klar
@@ -6401,7 +6602,19 @@ function renderAdminStufen(c){
   const status = dirty
     ? `<div class="lvl-note" style="text-align:left;">✏️ Änderungen noch nicht gespeichert.</div>`
     : (stufenSaved ? `<div class="lvl-note up" style="text-align:left;">✅ <b>Gespeichert.</b> Die Stufen sind jetzt in allen Aufgaben aktiv.</div>` : ``);
+  const profilInfo = store.profil
+    ? `<p class="muted" style="margin:0 0 8px;">🧭 <b>Einwertung vom ${store.profil.datum||"?"}:</b>
+        🔤 Rechtschreibung ${EW_TIERE[store.profil.r].e} ${EW_TIERE[store.profil.r].n} ·
+        🧩 Grammatik ${EW_TIERE[store.profil.g].e} ${EW_TIERE[store.profil.g].n}.
+        Die Start-Stufen wurden entsprechend angehoben (Auto-Modus, Kind schaltet weiter frei).</p>`
+    : `<p class="muted" style="margin:0 0 8px;">🧭 Noch keine Einwertung gemacht – die spielerische
+        „Schatzsuche mit Leo“ (3 Min) findet das passende Start-Niveau automatisch.</p>`;
   c.innerHTML = admHeader("stufen") + `
+    <div class="card">
+      <h3>🧭 Einwertung (Schatzsuche)</h3>
+      ${profilInfo}
+      <button class="btn-secondary btn-small" id="ewNeu" style="width:100%;">${store.profil?"🧭 Neu einwerten":"🧭 Einwertung starten"}</button>
+    </div>
     <div class="card">
       <h3>🎯 Stufen steuern</h3>
       <p class="muted"><b>Auto</b> = Stufen werden durch Üben freigeschaltet.
@@ -6420,6 +6633,7 @@ function renderAdminStufen(c){
       <button class="btn-secondary btn-small mt" id="stufenDiscard" style="width:100%;"${dirty?"":" disabled"}>Änderungen verwerfen</button>
     </div>`;
   admBindTabs(c);
+  c.querySelector("#ewNeu").onclick=()=>openEinwertung();
   c.querySelectorAll(".seg[data-scope]").forEach(b=>b.onclick=()=>{
     draftSet(b.dataset.scope, parseInt(b.dataset.v,10));
     stufenSaved=false;
@@ -6698,6 +6912,8 @@ let store = {
   leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" (Stichprobe) | "aus"
   stimme:"",                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
   leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
+  profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
+  profilSkip:false,             // „Später" gewählt: Einladung ausblenden
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -6757,6 +6973,12 @@ function load(){
     if(["immer","mix","aus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
     if(typeof d.stimme==="string") store.stimme=d.stimme;
     if(["langsam","normal","schnell"].includes(d.leseTempo)) store.leseTempo=d.leseTempo;
+    if(d.profil && typeof d.profil==="object"){
+      const r=parseInt(d.profil.r,10), g=parseInt(d.profil.g,10);
+      if(r>=0 && r<=2 && g>=0 && g<=2)
+        store.profil={ r:r, g:g, datum:typeof d.profil.datum==="string"?d.profil.datum:"" };
+    }
+    if(d.profilSkip===true) store.profilSkip=true;
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
     if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.blockwelt && typeof d.blockwelt==="object"){
@@ -6980,6 +7202,19 @@ function openSpielhalle(){
 }
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
+  // Schatzsuche-Einladung, bis die Einwertung gemacht (oder übersprungen) wurde
+  if(!store.profil && !store.profilSkip){
+    const k=document.createElement("div");
+    k.className="card ew-karte";
+    k.innerHTML=`<div class="ew-leo" style="margin-bottom:8px;"><span class="ew-kopf">🦁</span>
+        <div class="bubble" style="background:#fff;"><b>Neu hier?</b> Komm mit auf Schatzsuche –
+        ich finde heraus, wo du am besten startest! (3 Minuten)</div></div>
+      <button class="btn-primary btn-small" id="ewLos" style="width:100%;">🧭 Schatzsuche starten!</button>
+      <button class="linklike" id="ewSpaeter" style="margin-top:6px; font-size:13px;">Später – erst mal umschauen</button>`;
+    k.querySelector("#ewLos").onclick=()=>openEinwertung();
+    k.querySelector("#ewSpaeter").onclick=()=>{ store.profilSkip=true; save(); buildModuleChooser(); };
+    grid.appendChild(k);
+  }
   MODUL_GRUPPEN.forEach(g=>{
     const mods=gruppenModule(g);
     if(!mods.length) return;
