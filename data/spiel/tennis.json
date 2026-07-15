@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kommentar": "Tennis-Match: Gegner, Tennis-Wissen (Fun Facts) und Mentaltrainer-Karten für Felix (9, Klasse 3). Mentaltraining nach dem Kinder-Mentaltrainer-Prompt: kurze Sätze, Kinderbilder (Löwe, Adler, Ninja, Superman, Tennismagnet), Rituale, kein Gewinn-Druck. Fun Facts recherchiert: srf.ch/kids, klexikon.zum.de, tennis.de, tennisfinale.com.",
+  "kommentar": "Tennis-Match: Gegner, Tennis-Wissen (Fun Facts) und Mentaltrainer-Karten für Grundschulkinder (Klasse 3/4). Mentaltraining nach dem Kinder-Mentaltrainer-Prompt: kurze Sätze, Kinderbilder (Löwe, Adler, Ninja, Superman, Tennismagnet), Rituale, kein Gewinn-Druck. Fun Facts recherchiert: srf.ch/kids, klexikon.zum.de, tennis.de, tennisfinale.com.",
   "gegner": [
     {
       "id": "wand",
@@ -43,7 +43,7 @@
       "mission": "Spiele heute zehn Bälle richtig mutig. Mit vollem Schwung – auch wenn mal einer rausgeht.",
       "mut": "Trau dich – der Ball darf fliegen!",
       "punkt": "Schläger antippen, tief ausatmen: Nächster Ball.",
-      "schluss": "Mit jedem mutigen Schlag wirst du stärker. Fehler? Die gehören zum Lernen dazu. Viel Spaß beim Training, Felix!"
+      "schluss": "Mit jedem mutigen Schlag wirst du stärker. Fehler? Die gehören zum Lernen dazu. Viel Spaß beim Training, Champion!"
     },
     {
       "id": "match",
@@ -153,7 +153,7 @@
       "mission": "Nenn drei Dinge, die dir heute gut gelungen sind. Sag sie laut oder denk sie dir.",
       "mut": "Ich habe gekämpft. Ich bin stolz auf mich.",
       "punkt": "Schläger antippen, lächeln: Das war stark.",
-      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Felix!"
+      "schluss": "Gewonnen oder verloren – du hast gespielt, gekämpft und gelernt. Genau so werden Champions gemacht. Bis zum nächsten Match, Champion!"
     }
   ]
 }
