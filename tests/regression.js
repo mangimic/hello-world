@@ -153,8 +153,12 @@ function section(t) { console.log("\n== " + t + " =="); }
   const bericht = await page.evaluate(() => {
     fbForm.texte = { gut: document.getElementById("fbGut").value, stoert: "", fehler: "" };
     return feedbackText(); });
-  check("Bericht enthält Datenblock + Angaben", bericht.includes("##LP-FEEDBACK##")
-    && bericht.includes("Coach Leo ist super") && bericht.includes("★★★★☆"));
+  check("Bericht: Kurz-Zeile + nur ausgefüllte Felder", bericht.includes("##LP-FEEDBACK##")
+    && bericht.includes("Kurz: ⭐ Ø 4 · Klasse 3")
+    && bericht.includes("⭐ Spaß 4/5")
+    && bericht.includes("👍 Am besten: Coach Leo ist super")
+    && !bericht.includes("keine Angabe") && !bericht.includes("Bedienung")
+    && !bericht.includes("👎") && !bericht.includes("Fehler in:"));
   check("Datenblock ist gültiges JSON mit Version", await page.evaluate(() => {
     const m = feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/);
     const d = JSON.parse(m[1]);
