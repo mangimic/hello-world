@@ -452,8 +452,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.50.0";
+const APP_VERSION = "1.51.0";
 const RELEASE_NOTES = [
+  {v:"1.51.0", datum:"14.07.2026", punkte:[
+    "📨 Lesbarer Feedback-Bericht: Die Nachricht enthält nur noch ausgefüllte Felder (kein „(keine Angabe)“ mehr) und beginnt mit einer Kurz-Zeile zum Überfliegen (Ø-Sterne, Klasse, Fehler-Bereiche). Der technische Datenblock steht klar beschriftet ganz am Ende.",
+  ]},
   {v:"1.50.0", datum:"14.07.2026", punkte:[
     "💬 WhatsApp-Knopf repariert: Er ist jetzt ein echter Link – Popup-Blocker und eingebettete Ansichten hatten das bisherige Öffnen teils stumm verhindert. Dazu ein Hinweis mit Kopier-Alternative, falls WhatsApp auf dem Gerät fehlt.",
     "☑️ Fehler melden ohne Tippen: Bei „Fehler entdeckt?“ tippst du jetzt einfach die betroffenen Bereiche an (Schreiben, Grammatik, Rechtschreibung, Spiele, Vorlesen, Münzen/Zeitlimit, Elternbereich, Anzeige) – mehrere möglich, Beschreibung optional. Die Auswertung zählt die Bereiche automatisch.",
@@ -6022,30 +6025,36 @@ function feedbackNutzung(){
     zeitHeuteMin:Math.round(zeitHeute().sek/60), leseKontrolle:store.leseKontrolle,
     spieleAktiv:SPIELE_IDS.filter(spielAktiv), runden:runden };
 }
+/* Lesbarer Bericht: NUR ausgefüllte Felder, oben eine Kurz-Zeile
+   zum schnellen Überfliegen, der maschinenlesbare Datenblock klar
+   beschriftet ganz am Ende. Leere Felder erscheinen gar nicht. */
 function feedbackText(){
-  const f=fbForm||{sterne:{},texte:{}};
-  const sterneZeilen=FB_FRAGEN.map(q=>`${q.frage} ${f.sterne[q.id]?"★".repeat(f.sterne[q.id])+"☆".repeat(5-f.sterne[q.id]):"(keine Angabe)"}`).join("\n");
+  const f=fbForm||{sterne:{},texte:{},bereiche:[]};
+  const texte=f.texte||{};
+  const KURZ={bedienung:"Bedienung", spass:"Spaß", lernen:"Lerneffekt", eltern:"Elternbereich"};
+  const bereichLabel=id=>{ const b=FB_BEREICHE.find(x=>x.id===id); return b?b.label:id; };
+  const werte=FB_FRAGEN.map(q=>f.sterne[q.id]).filter(n=>n>=1);
+  const schnitt=werte.length?Math.round(werte.reduce((a,b)=>a+b,0)/werte.length*10)/10:null;
+  const zeilen=[`💬 LERNPROFI-FEEDBACK (Version ${APP_VERSION})`];
+  // Kurz-Zeile: das Wichtigste auf einen Blick
+  const kurz=[];
+  if(schnitt!=null) kurz.push("⭐ Ø "+String(schnitt).replace(".",","));
+  if(f.klasse) kurz.push("Klasse "+f.klasse);
+  if(f.nutzung) kurz.push("genutzt: "+f.nutzung);
+  if(f.bereiche&&f.bereiche.length) kurz.push("🐞 "+f.bereiche.length+" Fehler-Bereich"+(f.bereiche.length>1?"e":""));
+  if(kurz.length) zeilen.push("Kurz: "+kurz.join(" · "));
+  const sterneZeile=FB_FRAGEN.filter(q=>f.sterne[q.id]>=1).map(q=>`${KURZ[q.id]} ${f.sterne[q.id]}/5`).join(" · ");
+  if(sterneZeile) zeilen.push("⭐ "+sterneZeile);
+  if(texte.gut) zeilen.push("👍 Am besten: "+texte.gut);
+  if(texte.stoert) zeilen.push("👎 Stört/fehlt: "+texte.stoert);
+  if(f.bereiche&&f.bereiche.length) zeilen.push("🐞 Fehler in: "+f.bereiche.map(bereichLabel).join(", "));
+  if(texte.fehler) zeilen.push((f.bereiche&&f.bereiche.length?"   Details: ":"🐞 Fehler: ")+texte.fehler);
   const daten={ v:1, datum:new Date().toISOString().slice(0,10), klasseKind:f.klasse||null,
-    nutzung:f.nutzung||null, sterne:f.sterne, texte:f.texte, bereiche:f.bereiche||[],
+    nutzung:f.nutzung||null, sterne:f.sterne, texte:texte, bereiche:f.bereiche||[],
     app:(f.mitDaten!==false)?feedbackNutzung():{version:APP_VERSION} };
-  return `LERNPROFI BETA-FEEDBACK (Version ${APP_VERSION})
-=====================================
-Klasse des Kindes: ${f.klasse||"(keine Angabe)"}
-Wie oft genutzt: ${f.nutzung||"(keine Angabe)"}
+  return zeilen.join("\n")+`
 
-${sterneZeilen}
-
-Was gefällt am besten?
-${f.texte.gut||"-"}
-
-Was stört oder fehlt?
-${f.texte.stoert||"-"}
-
-Fehler entdeckt?
-Bereiche: ${(f.bereiche&&f.bereiche.length)?f.bereiche.map(id=>{const b=FB_BEREICHE.find(x=>x.id===id);return b?b.label:id;}).join(", "):"-"}
-${f.texte.fehler||"-"}
-
---- Datenblock für die Auswertung (bitte nicht verändern) ---
+🤖 Datenblock für die automatische Auswertung – bitte einfach mitschicken:
 ##LP-FEEDBACK##${JSON.stringify(daten)}##ENDE##`;
 }
 function openFeedback(){
