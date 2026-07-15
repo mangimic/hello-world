@@ -1007,6 +1007,10 @@ function section(t) { console.log("\n== " + t + " =="); }
     }
     return true; }));
   check("Startseite lädt zur Schatzsuche ein", (await page.locator("#ewLos").count()) === 1);
+  await setLevel(0);
+  check("Bei „Alle“: Einladung ausgeblendet", !(await page.locator("#ewLos").count()));
+  await setLevel(3);
+  check("Zurück auf Klasse 3: Einladung wieder da", (await page.locator("#ewLos").count()) === 1);
   await page.locator("#ewSpaeter").click(); await page.waitForTimeout(100);
   check("„Später“ blendet nur für diese Sitzung aus", !(await page.locator("#ewLos").count()));
   await page.reload(); await page.waitForTimeout(300);

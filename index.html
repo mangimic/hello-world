@@ -461,8 +461,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.53.0";
+const APP_VERSION = "1.54.0";
 const RELEASE_NOTES = [
+  {v:"1.54.0", datum:"15.07.2026", punkte:[
+    "🧭 Die Schatzsuche-Einladung erscheint nur noch, wenn Klasse 3 oder Klasse 4 gewählt ist – bei „Alle“ wird sie ausgeblendet.",
+  ]},
   {v:"1.53.0", datum:"15.07.2026", punkte:[
     "🙋 Die App ist jetzt für jedes Kind: Auf den Spielfeldern (Tennis, Fußball) steht dein eigener Name aus der Startseite – und Coach Leo spricht dich beim Probehören mit deinem Namen an. Alle fest eingebauten Namen wurden entfernt.",
     "🧭 Schatzsuche passt sich der Klasse an: Klasse 3 startet zum Aufwärmen mit leichten Wörtern, Klasse 4 mittel – danach regelt die Treppe alles von selbst.",
@@ -7215,8 +7218,10 @@ function openSpielhalle(){
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
   // Schatzsuche-Einladung, bis die Einwertung ABGESCHLOSSEN ist
-  // („Später" blendet nur für die laufende Sitzung aus)
-  if(!store.profil && !ewSpaeter){
+  // („Später" blendet nur für die laufende Sitzung aus).
+  // Nur bei gewählter Klasse 3/4 – bei „Alle" (0) ausgeblendet,
+  // denn die Treppe braucht eine Klassenstufe als Startpunkt.
+  if(!store.profil && !ewSpaeter && store.level!==0){
     const k=document.createElement("div");
     k.className="card ew-karte";
     k.innerHTML=`<div class="ew-leo" style="margin-bottom:8px;"><span class="ew-kopf">🦁</span>
