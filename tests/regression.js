@@ -1064,6 +1064,39 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.reload(); await page.waitForTimeout(300);
   check("Profil bleibt nach Neuladen erhalten", await page.evaluate(() =>
     store.profil && store.profil.r === 2 && store.progress["subj"].unlocked === 3));
+  // Historie der Schatzsuchen
+  check("Historie: erste Schatzsuche gespeichert", await page.evaluate(() =>
+    store.profilHistorie.length === 1 && store.profilHistorie[0].r === 2 && !!store.profilHistorie[0].datum));
+  // Zweite Schatzsuche: alles falsch -> 🐣, aber Stufen sinken NICHT
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator("#ewNeu").click(); await page.waitForTimeout(120);
+  await page.locator("#ewStart").click(); await page.waitForTimeout(150);
+  for (let i = 0; i < 8; i++) {
+    const richtig = await page.evaluate(() => ew.frage.richtig);
+    await page.evaluate(r => { [...document.querySelectorAll(".ew-opt")].find(b => b.dataset.w !== r).click(); }, richtig);
+    await page.waitForTimeout(260);
+  }
+  for (let i = 0; i < 3; i++) { await page.locator('.ew-opt[data-ok="0"]').first().click(); await page.waitForTimeout(260); }
+  check("Zweite Schatzsuche: 🐣-Profil, Historie mit 2 Einträgen in Reihenfolge", await page.evaluate(() =>
+    store.profil.r === 0 && store.profilHistorie.length === 2
+    && store.profilHistorie[0].r === 2 && store.profilHistorie[1].r === 0));
+  check("Stufen sinken durch schwächere Einwertung NICHT", await page.evaluate(() =>
+    store.progress["subj"].unlocked === 3));
+  check("Kein Jubel bei schwächerem Ergebnis", !(await page.locator("#moduleContent").textContent()).includes("immer stärker"));
+  await page.locator("#ewFertig").click(); await page.waitForTimeout(120);
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  check("Elternbereich: 📈 Entwicklung mit Trend-Pfeil ↘", await page.evaluate(() => {
+    const h = document.getElementById("ewHistorie");
+    return h && h.textContent.includes("2 Schatzsuchen") && h.innerHTML.includes("↘"); }));
+  check("Verbesserung wird im Ergebnis gefeiert (🐣 → 🦁)", await page.evaluate(() => {
+    ew = { punkte: Array.from({length: 8}, () => ({stufe: 2, ok: true})),
+      gramPunkte: Array.from({length: 3}, () => ({stufe: 2, ok: true})),
+      nr: 8, gramNr: 3, benutzt: [], phase: "gram" };
+    ewErgebnis();
+    const t = document.getElementById("moduleContent").textContent;
+    ew = null;
+    return t.includes("immer stärker") && store.profilHistorie.length === 3; }));
 
   // ---------- 7f) Spiele-Freischaltung (Münzen) ----------
   section("Spiele-Freischaltung (Münzen)");
