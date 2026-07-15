@@ -461,8 +461,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.54.0";
+const APP_VERSION = "1.55.0";
 const RELEASE_NOTES = [
+  {v:"1.55.0", datum:"15.07.2026", punkte:[
+    "📈 Schatzsuche-Historie: Jede abgeschlossene Schatzsuche wird gespeichert. Im Elternbereich (Stufen-Tab) siehst du die Entwicklung über alle Einwertungen – mit Trend-Pfeilen (↗/↘) je Bereich.",
+    "🎉 Leo feiert Fortschritte: Wer sich seit der letzten Schatzsuche verbessert hat, bekommt es im Ergebnis gezeigt („Rechtschreibung 🐣 → 🦊!“).",
+  ]},
   {v:"1.54.0", datum:"15.07.2026", punkte:[
     "🧭 Die Schatzsuche-Einladung erscheint nur noch, wenn Klasse 3 oder Klasse 4 gewählt ist – bei „Alle“ wird sie ausgeblendet.",
   ]},
@@ -6164,7 +6168,10 @@ function ewStufeAus(punkte, proFrage){
   return s>0.62?2 : s>0.3?1 : 0;
 }
 function ewAnwenden(r, g){
-  store.profil={ r:r, g:g, datum:new Date().toLocaleDateString("de-DE") };
+  const datum=new Date().toLocaleDateString("de-DE");
+  store.profil={ r:r, g:g, datum:datum };
+  // Historie: jede abgeschlossene Schatzsuche wird festgehalten (max. 20)
+  store.profilHistorie=(store.profilHistorie||[]).concat([{datum:datum, r:r, g:g}]).slice(-20);
   EW_FELDER_RECHT.forEach(k=>{ const p=fieldProg(k); p.unlocked=Math.max(p.unlocked||1, r+1); });
   EW_FELDER_GRAM.forEach(k=>{ const p=fieldProg(k); p.unlocked=Math.max(p.unlocked||1, g+1); });
   save();
@@ -6192,6 +6199,16 @@ function ewErgebnis(){
       ${zeile("🔤","Rechtschreibung", r)}
       ${zeile("🧩","Grammatik", g)}
       ${ewLeo("Stark! Wir starten genau auf deinem Level – und wenn du besser wirst, wird die App mit dir schwerer. 💪")}
+      ${(()=>{ // Entwicklung seit der letzten Schatzsuche feiern
+        const h=store.profilHistorie||[], vorher=h.length>1?h[h.length-2]:null;
+        if(!vorher) return "";
+        if(r>vorher.r || g>vorher.g) return ewLeo("📈 Schau mal, deine Entwicklung: "
+          +(r>vorher.r?`Rechtschreibung ${EW_TIERE[vorher.r].e} → ${EW_TIERE[r].e}! `:"")
+          +(g>vorher.g?`Grammatik ${EW_TIERE[vorher.g].e} → ${EW_TIERE[g].e}! `:"")
+          +"Du wirst immer stärker! 🎉");
+        if(r===vorher.r && g===vorher.g) return ewLeo("Du hältst dein Level – richtig stark! 💪");
+        return "";
+      })()}
     </div>
     <button class="btn-primary" id="ewFertig" style="width:100%;">Los geht’s! 🚀</button>
     <p class="muted" style="text-align:center; font-size:13px; margin:10px 0 0;">🔧 Eltern: Das Ergebnis steht im Elternbereich unter „Stufen“ und kann dort geändert werden.</p>`;
@@ -6626,10 +6643,22 @@ function renderAdminStufen(c){
         Die Start-Stufen wurden entsprechend angehoben (Auto-Modus, Kind schaltet weiter frei).</p>`
     : `<p class="muted" style="margin:0 0 8px;">🧭 Noch keine Einwertung gemacht – die spielerische
         „Schatzsuche mit Leo“ (3 Min) findet das passende Start-Niveau automatisch.</p>`;
+  // Historie: Entwicklung über alle Schatzsuchen (neueste zuerst, mit Trend-Pfeil)
+  const hist=(store.profilHistorie||[]);
+  const profilHistorie = hist.length>1 ? `<div id="ewHistorie" style="margin:0 0 8px;">
+      <b style="font-size:14px;">📈 Entwicklung (${hist.length} Schatzsuchen)</b>
+      ${hist.slice().reverse().map((h,i,arr)=>{
+        const aelter=arr[i+1];
+        const pfeil=t=>!aelter?"":h[t]>aelter[t]?" <span style='color:#1e6b34;'>↗</span>":h[t]<aelter[t]?" <span style='color:#a02c2c;'>↘</span>":"";
+        return `<div class="muted" style="font-size:13.5px; margin-top:3px;">${h.datum||"?"}:
+          🔤 ${EW_TIERE[h.r].e} ${EW_TIERE[h.r].n}${pfeil("r")} · 🧩 ${EW_TIERE[h.g].e} ${EW_TIERE[h.g].n}${pfeil("g")}</div>`;
+      }).join("")}
+    </div>` : "";
   c.innerHTML = admHeader("stufen") + `
     <div class="card">
       <h3>🧭 Einwertung (Schatzsuche)</h3>
       ${profilInfo}
+      ${profilHistorie}
       <button class="btn-secondary btn-small" id="ewNeu" style="width:100%;">${store.profil?"🧭 Neu einwerten":"🧭 Einwertung starten"}</button>
     </div>
     <div class="card">
@@ -6930,6 +6959,7 @@ let store = {
   stimme:"",                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
   leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
   profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
+  profilHistorie:[],            // alle Schatzsuchen: [{datum, r, g}] (max. 20)
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -6994,6 +7024,15 @@ function load(){
       if(r>=0 && r<=2 && g>=0 && g<=2)
         store.profil={ r:r, g:g, datum:typeof d.profil.datum==="string"?d.profil.datum:"" };
     }
+    if(Array.isArray(d.profilHistorie)){
+      store.profilHistorie=d.profilHistorie
+        .filter(h=>h && h.r>=0 && h.r<=2 && h.g>=0 && h.g<=2)
+        .map(h=>({ datum:typeof h.datum==="string"?h.datum:"", r:parseInt(h.r,10), g:parseInt(h.g,10) }))
+        .slice(-20);
+    }
+    // Migration: Profil aus v1.52/1.53 ohne Historie -> als ersten Eintrag übernehmen
+    if(store.profil && !(store.profilHistorie||[]).length)
+      store.profilHistorie=[{ datum:store.profil.datum, r:store.profil.r, g:store.profil.g }];
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
     if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.blockwelt && typeof d.blockwelt==="object"){
