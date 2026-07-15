@@ -159,6 +159,12 @@ function section(t) { console.log("\n== " + t + " =="); }
     const m = feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/);
     const d = JSON.parse(m[1]);
     return d.v === 1 && d.sterne.spass === 4 && d.klasseKind === "3" && d.app.version === APP_VERSION; }));
+  check("WhatsApp-Knopf zuerst + Click-to-Chat-Link mit Bericht", await page.evaluate(() => {
+    const wa = document.getElementById("fbWhatsApp");
+    const url = feedbackWhatsAppURL();
+    return !!wa && !!document.getElementById("fbMail") && !!document.getElementById("fbKopie")
+      && wa.compareDocumentPosition(document.getElementById("fbMail")) & Node.DOCUMENT_POSITION_FOLLOWING
+      && url.startsWith("https://wa.me/") && url.includes(encodeURIComponent("##LP-FEEDBACK##")); }));
   check("Zurück vom Feedback zur Startseite", await page.evaluate(() => { goBack(); return document.getElementById("screen-home").classList.contains("active"); }));
   // Auswertungs-Werkzeug mit Beispieldaten prüfen
   {

@@ -9,9 +9,15 @@ Auf der Startseite gibt es **„💬 Beta-Feedback“** (für Eltern):
 - 2-Minuten-Formular: Klasse des Kindes, Nutzungshäufigkeit,
   **4 Sterne-Fragen** (Bedienung, Spaß, Lerneffekt, Elternbereich)
   und 3 Freitexte (gefällt / stört / Fehler).
-- Versand per **E-Mail-Knopf** (öffnet das Mail-Programm, Adresse
-  ist in `index.html` als `FEEDBACK_MAIL` hinterlegt) oder
-  **Kopieren** (für WhatsApp & Co.).
+- Versand per **WhatsApp-Knopf** (öffnet WhatsApp mit dem fertigen
+  Bericht – Ziel-Nummer in `index.html` als `FEEDBACK_WHATSAPP`
+  hinterlegen, internationales Format ohne „+“, z. B.
+  `4917612345678`; solange sie leer ist, wählt der Tester den
+  Empfänger selbst), per **E-Mail-Knopf** (Adresse in
+  `FEEDBACK_MAIL`) oder **Kopieren**.
+- WhatsApp-Nachrichten für die Auswertung einfach markieren,
+  kopieren und wie Mails als Textdatei in `feedback/` legen –
+  der Datenblock bleibt dabei erhalten.
 - Ohne Server, keine persönlichen Daten. Die **anonyme
   Nutzungs-Zusammenfassung** (App-Version, geübte Runden je Bereich,
   aktive Spiele) hängt nur mit gesetztem Häkchen an – sie zeigt,
