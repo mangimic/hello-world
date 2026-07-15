@@ -452,8 +452,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.49.0";
+const APP_VERSION = "1.50.0";
 const RELEASE_NOTES = [
+  {v:"1.50.0", datum:"14.07.2026", punkte:[
+    "💬 WhatsApp-Knopf repariert: Er ist jetzt ein echter Link – Popup-Blocker und eingebettete Ansichten hatten das bisherige Öffnen teils stumm verhindert. Dazu ein Hinweis mit Kopier-Alternative, falls WhatsApp auf dem Gerät fehlt.",
+    "☑️ Fehler melden ohne Tippen: Bei „Fehler entdeckt?“ tippst du jetzt einfach die betroffenen Bereiche an (Schreiben, Grammatik, Rechtschreibung, Spiele, Vorlesen, Münzen/Zeitlimit, Elternbereich, Anzeige) – mehrere möglich, Beschreibung optional. Die Auswertung zählt die Bereiche automatisch.",
+  ]},
   {v:"1.49.0", datum:"14.07.2026", punkte:[
     "💬 Feedback per WhatsApp: Der Feedback-Bogen hat jetzt einen grünen WhatsApp-Knopf – ein Tipp, und WhatsApp öffnet sich mit dem fertigen Bericht. Nur noch abschicken! (E-Mail und Kopieren gibt es weiterhin.)",
   ]},
@@ -5999,6 +6003,17 @@ const FB_FRAGEN=[
   {id:"lernen",    frage:"Wie schätzt du den Lerneffekt ein?"},
   {id:"eltern",    frage:"Wie hilfreich ist der Elternbereich?"}
 ];
+/* Bereiche für die Fehler-Meldung: antippen statt tippen. */
+const FB_BEREICHE=[
+  {id:"schreiben",  label:"✍️ Schreiben & Texte"},
+  {id:"grammatik",  label:"🧩 Grammatik"},
+  {id:"recht",      label:"🔤 Rechtschreibung"},
+  {id:"spiele",     label:"🎮 Spiele"},
+  {id:"vorlesen",   label:"🔊 Vorlesen"},
+  {id:"muenzen",    label:"🪙 Münzen / Zeitlimit"},
+  {id:"eltern",     label:"🔧 Elternbereich"},
+  {id:"anzeige",    label:"📱 Anzeige / Bedienung"}
+];
 let fbForm=null;
 function feedbackNutzung(){
   const runden={};
@@ -6011,7 +6026,7 @@ function feedbackText(){
   const f=fbForm||{sterne:{},texte:{}};
   const sterneZeilen=FB_FRAGEN.map(q=>`${q.frage} ${f.sterne[q.id]?"★".repeat(f.sterne[q.id])+"☆".repeat(5-f.sterne[q.id]):"(keine Angabe)"}`).join("\n");
   const daten={ v:1, datum:new Date().toISOString().slice(0,10), klasseKind:f.klasse||null,
-    nutzung:f.nutzung||null, sterne:f.sterne, texte:f.texte,
+    nutzung:f.nutzung||null, sterne:f.sterne, texte:f.texte, bereiche:f.bereiche||[],
     app:(f.mitDaten!==false)?feedbackNutzung():{version:APP_VERSION} };
   return `LERNPROFI BETA-FEEDBACK (Version ${APP_VERSION})
 =====================================
@@ -6027,6 +6042,7 @@ Was stört oder fehlt?
 ${f.texte.stoert||"-"}
 
 Fehler entdeckt?
+Bereiche: ${(f.bereiche&&f.bereiche.length)?f.bereiche.map(id=>{const b=FB_BEREICHE.find(x=>x.id===id);return b?b.label:id;}).join(", "):"-"}
 ${f.texte.fehler||"-"}
 
 --- Datenblock für die Auswertung (bitte nicht verändern) ---
@@ -6035,7 +6051,7 @@ ${f.texte.fehler||"-"}
 function openFeedback(){
   stopSpeak();
   activeModuleId=null; activeSectionId=null;
-  fbForm={sterne:{}, texte:{}, mitDaten:true};
+  fbForm={sterne:{}, texte:{}, bereiche:[], mitDaten:true};
   document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
   $("screen-content").classList.add("active");
   const sterne=FB_FRAGEN.map(q=>`
@@ -6056,13 +6072,17 @@ function openFeedback(){
       <textarea id="fbGut" rows="2" style="width:100%;"></textarea>
       <p class="muted" style="margin:10px 0 4px;"><b>Was stört oder fehlt?</b></p>
       <textarea id="fbStoert" rows="2" style="width:100%;"></textarea>
-      <p class="muted" style="margin:10px 0 4px;"><b>Fehler entdeckt? (Was, wo, welches Gerät?)</b></p>
+      <p class="muted" style="margin:10px 0 4px;"><b>Fehler entdeckt? Wo? (antippen, mehrere möglich)</b></p>
+      <div class="chip-row" id="fbBereiche">${FB_BEREICHE.map(b=>
+        `<button class="chip" type="button" data-bereich="${b.id}">${b.label}</button>`).join("")}</div>
+      <p class="muted" style="margin:8px 0 4px;">Kurz beschreiben (optional):</p>
       <textarea id="fbFehler" rows="2" style="width:100%;"></textarea>
       <label style="display:flex; gap:8px; align-items:flex-start; margin:12px 0; font-size:14px;">
         <input type="checkbox" id="fbDaten" checked style="margin-top:3px;">
         <span>Anonyme Nutzungs-Zusammenfassung anhängen (App-Version, geübte Runden – keine Namen, keine Texte des Kindes)</span>
       </label>
-      <button class="btn-primary" id="fbWhatsApp" style="width:100%; background:#25d366;">💬 Per WhatsApp senden</button>
+      <a class="btn-primary" id="fbWhatsApp" href="https://wa.me/${FEEDBACK_WHATSAPP}" target="_blank" rel="noopener"
+        style="display:block; width:100%; box-sizing:border-box; background:#25d366; text-align:center; text-decoration:none; color:#fff;">💬 Per WhatsApp senden</a>
       <button class="btn-secondary btn-small mt" id="fbMail" style="width:100%;">📧 Per E-Mail senden</button>
       <button class="btn-secondary btn-small mt" id="fbKopie" style="width:100%;">📋 Bericht nur kopieren</button>
       <div id="fbOk"></div>
@@ -6081,11 +6101,20 @@ function openFeedback(){
     fbForm.texte={ gut:$("fbGut").value.trim(), stoert:$("fbStoert").value.trim(), fehler:$("fbFehler").value.trim() };
     fbForm.mitDaten=$("fbDaten").checked;
   };
-  c.querySelector("#fbWhatsApp").onclick=()=>{
+  c.querySelectorAll("#fbBereiche .chip").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.bereich, i=fbForm.bereiche.indexOf(id);
+    if(i>=0) fbForm.bereiche.splice(i,1); else fbForm.bereiche.push(id);
+    b.classList.toggle("on", i<0);
+  });
+  // Echter Link statt window.open: Popup-Blocker und eingebettete
+  // Ansichten lassen einen angeklickten <a target="_blank"> durch,
+  // window.open() dagegen oft nicht. Die URL wird im Klick-Moment
+  // mit dem aktuellen Formular-Stand befüllt.
+  c.querySelector("#fbWhatsApp").onclick=function(){
     einsammeln();
-    const url=feedbackWhatsAppURL();
-    const w=window.open(url,"_blank"); if(!w) location.href=url;
-    $("fbOk").innerHTML=`<div class="feedback ok">💬 WhatsApp öffnet sich mit dem fertigen Bericht – nur noch abschicken. Danke!</div>`;
+    this.href=feedbackWhatsAppURL();
+    $("fbOk").innerHTML=`<div class="feedback ok">💬 WhatsApp öffnet sich mit dem fertigen Bericht – nur noch abschicken. Danke!<br>
+      <span class="muted" style="font-size:13px;">Nichts passiert? Dann nutze 📋 Kopieren und füge den Bericht selbst in WhatsApp ein.</span></div>`;
   };
   c.querySelector("#fbMail").onclick=()=>{
     einsammeln();
