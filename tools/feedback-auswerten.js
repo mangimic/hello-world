@@ -64,6 +64,13 @@ console.log("  Klasse des Kindes: ", zaehle(eintraege.map(e => e.d.klasseKind)))
 console.log("  Nutzungshäufigkeit:", zaehle(eintraege.map(e => e.d.nutzung)));
 console.log("  App-Version:       ", zaehle(eintraege.map(e => (e.d.app || {}).version)));
 
+const fehlerBereiche = {};
+eintraege.forEach(e => (e.d.bereiche || []).forEach(b => { fehlerBereiche[b] = (fehlerBereiche[b] || 0) + 1; }));
+if (Object.keys(fehlerBereiche).length) {
+  console.log("\n-- Fehler-Bereiche (angetippt, Mehrfachnennung möglich) --");
+  Object.entries(fehlerBereiche).sort((a, b) => b[1] - a[1]).forEach(([k, v]) => console.log("  " + k.padEnd(18) + v));
+}
+
 const nutz = eintraege.map(e => e.d.app).filter(a => a && a.runden);
 if (nutz.length) {
   const rundenSumme = {};

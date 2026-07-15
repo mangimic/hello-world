@@ -165,6 +165,27 @@ function section(t) { console.log("\n== " + t + " =="); }
     return !!wa && !!document.getElementById("fbMail") && !!document.getElementById("fbKopie")
       && wa.compareDocumentPosition(document.getElementById("fbMail")) & Node.DOCUMENT_POSITION_FOLLOWING
       && url.startsWith("https://wa.me/") && url.includes(encodeURIComponent("##LP-FEEDBACK##")); }));
+  check("WhatsApp ist echter Link (target=_blank), Klick befüllt die URL", await page.evaluate(() => {
+    const wa = document.getElementById("fbWhatsApp");
+    if (wa.tagName !== "A" || wa.target !== "_blank" || wa.rel !== "noopener") return false;
+    wa.onclick.call(wa);
+    return wa.href.startsWith("https://wa.me/") && wa.href.includes(encodeURIComponent("##LP-FEEDBACK##"));
+  }));
+  check("Fehler-Bereiche als Chips: antippen landet in Bericht + JSON", await page.evaluate(() => {
+    const chips = document.querySelectorAll("#fbBereiche .chip");
+    if (chips.length !== FB_BEREICHE.length) return false;
+    document.querySelector('#fbBereiche .chip[data-bereich="vorlesen"]').click();
+    document.querySelector('#fbBereiche .chip[data-bereich="spiele"]').click();
+    const t = feedbackText();
+    const d = JSON.parse(t.match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/)[1]);
+    return t.includes("🔊 Vorlesen") && t.includes("🎮 Spiele")
+      && d.bereiche.includes("vorlesen") && d.bereiche.includes("spiele");
+  }));
+  check("Chip nochmal antippen wählt ab", await page.evaluate(() => {
+    document.querySelector('#fbBereiche .chip[data-bereich="spiele"]').click();
+    const d = JSON.parse(feedbackText().match(/##LP-FEEDBACK##([\s\S]*?)##ENDE##/)[1]);
+    return d.bereiche.includes("vorlesen") && !d.bereiche.includes("spiele");
+  }));
   check("Zurück vom Feedback zur Startseite", await page.evaluate(() => { goBack(); return document.getElementById("screen-home").classList.contains("active"); }));
   // Auswertungs-Werkzeug mit Beispieldaten prüfen
   {
