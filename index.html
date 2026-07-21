@@ -461,8 +461,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.59.0";
+const APP_VERSION = "1.60.0";
 const RELEASE_NOTES = [
+  {v:"1.60.0", datum:"15.07.2026", punkte:[
+    "🧪 Neuer Bereich „Test-Training“ auf der Startseite: ein Übungs-Test wie ein echter Könnernachweis! 11 gemischte Aufgaben (richtige Schreibweise, Satzglieder umstellen, Zeit & Ort, Subjekt & Prädikat, die ausführliche Frage), 13 Punkte – und jede Antwort zählt beim ersten Versuch, genau wie in der Schule.",
+    "📊 Am Ende siehst du deine Punkte, die Dauer und welche Bereiche du vor dem nächsten Test noch üben solltest – mit direktem „Üben ➜“-Knopf. Deine letzten Test-Ergebnisse werden gespeichert, damit du deine Entwicklung siehst. Eine gute Runde bringt 1 Spiel-Münze!",
+  ]},
   {v:"1.59.0", datum:"15.07.2026", punkte:[
     "🔀 Neu im Lernfeld Satzglieder: „Umstellen“! Baue Sätze aus Satzglied-Bausteinen NEU zusammen – die Regel: Das Prädikat bleibt an 2. Stelle. Genau wie im Könnernachweis „Sprache untersuchen“.",
     "🕐📍 Dazu: Zeit- und Ortsbestimmungen erkennen – in den Schulfarben (Zeit = orange, Ort = grün), auch mit Sätzen, die gar keine Ortsbestimmung haben („Keine da!“).",
@@ -6176,6 +6180,209 @@ function bwRender(c){
 }
 
 /* ============================================================
+   TEST-TRAINING – „Könnernachweis üben"
+   Ein simulierter Test wie in der Schule: 11 gemischte Aufgaben
+   (Wörter, Umstellprobe, Zeit/Ort, Subjekt/Prädikat antippen,
+   ausführliche Frage wählen), 13 Punkte, EIN Versuch pro Aufgabe.
+   Am Ende: Punkte, Dauer, Bereichs-Auswertung mit Übe-Empfehlung
+   und eine Historie der letzten Tests (store.testHistorie).
+   ============================================================ */
+const TEST_SP=[
+  {teile:["der kleine Junge","spielt","mit dem Ball"], subj:0, praed:1},
+  {teile:["am Morgen","singt","der Vogel","laut"], subj:2, praed:1},
+  {teile:["die Kinder","besuchen","ihre Großeltern"], subj:0, praed:1},
+  {teile:["heute","backt","die Oma","einen Kuchen"], subj:2, praed:1}
+];
+const TEST_FRAGEN=[
+  {ziel:"Subjekt", satz:"Oma wohnt auf einem Bauernhof.", o:[["Wer wohnt auf einem Bauernhof?",1],["Was tut Oma?",0],["Wo wohnt Oma?",0]]},
+  {ziel:"Subjekt", satz:"Opa erzählt eine Geschichte.", o:[["Wer erzählt eine Geschichte?",1],["Was tut Opa?",0],["Was erzählt Opa?",0]]},
+  {ziel:"Prädikat", satz:"Oma stellt einen Kuchen auf den Tisch.", o:[["Was tut Oma?",1],["Wer stellt einen Kuchen auf den Tisch?",0],["Wo steht der Kuchen?",0]]},
+  {ziel:"Prädikat", satz:"Melissa und Max schlafen.", o:[["Was tun Melissa und Max?",1],["Wer schläft?",0],["Wann schlafen Melissa und Max?",0]]}
+];
+const TEST_BEREICHE={ recht:{name:"🔤 Rechtschreibung", modul:"gws", sektion:null},
+  satzbau:{name:"🔀 Satzglieder umstellen", modul:"satzglieder", sektion:"umstellen"},
+  zeitort:{name:"🕐📍 Zeit & Ort", modul:"satzglieder", sektion:"umstellen"},
+  subjpraed:{name:"🧩 Subjekt & Prädikat", modul:"subjekt", sektion:null} };
+let test=null;
+function testZieh(arr,n,filter){
+  const p=(filter?arr.filter(filter):arr).slice(), out=[];
+  while(out.length<n && p.length) out.push(p.splice(Math.floor(Math.random()*p.length),1)[0]);
+  return out;
+}
+function testStart(){
+  const wort=s=>{ let pool=gwsNiveauPool([s]); if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
+    const t=pool[Math.floor(Math.random()*pool.length)];
+    return {art:"wort", w:t.w, stufe:s, punkte:1, bereich:"recht"}; };
+  const um=testZieh(SG_UM_AUFGABEN,2,x=>x.art==="um").map(a=>({art:"um", a:a, punkte:1, bereich:"satzbau"}));
+  const zo=testZieh(SG_UM_AUFGABEN,2,x=>x.art==="zo").map(a=>({art:"zo", a:a, punkte:2, bereich:"zeitort"}));
+  const sp=testZieh(TEST_SP,2,null);
+  const fr=[testZieh(TEST_FRAGEN,1,q=>q.ziel==="Subjekt")[0], testZieh(TEST_FRAGEN,1,q=>q.ziel==="Prädikat")[0]];
+  test={ aufgaben:[wort("L"), wort("M"), wort("S"),
+      um[0], um[1], zo[0], zo[1],
+      {art:"sp", a:sp[0], ziel:"Subjekt", punkte:1, bereich:"subjpraed"},
+      {art:"sp", a:sp[1], ziel:"Prädikat", punkte:1, bereich:"subjpraed"},
+      {art:"frage", a:fr[0], punkte:1, bereich:"subjpraed"},
+      {art:"frage", a:fr[1], punkte:1, bereich:"subjpraed"}],
+    idx:0, punkte:0, max:13, start:Date.now(),
+    bereiche:{recht:{p:0,max:3}, satzbau:{p:0,max:2}, zeitort:{p:0,max:4}, subjpraed:{p:0,max:4}} };
+  testFrage();
+}
+function testPunkt(n){ test.punkte+=n; test.bereiche[test.aufgaben[test.idx].bereich].p+=n; }
+function openTestTraining(){
+  if(zeitAbgelaufen()){ zeitSperren(); return; }
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null; test=null;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  const hist=(store.testHistorie||[]);
+  const histHTML=hist.length?`<div class="card"><h3>📈 Deine letzten Tests</h3>${hist.slice().reverse().map(h=>
+    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b></p>`).join("")}</div>`:"";
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2>🧪 Test-Training</h2>
+      <p>Wie ein <b>Könnernachweis</b> in der Schule: 11 gemischte Aufgaben,
+        <b>13 Punkte</b> – und jede Antwort zählt beim <b>ersten Versuch</b>!</p>
+      <div class="hint">Dabei ist alles einmal dran: richtige Schreibweise, Satzglieder
+        umstellen, Zeit- und Ortsbestimmungen, Subjekt und Prädikat.</div>
+      <button class="btn-primary mt" id="testLos" style="width:100%;">Test starten! ✏️</button>
+    </div>${histHTML}`;
+  $("moduleContent").querySelector("#testLos").onclick=()=>testStart();
+  addSpeakButtons($("moduleContent"));
+  renderNav(); window.scrollTo(0,0);
+}
+function testFrage(){
+  const c=$("moduleContent");
+  if(test.idx>=test.aufgaben.length) return testErgebnis();
+  const a=test.aufgaben[test.idx];
+  let beantwortet=false;
+  const kopf=`<div class="card">
+    <p class="muted" style="margin:0; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">
+      Aufgabe ${test.idx+1} von ${test.aufgaben.length} · ${a.punkte} ${a.punkte===1?"Punkt":"Punkte"} · Stand: ${String(test.punkte).replace(".",",")} P.</p>`;
+  const fuss=`<div id="testfb"></div>
+    <button class="btn-primary mt" id="testWeiter" disabled>Weiter</button></div>`;
+  const fertig=()=>{ beantwortet=true; c.querySelector("#testWeiter").disabled=false; };
+  const sag=(ok,text)=>{ const d=document.createElement("div"); d.className="feedback "+(ok?"ok":"tip");
+    d.innerHTML=text; const fb=c.querySelector("#testfb"); fb.innerHTML=""; fb.appendChild(d); };
+  if(a.art==="wort"){
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Welches Wort ist <u>richtig</u> geschrieben?</h2>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">${spielOptionenHTML(a.w,"test-opt","font-size:19px; padding:16px 6px;")}</div>`+fuss;
+    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.w===a.w.richtig) x.style.background="#d9f0dd"; });
+      const ok=b.dataset.w===a.w.richtig;
+      if(ok){ testPunkt(1); sag(true,"Richtig! +1 Punkt 🌟"); }
+      else sag(false,`Leider nicht – richtig ist <b>„${a.w.richtig}“</b>. (0 Punkte, weiter geht's!)`);
+      fertig();
+    });
+  } else if(a.art==="um"){
+    let bau=[];
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Stelle den Satz um!</h2>
+      <div class="hint">Ausgangssatz: <b>${umSatzText(a.a.teile, a.a.teile.map((_,i)=>i))}</b><br>
+        <span class="muted" style="font-size:13.5px;">Baue ihn in NEUER Reihenfolge – Prädikat an 2. Stelle.</span></div>
+      <div class="chip-row">${a.a.teile.map((t,i)=>`<button class="chip test-chip" type="button" data-i="${i}">${t}</button>`).join("")}</div>
+      <div class="example-box" id="testBau" style="min-height:34px;">&nbsp;</div>`+fuss;
+    c.querySelectorAll(".test-chip").forEach(b=>b.onclick=()=>{
+      if(b.disabled||beantwortet) return;
+      b.disabled=true; bau.push(parseInt(b.dataset.i,10));
+      c.querySelector("#testBau").textContent=umSatzText(a.a.teile,bau).slice(0, bau.length===a.a.teile.length?undefined:-1);
+      if(bau.length===a.a.teile.length){
+        const ok=bau[1]===a.a.verb && !bau.every((v,i)=>v===i);
+        if(ok){ testPunkt(1); sag(true,"Super umgestellt! +1 Punkt 🌟"); }
+        else sag(false,`Leider nicht – z. B. so wäre es richtig: <b>${umSatzText(a.a.teile,[2,1,0].concat(a.a.teile.map((_,i)=>i).slice(3)))}</b>`);
+        fertig();
+      }
+    });
+  } else if(a.art==="zo"){
+    let phase="zeit";
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;" id="testZoFrage">Tippe die <b style="color:#c77800;">Zeitbestimmung</b> an! <span class="muted">(Wann?)</span></h2>
+      <div class="example-box">${a.a.teile.map((t,i)=>`<button class="chip test-chip" type="button" data-i="${i}" style="margin:2px;">${t}</button>`).join(" ")}</div>
+      <button class="btn-secondary btn-small" id="testZoKeine" style="display:none;">🚫 Keine da!</button>`+fuss;
+    const weiterZuOrt=()=>{ phase="ort";
+      c.querySelector("#testZoFrage").innerHTML=`Und jetzt die <b style="color:#1e6b34;">Ortsbestimmung</b>! <span class="muted">(Wo?)</span>`;
+      c.querySelector("#testZoKeine").style.display="inline-block"; };
+    const ortAufloesen=(ok)=>{
+      if(ok){ testPunkt(1); sag(true,"Richtig! +1 Punkt 🌟"); }
+      else sag(false, a.a.ort===null
+        ? "Dieser Satz hat KEINE Ortsbestimmung – das wäre der „Keine da!“-Knopf gewesen. (0 P.)"
+        : `Die Ortsbestimmung wäre <b>„${a.a.teile[a.a.ort]}“</b> gewesen. (0 P.)`);
+      fertig(); };
+    c.querySelectorAll(".test-chip").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      const i=parseInt(b.dataset.i,10);
+      if(phase==="zeit"){
+        if(i===a.a.zeit){ b.style.background="#ffd9a0"; testPunkt(1); sag(true,"Die Zeitbestimmung stimmt! +1 Punkt"); }
+        else sag(false,`Die Zeitbestimmung wäre <b>„${a.a.teile[a.a.zeit]}“</b> gewesen. (0 P.) Jetzt der Ort:`);
+        weiterZuOrt();
+      } else {
+        if(a.a.ort!==null && i===a.a.ort){ b.style.background="#c9edcc"; ortAufloesen(true); }
+        else ortAufloesen(false);
+      }
+    });
+    c.querySelector("#testZoKeine").onclick=()=>{ if(!beantwortet && phase==="ort") ortAufloesen(a.a.ort===null); };
+  } else if(a.art==="sp"){
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Tippe das <b>${a.ziel}</b> an!</h2>
+      <p class="muted" style="margin:0 0 6px;">${a.ziel==="Subjekt"?"Frage: Wer oder was …?":"Frage: Was tut …?"}</p>
+      <div class="example-box">${a.a.teile.map((t,i)=>`<button class="chip test-chip" type="button" data-i="${i}" style="margin:2px;">${t}</button>`).join(" ")}</div>`+fuss;
+    const richtig=a.ziel==="Subjekt"?a.a.subj:a.a.praed;
+    c.querySelectorAll(".test-chip").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      const i=parseInt(b.dataset.i,10);
+      c.querySelector(`.test-chip[data-i="${richtig}"]`).style.background=a.ziel==="Subjekt"?"#cfe3ff":"#f8c9c9";
+      if(i===richtig){ testPunkt(1); sag(true,"Genau! +1 Punkt 🌟"); }
+      else sag(false,`Das ${a.ziel} wäre <b>„${a.a.teile[richtig]}“</b> gewesen. (0 P.)`);
+      fertig();
+    });
+  } else { // frage
+    const opts=a.a.o.slice().sort(()=>Math.random()-0.5);
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Wie lautet die ausführliche Frage nach dem <b>${a.a.ziel}</b>?</h2>
+      <div class="example-box">${a.a.satz}</div>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">${opts.map(([t,ok])=>
+        `<button class="btn-secondary test-opt" data-ok="${ok}" style="font-size:16px;">${t}</button>`).join("")}</div>`+fuss;
+    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.ok==="1") x.style.background="#d9f0dd"; });
+      if(b.dataset.ok==="1"){ testPunkt(1); sag(true,"Genau diese Frage! +1 Punkt 🌟"); }
+      else sag(false,"Die richtige Frage ist grün markiert. (0 P.)");
+      fertig();
+    });
+  }
+  c.querySelector("#testWeiter").onclick=()=>{ if(beantwortet){ test.idx++; testFrage(); window.scrollTo(0,0); } };
+  addSpeakButtons(c); window.scrollTo(0,0);
+}
+function testErgebnis(){
+  const dauerMin=Math.max(1, Math.round((Date.now()-test.start)/60000));
+  const anteil=test.punkte/test.max;
+  const datum=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr";
+  store.testHistorie=(store.testHistorie||[]).concat([{datum:datum, p:test.punkte, max:test.max}]).slice(-10);
+  let muenzText="";
+  if(store.muenzenAktiv && anteil>=0.6){ store.muenzen=(store.muenzen||0)+1; muenzText=`<p style="font-weight:700;">🪙 Starke Runde – 1 Spiel-Münze verdient!</p>`; }
+  save();
+  const zeilen=Object.entries(test.bereiche).map(([id,b])=>{
+    const ok=b.p/b.max>=0.6, B=TEST_BEREICHE[id];
+    return `<div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
+      <span style="flex:1;">${B.name}</span><b>${String(b.p).replace(".",",")}/${b.max} P.</b>
+      ${ok?"✅":`<button class="btn-secondary btn-small test-ueben" data-b="${id}" style="min-height:auto; padding:6px 10px;">Üben ➜</button>`}</div>`;
+  }).join("");
+  $("moduleContent").innerHTML=`
+    <div class="card" style="text-align:center;">
+      <h2 style="margin:0;">${anteil>=0.85?"🏆 Spitze!":anteil>=0.6?"💪 Gut gemacht!":"🌱 Guter Anfang!"}</h2>
+      <p style="font-size:26px; font-weight:800; margin:8px 0;">${String(test.punkte).replace(".",",")} von ${test.max} Punkten</p>
+      <p class="muted">⏱️ Dauer: ca. ${dauerMin} Min</p>${muenzText}
+    </div>
+    <div class="card"><h3>Deine Bereiche</h3>${zeilen}
+      <p class="muted" style="font-size:13.5px; margin-top:8px;">Bereiche mit „Üben ➜“ lohnen sich vor dem nächsten Test besonders.</p></div>
+    <button class="btn-primary" id="testNochmal" style="width:100%;">🧪 Noch ein Test</button>
+    <button class="btn-secondary btn-small mt" id="testHome" style="width:100%;">🏠 Zur Startseite</button>`;
+  $("moduleContent").querySelector("#testNochmal").onclick=()=>testStart();
+  $("moduleContent").querySelector("#testHome").onclick=()=>goHome();
+  $("moduleContent").querySelectorAll(".test-ueben").forEach(b=>b.onclick=()=>{
+    const B=TEST_BEREICHE[b.dataset.b];
+    openModule(B.modul); if(B.sektion) goSection(B.sektion);
+  });
+  renderNav(); window.scrollTo(0,0);
+}
+
+/* ============================================================
    EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
    Beim ersten Start (oder über den Elternbereich) ermittelt die App
    das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
@@ -7156,6 +7363,7 @@ let store = {
   leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
   profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
   profilHistorie:[],            // alle Schatzsuchen: [{datum, r, g}] (max. 20)
+  testHistorie:[],              // Test-Training: [{datum, p, max}] (max. 10)
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -7229,6 +7437,12 @@ function load(){
     // Migration: Profil aus v1.52/1.53 ohne Historie -> als ersten Eintrag übernehmen
     if(store.profil && !(store.profilHistorie||[]).length)
       store.profilHistorie=[{ datum:store.profil.datum, r:store.profil.r, g:store.profil.g }];
+    if(Array.isArray(d.testHistorie)){
+      store.testHistorie=d.testHistorie
+        .filter(h=>h && h.p>=0 && h.max>0)
+        .map(h=>({ datum:typeof h.datum==="string"?h.datum:"", p:+h.p, max:+h.max }))
+        .slice(-10);
+    }
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
     if("muenzen" in d){ const v=parseInt(d.muenzen,10); if(v>=0 && v<=999) store.muenzen=v; }
     if(d.blockwelt && typeof d.blockwelt==="object"){
@@ -7478,6 +7692,13 @@ function buildModuleChooser(){
     div.onclick=()=>openGruppe(g.id);
     grid.appendChild(div);
   });
+  // Übungsbereich für Tests (Könnernachweis-Simulator)
+  const kachel=document.createElement("div");
+  kachel.className="choice gruppe test-kachel";
+  kachel.innerHTML=`<span class="emoji">🧪</span>Test-Training
+    <span class="card-lvl">Wie ein Könnernachweis – mit Punkten</span>`;
+  kachel.onclick=openTestTraining;
+  grid.appendChild(kachel);
   const aktive=SPIELE_IDS.filter(spielAktiv);
   const halle=document.createElement("div");
   halle.className="choice gruppe spielhalle";
