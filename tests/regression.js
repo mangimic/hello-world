@@ -91,9 +91,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
-  check("Aufgeräumte Startseite: 3 Gruppen + Spielhalle statt Kachelwand",
-    (await page.locator("#moduleChooser .choice").count()) === 4
-    && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1);
+  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Spielhalle",
+    (await page.locator("#moduleChooser .choice").count()) === 5
+    && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1
+    && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1);
   check("Startseite: Fach-Einstieg statt Thema-Wahl", await page.evaluate(() =>
     !!document.getElementById("fachRow")
     && document.getElementById("fachRow").textContent.includes("Deutsch")
@@ -1009,6 +1010,52 @@ function section(t) { console.log("\n== " + t + " =="); }
     const st = bwStore();
     return st.welt[40] === "" && st.welt[9 * 16 + 3] === "erde"
       && st.verdient === v && !!st.sicherung; }, bwVorher));
+
+  // ---------- 7fv) Test-Training (Könnernachweis-Simulator) ----------
+  section("Test-Training (Könnernachweis)");
+  await fresh(); await setLevel(3);
+  check("Startseite hat die Test-Training-Kachel", (await page.locator(".test-kachel").count()) === 1);
+  await page.locator(".test-kachel").click(); await page.waitForTimeout(150);
+  check("Übersicht: 13 Punkte + Erst-Versuch-Regel + Start-Knopf", (await page.locator("#moduleContent").textContent()).includes("13 Punkte")
+    && (await page.locator("#testLos").count()) === 1);
+  await page.locator("#testLos").click(); await page.waitForTimeout(150);
+  check("Test: 11 gemischte Aufgaben, 13 Punkte, alle Typen dabei", await page.evaluate(() =>
+    test.aufgaben.length === 11 && test.max === 13
+    && test.aufgaben.filter(a => a.art === "wort").length === 3
+    && test.aufgaben.filter(a => a.art === "um").length === 2
+    && test.aufgaben.filter(a => a.art === "zo").length === 2
+    && test.aufgaben.filter(a => a.art === "sp").length === 2
+    && test.aufgaben.filter(a => a.art === "frage").length === 2));
+  for (let k = 0; k < 11; k++) {
+    const a = await page.evaluate(() => { const x = test.aufgaben[test.idx];
+      return { art: x.art, richtig: x.w ? x.w.richtig : null, n: x.a && x.a.teile ? x.a.teile.length : 0,
+        zeit: x.a ? x.a.zeit : null, ort: x.a ? x.a.ort : null, ziel: x.ziel || null,
+        subj: x.a ? x.a.subj : null, praed: x.a ? x.a.praed : null }; });
+    if (a.art === "wort") await page.locator(`.test-opt[data-w="${a.richtig}"]`).click();
+    else if (a.art === "um") { const folge = [2, 1, 0].concat(Array.from({ length: a.n - 3 }, (_, j) => j + 3));
+      for (const i of folge) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(30); } }
+    else if (a.art === "zo") { await page.locator(`.test-chip[data-i="${a.zeit}"]`).click(); await page.waitForTimeout(60);
+      if (a.ort === null) await page.locator("#testZoKeine").click(); else await page.locator(`.test-chip[data-i="${a.ort}"]`).click(); }
+    else if (a.art === "sp") await page.locator(`.test-chip[data-i="${a.ziel === "Subjekt" ? a.subj : a.praed}"]`).click();
+    else await page.locator('.test-opt[data-ok="1"]').click();
+    await page.waitForTimeout(60);
+    await page.locator("#testWeiter").click(); await page.waitForTimeout(80);
+  }
+  check("Ergebnis: 13/13, 🪙 Münze + Historie gespeichert", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("13 von 13 Punkten") && t.includes("Spitze")
+      && store.muenzen === 1 && store.testHistorie.length === 1 && store.testHistorie[0].p === 13; }));
+  check("Alle Bereiche ✅ – keine Übe-Empfehlung nötig", (await page.locator(".test-ueben").count()) === 0);
+  // Zweiter Test: erste Aufgabe absichtlich falsch -> 0 P + Lösung
+  await page.locator("#testNochmal").click(); await page.waitForTimeout(150);
+  const testF = await page.evaluate(() => test.aufgaben[0].w.falsch);
+  await page.locator(`.test-opt[data-w="${testF}"]`).click(); await page.waitForTimeout(80);
+  check("Falsche Antwort: 0 Punkte, Lösung gezeigt, Weiter frei", await page.evaluate(() =>
+    test.punkte === 0 && document.getElementById("testfb").textContent.includes("richtig ist")
+    && !document.getElementById("testWeiter").disabled));
+  check("Übersicht zeigt die Test-Historie", await page.evaluate(() => {
+    openTestTraining();
+    return document.getElementById("moduleContent").textContent.includes("Deine letzten Tests"); }));
 
   // ---------- 7fw) Satzglieder: Umstellen & Zeit/Ort ----------
   section("Satzglieder umstellen & Zeit/Ort");
