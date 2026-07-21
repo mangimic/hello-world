@@ -461,8 +461,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.61.0";
+const APP_VERSION = "1.62.0";
 const RELEASE_NOTES = [
+  {v:"1.62.0", datum:"16.07.2026", punkte:[
+    "📖 Der Vorgangsbeschreibungs-Test hat jetzt die komplette Vorlage – wie in der Schule: Aufgabe, Zutaten, Hilfsmittel, die 5 Bild-Schritte und ein Muster-Text (mit Vorlesen und Mitlese-Markierung). Erst lesen, dann Test – und während des Tests ist die Vorlage jederzeit über „📖 Vorlage ansehen“ aufklappbar.",
+  ]},
   {v:"1.61.0", datum:"16.07.2026", punkte:[
     "📝 Zweiter Test im Test-Training: „Vorgangsbeschreibung“! Genau nach dem Bewertungsbogen aus der Schule: passende Überschrift, vollständige Zutaten, die 5 Waffel-Schritte in die RICHTIGE Reihenfolge bringen, genaue Schritte erkennen, Präsens, Ich-Form, vollständige Sätze, abwechslungsreiche Satzanfänge und Groß + Punkt – 9 Aufgaben, 13 Punkte.",
     "📈 Die Test-Historie zeigt jetzt, welcher Test es war (🧩 Sprache oder 📝 Vorgang).",
@@ -6217,6 +6220,42 @@ const TEST_BEREICHE={ recht:{name:"🔤 Rechtschreibung", modul:"gws", sektion:n
    vollständige Sätze, abwechslungsreiche Satzanfänge, Groß + Punkt. */
 const VT_SCHRITTE=["Eier, Zucker und Butter verrühren","Mehl, Vanillezucker und Backpulver untermischen",
   "Milch dazugießen und glatt rühren","Teig im Waffeleisen backen","Waffeln mit Puderzucker bestreuen"];
+// Die Vorlage zum Test (wie die Bild-Vorlage in der Schule): Aufgabe,
+// Zutaten, Hilfsmittel, Bild-Schritte und ein Muster-Text in Ich-Form.
+const VT_VORLAGE={
+  zutaten:"5 Eier · 250 g Zucker · 250 g weiche Butter · 500 g Mehl · 1 Päckchen Vanillezucker · 1 Päckchen Backpulver · 500 ml Milch · etwas Puderzucker",
+  hilfsmittel:"Rührschüssel · Handmixer · Esslöffel · Waffeleisen · Teller",
+  bilder:["1️⃣ 5 Eier + 250 g Zucker + 250 g weiche Butter → verrühren",
+    "2️⃣ 500 g Mehl + 1 Pck. Vanillezucker + 1 Pck. Backpulver → untermischen",
+    "3️⃣ 500 ml Milch → dazugießen, glatt rühren",
+    "4️⃣ Teig mit dem Löffel ins Waffeleisen → backen",
+    "5️⃣ Fertige Waffel auf den Teller → etwas Puderzucker darüber"],
+  muster:"Waffeln backen – Schritt für Schritt. Zuerst verrühre ich 5 Eier, 250 g Zucker und 250 g weiche Butter mit dem Mixer. Danach mische ich 500 g Mehl, 1 Päckchen Vanillezucker und 1 Päckchen Backpulver unter. Nun gieße ich 500 ml Milch dazu und rühre alles zu einem glatten Teig. Anschließend backe ich den Teig portionsweise im heißen Waffeleisen goldbraun. Zum Schluss lege ich die fertigen Waffeln auf einen Teller und bestreue sie mit etwas Puderzucker. Guten Appetit!"
+};
+function vtVorlageHTML(){
+  return `<div class="hint" style="margin-bottom:8px;"><b>🧾 Zutaten:</b> ${VT_VORLAGE.zutaten}<br>
+      <b>🥄 Hilfsmittel:</b> ${VT_VORLAGE.hilfsmittel}</div>
+    <div class="example-box" style="margin-bottom:8px;">${VT_VORLAGE.bilder.join("<br>")}</div>
+    <p class="muted" style="margin:0 0 4px; font-size:13.5px;"><b>So kann der fertige Text aussehen:</b></p>
+    <div class="lesetext">${VT_VORLAGE.muster}</div>`;
+}
+function testVorgangVorlage(){
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2>📝 Vorgangsbeschreibung: Waffelrezept</h2>
+      <p><b>Aufgabe wie in der Schule:</b> Schreibe ein Waffelrezept – alle nötigen
+        Informationen findest du in der Vorlage. Lies sie dir genau durch!</p>
+      ${vtVorlageHTML()}
+      <div class="hint" style="margin-top:8px;">💡 <b>Tipps aus dem Könnernachweis:</b> passende Überschrift ·
+        alle Zutaten und Hilfsmittel · alle Schritte genau und in der richtigen Reihenfolge ·
+        Ich-Form · unterschiedliche Satzanfänge · Präsens · am Ende durchlesen!</div>
+      <button class="btn-primary mt" id="vtStart" style="width:100%;">Alles gelesen – Test starten! ✏️</button>
+      <p class="muted" style="text-align:center; font-size:13px; margin:8px 0 0;">Die Vorlage kannst du auch während des Tests jederzeit ansehen – wie in der Schule.</p>
+    </div>`;
+  $("moduleContent").querySelector("#vtStart").onclick=()=>testFrage();
+  addSpeakButtons($("moduleContent"));
+  window.scrollTo(0,0);
+}
 const VT_WAHL=[
   {frage:"Welche Überschrift passt zu einer Vorgangsbeschreibung übers Waffelbacken?", punkte:1, bereich:"vinhalt",
     o:[["Waffeln backen – Schritt für Schritt",1],["Mein Lieblingsessen",0],["Die Waffel",0]]},
@@ -6251,7 +6290,7 @@ function testStart(typ){
         wahl[2], wahl[3], wahl[4], wahl[5], wahl[6], wahl[7]],
       idx:0, punkte:0, max:13, start:Date.now(),
       bereiche:{vinhalt:{p:0,max:3}, vaufbau:{p:0,max:5}, vsprache:{p:0,max:4}, vform:{p:0,max:1}} };
-    return testFrage();
+    return testVorgangVorlage(); // erst die Vorlage lesen – wie in der Schule
   }
   const wort=s=>{ let pool=gwsNiveauPool([s]); if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
     const t=pool[Math.floor(Math.random()*pool.length)];
@@ -6300,9 +6339,14 @@ function testFrage(){
   if(test.idx>=test.aufgaben.length) return testErgebnis();
   const a=test.aufgaben[test.idx];
   let beantwortet=false;
+  const vorlage=test.typ==="vorgang"
+    ? `<button class="linklike" id="vtZeigen" style="font-size:13px; margin:0 0 6px;">📖 Vorlage ansehen</button>
+       <div id="vtVorlage" style="display:none; margin-bottom:8px;">${vtVorlageHTML()}</div>`
+    : "";
   const kopf=`<div class="card">
     <p class="muted" style="margin:0; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">
-      Aufgabe ${test.idx+1} von ${test.aufgaben.length} · ${a.punkte} ${a.punkte===1?"Punkt":"Punkte"} · Stand: ${String(test.punkte).replace(".",",")} P.</p>`;
+      Aufgabe ${test.idx+1} von ${test.aufgaben.length} · ${a.punkte} ${a.punkte===1?"Punkt":"Punkte"} · Stand: ${String(test.punkte).replace(".",",")} P.</p>
+    ${vorlage}`;
   const fuss=`<div id="testfb"></div>
     <button class="btn-primary mt" id="testWeiter" disabled>Weiter</button></div>`;
   const fertig=()=>{ beantwortet=true; c.querySelector("#testWeiter").disabled=false; };
@@ -6429,6 +6473,13 @@ function testFrage(){
       fertig();
     });
   }
+  const vz=c.querySelector("#vtZeigen");
+  if(vz) vz.onclick=()=>{
+    const box=c.querySelector("#vtVorlage");
+    const offen=box.style.display!=="none";
+    box.style.display=offen?"none":"block";
+    vz.textContent=offen?"📖 Vorlage ansehen":"📖 Vorlage zuklappen";
+  };
   c.querySelector("#testWeiter").onclick=()=>{ if(beantwortet){ test.idx++; testFrage(); window.scrollTo(0,0); } };
   addSpeakButtons(c); window.scrollTo(0,0);
 }

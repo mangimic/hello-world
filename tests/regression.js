@@ -1060,10 +1060,23 @@ function section(t) { console.log("\n== " + t + " =="); }
       && !!document.getElementById("testLos") && !!document.getElementById("testLosVorgang"); }));
   // ---------- Vorgangsbeschreibungs-Test (Waffelrezept) ----------
   await page.locator("#testLosVorgang").click(); await page.waitForTimeout(150);
+  check("Vorgangs-Test startet mit der Vorlage (Zutaten, Schritte, Mustertext)", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return !!document.getElementById("vtStart")
+      && t.includes("5 Eier") && t.includes("Waffeleisen")
+      && t.includes("Zuerst verrühre ich") && t.includes("Tipps aus dem Könnernachweis"); }));
+  await page.locator("#vtStart").click(); await page.waitForTimeout(150);
   check("Vorgangs-Test: 9 Aufgaben, 13 P., Reihenfolge-Aufgabe dabei", await page.evaluate(() =>
     test.typ === "vorgang" && test.aufgaben.length === 9 && test.max === 13
     && test.aufgaben.filter(a => a.art === "folge").length === 1
     && test.aufgaben.filter(a => a.art === "wahl").length === 8));
+  check("Vorlage während des Tests aufklappbar", await page.evaluate(() => {
+    const btn = document.getElementById("vtZeigen"), box = document.getElementById("vtVorlage");
+    if (!btn || !box || box.style.display !== "none") return false;
+    btn.click();
+    const offen = box.style.display === "block" && box.textContent.includes("5 Eier");
+    btn.click();
+    return offen && box.style.display === "none"; }));
   for (let k = 0; k < 9; k++) {
     const art = await page.evaluate(() => test.aufgaben[test.idx].art);
     if (art === "wahl") await page.locator('.test-opt[data-ok="1"]').click();
