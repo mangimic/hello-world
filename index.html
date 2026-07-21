@@ -461,8 +461,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.60.0";
+const APP_VERSION = "1.61.0";
 const RELEASE_NOTES = [
+  {v:"1.61.0", datum:"16.07.2026", punkte:[
+    "📝 Zweiter Test im Test-Training: „Vorgangsbeschreibung“! Genau nach dem Bewertungsbogen aus der Schule: passende Überschrift, vollständige Zutaten, die 5 Waffel-Schritte in die RICHTIGE Reihenfolge bringen, genaue Schritte erkennen, Präsens, Ich-Form, vollständige Sätze, abwechslungsreiche Satzanfänge und Groß + Punkt – 9 Aufgaben, 13 Punkte.",
+    "📈 Die Test-Historie zeigt jetzt, welcher Test es war (🧩 Sprache oder 📝 Vorgang).",
+  ]},
   {v:"1.60.0", datum:"15.07.2026", punkte:[
     "🧪 Neuer Bereich „Test-Training“ auf der Startseite: ein Übungs-Test wie ein echter Könnernachweis! 11 gemischte Aufgaben (richtige Schreibweise, Satzglieder umstellen, Zeit & Ort, Subjekt & Prädikat, die ausführliche Frage), 13 Punkte – und jede Antwort zählt beim ersten Versuch, genau wie in der Schule.",
     "📊 Am Ende siehst du deine Punkte, die Dauer und welche Bereiche du vor dem nächsten Test noch üben solltest – mit direktem „Üben ➜“-Knopf. Deine letzten Test-Ergebnisse werden gespeichert, damit du deine Entwicklung siehst. Eine gute Runde bringt 1 Spiel-Münze!",
@@ -6202,14 +6206,53 @@ const TEST_FRAGEN=[
 const TEST_BEREICHE={ recht:{name:"🔤 Rechtschreibung", modul:"gws", sektion:null},
   satzbau:{name:"🔀 Satzglieder umstellen", modul:"satzglieder", sektion:"umstellen"},
   zeitort:{name:"🕐📍 Zeit & Ort", modul:"satzglieder", sektion:"umstellen"},
-  subjpraed:{name:"🧩 Subjekt & Prädikat", modul:"subjekt", sektion:null} };
+  subjpraed:{name:"🧩 Subjekt & Prädikat", modul:"subjekt", sektion:null},
+  vinhalt:{name:"📋 Inhalt (Zutaten & Schritte)", modul:"vorgang", sektion:null},
+  vaufbau:{name:"🔢 Richtige Reihenfolge", modul:"vorgang", sektion:null},
+  vsprache:{name:"🗣️ Sprache (Sätze & Form)", modul:"vorgang", sektion:null},
+  vform:{name:"✍️ Groß schreiben & Punkt", modul:"grossklein", sektion:null} };
+/* Vorgangsbeschreibungs-Test (nach dem Bewertungsbogen „Waffelrezept"):
+   prüft genau die Schul-Kriterien – Überschrift, vollständige Zutaten,
+   Schritte GENAU und in RICHTIGER Reihenfolge, Präsens, gleiche Form,
+   vollständige Sätze, abwechslungsreiche Satzanfänge, Groß + Punkt. */
+const VT_SCHRITTE=["Eier, Zucker und Butter verrühren","Mehl, Vanillezucker und Backpulver untermischen",
+  "Milch dazugießen und glatt rühren","Teig im Waffeleisen backen","Waffeln mit Puderzucker bestreuen"];
+const VT_WAHL=[
+  {frage:"Welche Überschrift passt zu einer Vorgangsbeschreibung übers Waffelbacken?", punkte:1, bereich:"vinhalt",
+    o:[["Waffeln backen – Schritt für Schritt",1],["Mein Lieblingsessen",0],["Die Waffel",0]]},
+  {frage:"In der Zutatenliste stehen: 5 Eier, 250 g Zucker, 250 g Butter, 500 g Mehl, Vanillezucker, Backpulver. Welche Zutat fehlt noch?", punkte:1, bereich:"vinhalt",
+    o:[["500 ml Milch",1],["1 kg Äpfel",0],["Salz und Pfeffer",0]]},
+  {frage:"Welcher Schritt ist GENAU beschrieben?", punkte:1, bereich:"vinhalt",
+    o:[["Ich verrühre 5 Eier, 250 g Zucker und 250 g Butter mit dem Mixer.",1],["Ich mache den Teig.",0],["Dann alles mixen.",0]]},
+  {frage:"Eine Vorgangsbeschreibung steht in der Gegenwart (Präsens). Welcher Satz passt?", punkte:1, bereich:"vsprache",
+    o:[["Nun gieße ich die Milch dazu.",1],["Dann goss ich die Milch dazu.",0],["Ich werde die Milch dazugießen.",0]]},
+  {frage:"Der Text ist in der Ich-Form geschrieben: „Zuerst verrühre ich die Eier.“ Welcher Satz bleibt in DERSELBEN Form?", punkte:1, bereich:"vsprache",
+    o:[["Danach mische ich das Mehl unter.",1],["Danach mischst du das Mehl unter.",0],["Danach das Mehl untermischen.",0]]},
+  {frage:"Welcher Satz ist ein VOLLSTÄNDIGER Satz?", punkte:1, bereich:"vsprache",
+    o:[["Jetzt fülle ich den Teig ins Waffeleisen.",1],["Teig ins Waffeleisen.",0],["Und dann backen.",0]]},
+  {frage:"„Zuerst … Dann … Dann …“ – welcher Satzanfang macht den Text abwechslungsreich?", punkte:1, bereich:"vsprache",
+    o:[["Anschließend",1],["Dann",0],["Und dann",0]]},
+  {frage:"Welcher Satz ist richtig aufgeschrieben (groß angefangen, Punkt am Ende)?", punkte:1, bereich:"vform",
+    o:[["Zum Schluss bestreue ich die Waffeln mit Puderzucker.",1],["zum Schluss bestreue ich die Waffeln mit Puderzucker",0],["zum schluss bestreue ich die waffeln mit puderzucker.",0]]}
+];
 let test=null;
 function testZieh(arr,n,filter){
   const p=(filter?arr.filter(filter):arr).slice(), out=[];
   while(out.length<n && p.length) out.push(p.splice(Math.floor(Math.random()*p.length),1)[0]);
   return out;
 }
-function testStart(){
+function testStart(typ){
+  typ=typ||"sprache";
+  if(typ==="vorgang"){
+    // Reihenfolge-Aufgabe in die Mitte, Wahl-Aufgaben drumherum
+    const wahl=VT_WAHL.map(q=>({art:"wahl", a:q, punkte:q.punkte, bereich:q.bereich}));
+    test={ typ:typ, aufgaben:[wahl[0], wahl[1],
+        {art:"folge", schritte:VT_SCHRITTE, punkte:5, bereich:"vaufbau"},
+        wahl[2], wahl[3], wahl[4], wahl[5], wahl[6], wahl[7]],
+      idx:0, punkte:0, max:13, start:Date.now(),
+      bereiche:{vinhalt:{p:0,max:3}, vaufbau:{p:0,max:5}, vsprache:{p:0,max:4}, vform:{p:0,max:1}} };
+    return testFrage();
+  }
   const wort=s=>{ let pool=gwsNiveauPool([s]); if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
     const t=pool[Math.floor(Math.random()*pool.length)];
     return {art:"wort", w:t.w, stufe:s, punkte:1, bereich:"recht"}; };
@@ -6217,7 +6260,7 @@ function testStart(){
   const zo=testZieh(SG_UM_AUFGABEN,2,x=>x.art==="zo").map(a=>({art:"zo", a:a, punkte:2, bereich:"zeitort"}));
   const sp=testZieh(TEST_SP,2,null);
   const fr=[testZieh(TEST_FRAGEN,1,q=>q.ziel==="Subjekt")[0], testZieh(TEST_FRAGEN,1,q=>q.ziel==="Prädikat")[0]];
-  test={ aufgaben:[wort("L"), wort("M"), wort("S"),
+  test={ typ:typ, aufgaben:[wort("L"), wort("M"), wort("S"),
       um[0], um[1], zo[0], zo[1],
       {art:"sp", a:sp[0], ziel:"Subjekt", punkte:1, bereich:"subjpraed"},
       {art:"sp", a:sp[1], ziel:"Prädikat", punkte:1, bereich:"subjpraed"},
@@ -6236,17 +6279,19 @@ function openTestTraining(){
   $("screen-content").classList.add("active");
   const hist=(store.testHistorie||[]);
   const histHTML=hist.length?`<div class="card"><h3>📈 Deine letzten Tests</h3>${hist.slice().reverse().map(h=>
-    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b></p>`).join("")}</div>`:"";
+    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":"🧩 Sprache"}</p>`).join("")}</div>`:"";
   $("moduleContent").innerHTML=`
     <div class="card">
       <h2>🧪 Test-Training</h2>
-      <p>Wie ein <b>Könnernachweis</b> in der Schule: 11 gemischte Aufgaben,
-        <b>13 Punkte</b> – und jede Antwort zählt beim <b>ersten Versuch</b>!</p>
-      <div class="hint">Dabei ist alles einmal dran: richtige Schreibweise, Satzglieder
-        umstellen, Zeit- und Ortsbestimmungen, Subjekt und Prädikat.</div>
-      <button class="btn-primary mt" id="testLos" style="width:100%;">Test starten! ✏️</button>
+      <p>Wie ein <b>Könnernachweis</b> in der Schule – und jede Antwort zählt
+        beim <b>ersten Versuch</b>! Such dir einen Test aus (je 13 Punkte):</p>
+      <button class="btn-primary mt" id="testLos" style="width:100%;">🧩 Sprache untersuchen<br>
+        <span style="font-size:13px; font-weight:400;">Wörter · Satzglieder · Zeit &amp; Ort · Subjekt &amp; Prädikat</span></button>
+      <button class="btn-primary mt" id="testLosVorgang" style="width:100%;">📝 Vorgangsbeschreibung<br>
+        <span style="font-size:13px; font-weight:400;">Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form</span></button>
     </div>${histHTML}`;
-  $("moduleContent").querySelector("#testLos").onclick=()=>testStart();
+  $("moduleContent").querySelector("#testLos").onclick=()=>testStart("sprache");
+  $("moduleContent").querySelector("#testLosVorgang").onclick=()=>testStart("vorgang");
   addSpeakButtons($("moduleContent"));
   renderNav(); window.scrollTo(0,0);
 }
@@ -6332,6 +6377,44 @@ function testFrage(){
       else sag(false,`Das ${a.ziel} wäre <b>„${a.a.teile[richtig]}“</b> gewesen. (0 P.)`);
       fertig();
     });
+  } else if(a.art==="wahl"){
+    const opts=a.a.o.slice().sort(()=>Math.random()-0.5);
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px; font-size:18px;">${a.a.frage}</h2>
+      <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">${opts.map(([t,ok])=>
+        `<button class="btn-secondary test-opt" data-ok="${ok}" style="font-size:16px; text-align:left;">${t}</button>`).join("")}</div>`+fuss;
+    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.ok==="1") x.style.background="#d9f0dd"; });
+      if(b.dataset.ok==="1"){ testPunkt(a.punkte); sag(true,"Richtig! +"+a.punkte+" Punkt 🌟"); }
+      else sag(false,"Die richtige Antwort ist grün markiert. (0 P.)");
+      fertig();
+    });
+  } else if(a.art==="folge"){
+    // Schritte mischen (nie in der Lösungs-Reihenfolge anzeigen)
+    let anzeige=a.schritte.map((_,i)=>i).sort(()=>Math.random()-0.5);
+    if(anzeige.every((v,i)=>v===i)) anzeige.push(anzeige.shift());
+    let erwartet=0, richtig=0;
+    c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Bringe das Waffelrezept in die richtige Reihenfolge!</h2>
+      <p class="muted" style="margin:0 0 6px;">Tippe die Schritte der Reihe nach an – vom ersten bis zum letzten.</p>
+      <div style="display:flex; flex-direction:column; gap:8px;">${anzeige.map(i=>
+        `<button class="btn-secondary test-chip" data-i="${i}" style="font-size:15px; text-align:left;">${a.schritte[i]}</button>`).join("")}</div>`+fuss;
+    c.querySelectorAll(".test-chip").forEach(b=>b.onclick=()=>{
+      if(beantwortet || b.disabled) return;
+      const i=parseInt(b.dataset.i,10);
+      const ok=i===erwartet;
+      const ziel=c.querySelector(`.test-chip[data-i="${erwartet}"]`);
+      ziel.disabled=true; ziel.style.background=ok?"#d9f0dd":"#fdeeca";
+      ziel.textContent=(erwartet+1)+". "+a.schritte[erwartet];
+      if(ok){ testPunkt(1); richtig++; } else b.style.outline="2px solid #a02c2c";
+      erwartet++;
+      setTimeout(()=>{ if(b!==ziel) b.style.outline=""; }, 700);
+      if(erwartet>=a.schritte.length){
+        sag(richtig===a.schritte.length, richtig===a.schritte.length
+          ? "Perfekte Reihenfolge! +5 Punkte 🌟"
+          : `${richtig} von ${a.schritte.length} Schritten saßen – die richtige Reihenfolge steht jetzt da. (+${richtig} P.)`);
+        fertig();
+      }
+    });
   } else { // frage
     const opts=a.a.o.slice().sort(()=>Math.random()-0.5);
     c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Wie lautet die ausführliche Frage nach dem <b>${a.a.ziel}</b>?</h2>
@@ -6353,7 +6436,7 @@ function testErgebnis(){
   const dauerMin=Math.max(1, Math.round((Date.now()-test.start)/60000));
   const anteil=test.punkte/test.max;
   const datum=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr";
-  store.testHistorie=(store.testHistorie||[]).concat([{datum:datum, p:test.punkte, max:test.max}]).slice(-10);
+  store.testHistorie=(store.testHistorie||[]).concat([{datum:datum, p:test.punkte, max:test.max, typ:test.typ||"sprache"}]).slice(-10);
   let muenzText="";
   if(store.muenzenAktiv && anteil>=0.6){ store.muenzen=(store.muenzen||0)+1; muenzText=`<p style="font-weight:700;">🪙 Starke Runde – 1 Spiel-Münze verdient!</p>`; }
   save();
@@ -6373,7 +6456,7 @@ function testErgebnis(){
       <p class="muted" style="font-size:13.5px; margin-top:8px;">Bereiche mit „Üben ➜“ lohnen sich vor dem nächsten Test besonders.</p></div>
     <button class="btn-primary" id="testNochmal" style="width:100%;">🧪 Noch ein Test</button>
     <button class="btn-secondary btn-small mt" id="testHome" style="width:100%;">🏠 Zur Startseite</button>`;
-  $("moduleContent").querySelector("#testNochmal").onclick=()=>testStart();
+  $("moduleContent").querySelector("#testNochmal").onclick=()=>testStart(test?test.typ:"sprache");
   $("moduleContent").querySelector("#testHome").onclick=()=>goHome();
   $("moduleContent").querySelectorAll(".test-ueben").forEach(b=>b.onclick=()=>{
     const B=TEST_BEREICHE[b.dataset.b];
@@ -7440,7 +7523,8 @@ function load(){
     if(Array.isArray(d.testHistorie)){
       store.testHistorie=d.testHistorie
         .filter(h=>h && h.p>=0 && h.max>0)
-        .map(h=>({ datum:typeof h.datum==="string"?h.datum:"", p:+h.p, max:+h.max }))
+        .map(h=>({ datum:typeof h.datum==="string"?h.datum:"", p:+h.p, max:+h.max,
+          typ:h.typ==="vorgang"?"vorgang":"sprache" }))
         .slice(-10);
     }
     if("muenzenAktiv" in d) store.muenzenAktiv=d.muenzenAktiv!==false;
