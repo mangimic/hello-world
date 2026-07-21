@@ -1010,6 +1010,54 @@ function section(t) { console.log("\n== " + t + " =="); }
     return st.welt[40] === "" && st.welt[9 * 16 + 3] === "erde"
       && st.verdient === v && !!st.sicherung; }, bwVorher));
 
+  // ---------- 7fw) Satzglieder: Umstellen & Zeit/Ort ----------
+  section("Satzglieder umstellen & Zeit/Ort");
+  await fresh(); await setLevel(3);
+  await openMod("Satzglieder", "Umstellen");
+  check("Umstell-Übung: Ausgangssatz + Bausteine + Verb-Regel", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return SG_UM_AUFGABEN.length === 9
+      && t.includes("Ausgangssatz") && t.includes("2. Stelle")
+      && document.querySelectorAll(".um-chip").length === SG_UM_AUFGABEN[0].teile.length; }));
+  // Fehlversuch 1: identische Reihenfolge
+  for (let i = 0; i < 4; i++) { await page.locator(`.um-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
+  check("Gleiche Reihenfolge wird abgelehnt", (await page.locator("#umfb").textContent()).includes("Ausgangssatz"));
+  await page.waitForTimeout(1400); // Auto-Reset abwarten
+  // Fehlversuch 2: Verb nicht an 2. Stelle
+  for (const i of [2, 3, 1, 0]) { await page.locator(`.um-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
+  check("Verb nicht an 2. Stelle wird erklärt", (await page.locator("#umfb").textContent()).includes("2. Stelle"));
+  await page.waitForTimeout(1400);
+  // Gültige Umstellung: [2,1,0,3] -> Verb bleibt an Position 2
+  for (const i of [2, 1, 0, 3]) { await page.locator(`.um-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
+  check("Gültige Umstellung wird gefeiert", (await page.locator("#umfb").textContent()).includes("Super umgestellt"));
+  await page.locator("#nextBtn").click(); await page.waitForTimeout(100);
+  // Restliche Umstell-Aufgaben lösen (Muster [2,1,0,3,(4)] ist immer gültig)
+  for (let k = 1; k < 5; k++) {
+    const n = await page.evaluate(() => SG_UM_AUFGABEN[umIdx].teile.length);
+    const folge = [2, 1, 0].concat(Array.from({ length: n - 3 }, (_, j) => j + 3));
+    for (const i of folge) { await page.locator(`.um-chip[data-i="${i}"]`).click(); await page.waitForTimeout(30); }
+    await page.locator("#nextBtn").click(); await page.waitForTimeout(80);
+  }
+  // Zeit/Ort-Aufgaben: erst Zeit (orange), dann Ort bzw. „Keine da!"
+  check("Zeit/Ort-Aufgabe fragt zuerst nach der Zeitbestimmung", await page.evaluate(() =>
+    SG_UM_AUFGABEN[umIdx].art === "zo"
+    && document.getElementById("zoFrage").textContent.includes("Zeitbestimmung")));
+  for (let k = 0; k < 4; k++) {
+    const a = await page.evaluate(() => SG_UM_AUFGABEN[umIdx]);
+    await page.locator(`.um-chip[data-i="${a.zeit}"]`).click(); await page.waitForTimeout(80);
+    if (k === 0) check("Nach der Zeit kommt die Orts-Frage + „Keine da!“-Knopf", await page.evaluate(() =>
+      document.getElementById("zoFrage").textContent.includes("Ortsbestimmung")
+      && document.getElementById("zoKeine").style.display !== "none"));
+    if (a.ort === null) await page.locator("#zoKeine").click();
+    else await page.locator(`.um-chip[data-i="${a.ort}"]`).click();
+    await page.waitForTimeout(80);
+    await page.locator("#nextBtn").click(); await page.waitForTimeout(80);
+  }
+  check("Runde fertig: Auswertung mit voller Punktzahl", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent.replace(/\s+/g, " ");
+    const m = t.match(/Auf Anhieb richtig:\s*(\d+)\s*von\s*(\d+)/);
+    return !!document.getElementById("runAgain") && m && m[2] === "9"; }));
+
   // ---------- 7fx) Kein fest eingebauter Name mehr ----------
   section("Neutraler Spielername");
   await fresh(); await setLevel(3);

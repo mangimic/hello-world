@@ -461,8 +461,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.58.0";
+const APP_VERSION = "1.59.0";
 const RELEASE_NOTES = [
+  {v:"1.59.0", datum:"15.07.2026", punkte:[
+    "🔀 Neu im Lernfeld Satzglieder: „Umstellen“! Baue Sätze aus Satzglied-Bausteinen NEU zusammen – die Regel: Das Prädikat bleibt an 2. Stelle. Genau wie im Könnernachweis „Sprache untersuchen“.",
+    "🕐📍 Dazu: Zeit- und Ortsbestimmungen erkennen – in den Schulfarben (Zeit = orange, Ort = grün), auch mit Sätzen, die gar keine Ortsbestimmung haben („Keine da!“).",
+  ]},
   {v:"1.58.0", datum:"15.07.2026", punkte:[
     "💬 Der WhatsApp-Knopf ist zurück – und öffnet auf Android jetzt die WhatsApp-App DIREKT (ohne die Web-Zwischenseite, an der es vorher scheiterte). iPhone und PC haben ihre eigenen Wege. Zur Sicherheit ist der Bericht beim Tippen immer schon kopiert und sichtbar – falls WhatsApp fehlt, sagt es die App nach kurzer Zeit ehrlich.",
     "📤 „Teilen oder Kopieren“ bleibt als zweiter Weg für alle anderen Apps (E-Mail, Signal …).",
@@ -2558,6 +2562,130 @@ function sgWorksheetHTML(){
     ${lines}`;
 }
 function sgFlower(c){ renderFlower(c, MODULES.satzglieder.self, store.satzglieder.self); }
+
+/* ============================================================
+   SATZGLIEDER UMSTELLEN & ZEIT/ORT (nach Könnernachweis 8)
+   1) Umstellprobe: Satzglied-Bausteine antippen und den Satz NEU
+      zusammenbauen – Regel: das Prädikat (Verb) bleibt an 2. Stelle,
+      und die Reihenfolge muss sich vom Ausgangssatz unterscheiden.
+   2) Zeit- und Ortsbestimmungen erkennen (Schulfarben: Zeit = orange,
+      Ort = grün) – inkl. Sätzen OHNE Ortsbestimmung („Keine da!").
+   Bausteine stehen in Satzmitte-Schreibung; am Satzanfang wird der
+   erste Buchstabe automatisch groß.
+   ============================================================ */
+const SG_UM_AUFGABEN=[
+  {art:"um", teile:["Nico","hat","ein Aquarium","im Zimmer"], verb:1},
+  {art:"um", teile:["tagsüber","sitzt","der Wasserfrosch","auf einem Seerosenblatt"], verb:1},
+  {art:"um", teile:["Peter","spielt","morgens","am Seeufer"], verb:1},
+  {art:"um", teile:["regelmäßig","versorgt","Nico","die Fische"], verb:1},
+  {art:"um", teile:["die Kinder","besuchen","am Sonntag","ihre Großeltern"], verb:1},
+  {art:"zo", teile:["jeden Montag","habe","ich","Training"], zeit:0, ort:null},
+  {art:"zo", teile:["drei Stunden","üben","wir","in der Turnhalle"], zeit:0, ort:3},
+  {art:"zo", teile:["heute","spielen","die Kinder","im Garten"], zeit:0, ort:3},
+  {art:"zo", teile:["morgens","füttert","Opa","auf dem Bauernhof","die Hühner"], zeit:0, ort:3}
+];
+let umIdx=0, umBau=[], zoPhase="zeit";
+function umSatzText(teile, folge){
+  const s=folge.map(i=>teile[i]).join(" ");
+  return s.charAt(0).toUpperCase()+s.slice(1)+".";
+}
+function sgUmstellen(c){
+  const A=SG_UM_AUFGABEN; runGet("satzglied", A.length);
+  if(umIdx>=A.length){ return renderRunResult(c, "satzglied", ()=>{ umIdx=0; sgUmstellen(c); }); }
+  const a=A[umIdx];
+  umBau=[]; zoPhase="zeit";
+  let answered=false;
+  const kopf=`
+    <div class="card">
+      <h2>🔀 Satzglieder umstellen</h2>
+      <p class="muted">Aufgabe ${umIdx+1} von ${A.length}</p>
+      <div class="lvl-row">${fieldBadge("satzglied")}</div>`;
+  const fuss=`<div id="umfb"></div>
+      <button class="btn-primary mt" id="nextBtn">Nächste Aufgabe</button>
+    </div>`;
+  const weiterFrei=()=>{ answered=true; };
+  if(a.art==="um"){
+    c.innerHTML=kopf+`
+      <p>Baue den Satz <b>NEU</b> zusammen – stelle die Satzglieder um!</p>
+      <div class="hint">Ausgangssatz: <b>${umSatzText(a.teile, a.teile.map((_,i)=>i))}</b><br>
+        <span class="muted" style="font-size:13.5px;">💡 Das Prädikat (Verb) bleibt an <b>2. Stelle</b>.</span></div>
+      <div class="chip-row" id="umBausteine">${a.teile.map((t,i)=>
+        `<button class="chip um-chip" type="button" data-i="${i}">${t}</button>`).join("")}</div>
+      <div class="example-box" id="umBauZeile" style="min-height:34px;">&nbsp;</div>
+      <button class="linklike" id="umReset" style="font-size:13px;">🔄 Neu bauen</button>`+fuss;
+    const zeile=c.querySelector("#umBauZeile"), fb=c.querySelector("#umfb");
+    const chips=()=>c.querySelectorAll(".um-chip");
+    const reset=()=>{ umBau=[]; zeile.innerHTML="&nbsp;"; chips().forEach(x=>x.disabled=false); };
+    const pruefen=()=>{
+      const gleich=umBau.every((v,i)=>v===i);
+      const verbAn2=umBau[1]===a.verb;
+      const d=document.createElement("div");
+      if(!gleich && verbAn2){
+        runCorrect("satzglied", umIdx); weiterFrei();
+        d.className="feedback ok";
+        d.textContent="Super umgestellt! 🌟 Das Prädikat steht an 2. Stelle – der Satz stimmt.";
+        fb.innerHTML=""; fb.appendChild(d);
+      } else {
+        runWrong("satzglied", umIdx);
+        d.className="feedback tip";
+        d.textContent=gleich
+          ? "Das ist noch der Ausgangssatz – stelle die Satzglieder in eine ANDERE Reihenfolge!"
+          : "Fast! Das Prädikat (die Verb-Karte „"+a.teile[a.verb]+"“) muss an 2. Stelle stehen.";
+        fb.innerHTML=""; fb.appendChild(d);
+        focusFeedback(d, null);
+        setTimeout(reset, 1200);
+      }
+    };
+    c.querySelectorAll(".um-chip").forEach(b=>b.onclick=()=>{
+      if(b.disabled || answered) return;
+      b.disabled=true; umBau.push(parseInt(b.dataset.i,10));
+      zeile.textContent=umSatzText(a.teile, umBau).slice(0, umBau.length===a.teile.length?undefined:-1);
+      if(umBau.length===a.teile.length) pruefen();
+    });
+    c.querySelector("#umReset").onclick=()=>{ if(!answered) { reset(); c.querySelector("#umfb").innerHTML=""; } };
+  } else {
+    c.innerHTML=kopf+`
+      <p id="zoFrage">Tippe die <b style="color:#c77800;">Zeitbestimmung</b> an! <span class="muted">(Wann?)</span></p>
+      <div class="example-box"><span id="zoSatz">${a.teile.map((t,i)=>
+        `<button class="chip um-chip" type="button" data-i="${i}" style="margin:2px;">${t}</button>`).join(" ")}</span></div>
+      <button class="btn-secondary btn-small" id="zoKeine" style="display:none;">🚫 Keine da!</button>`+fuss;
+    const fb=c.querySelector("#umfb"), frage=c.querySelector("#zoFrage");
+    const sag=(ok,text)=>{ const d=document.createElement("div"); d.className="feedback "+(ok?"ok":"tip");
+      d.textContent=text; fb.innerHTML=""; fb.appendChild(d); if(!ok) focusFeedback(d,null); };
+    const ortPhase=()=>{
+      zoPhase="ort";
+      frage.innerHTML=`Und jetzt: Tippe die <b style="color:#1e6b34;">Ortsbestimmung</b> an! <span class="muted">(Wo?)</span>`;
+      c.querySelector("#zoKeine").style.display="inline-block";
+    };
+    const antwort=(i)=>{
+      if(answered) return;
+      if(zoPhase==="zeit"){
+        if(i===a.zeit){
+          c.querySelector(`.um-chip[data-i="${i}"]`).style.background="#ffd9a0";
+          sag(true,"Genau, das ist die Zeitbestimmung! 🕐"); ortPhase();
+        } else { runWrong("satzglied", umIdx); sag(false,"Das ist keine Zeitbestimmung. Frage dich: WANN passiert es?"); }
+      } else {
+        if(a.ort!==null && i===a.ort){
+          c.querySelector(`.um-chip[data-i="${i}"]`).style.background="#c9edcc";
+          runCorrect("satzglied", umIdx); weiterFrei();
+          sag(true,"Richtig, das ist die Ortsbestimmung! 📍🌟");
+        } else if(a.ort===null){
+          runWrong("satzglied", umIdx); sag(false,"Schau genau: Sagt dieses Satzglied wirklich, WO etwas passiert?");
+        } else { runWrong("satzglied", umIdx); sag(false,"Das ist kein Ort. Frage dich: WO passiert es?"); }
+      }
+    };
+    c.querySelectorAll(".um-chip").forEach(b=>b.onclick=()=>antwort(parseInt(b.dataset.i,10)));
+    c.querySelector("#zoKeine").onclick=()=>{
+      if(answered || zoPhase!=="ort") return;
+      if(a.ort===null){ runCorrect("satzglied", umIdx); weiterFrei(); sag(true,"Stark! Dieser Satz hat wirklich KEINE Ortsbestimmung. 🌟"); }
+      else { runWrong("satzglied", umIdx); sag(false,"Doch, eine Ortsbestimmung versteckt sich im Satz. WO passiert es?"); }
+    };
+  }
+  c.querySelector("#nextBtn").onclick=()=>{
+    if(!answered){ needAnswer(c.querySelector("#umfb"), "Löse zuerst die Aufgabe – dann geht es weiter."); return; }
+    umIdx++; sgUmstellen(c); window.scrollTo(0,0);
+  };
+}
 
 /* ============================================================
    MODUL 5: WÖRTLICHE REDE
@@ -6874,10 +7002,11 @@ const MODULES = {
   satzglieder:{
     id:"satzglieder", name:"Satzglieder", emoji:"🧩",
     sections:[
-      {id:"lernen", icon:"📖", label:"Lernen", render:sgLernen},
-      {id:"ueben",  icon:"✏️", label:"Üben",   render:sgUeben},
-      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:sgSheet},
-      {id:"blume",  icon:"🌱", label:"Blume",  render:sgFlower}
+      {id:"lernen",    icon:"📖", label:"Lernen",    render:sgLernen},
+      {id:"ueben",     icon:"✏️", label:"Üben",      render:sgUeben},
+      {id:"umstellen", icon:"🔀", label:"Umstellen", render:sgUmstellen},
+      {id:"blatt",     icon:"🖨️", label:"Blatt",     render:sgSheet},
+      {id:"blume",     icon:"🌱", label:"Blume",     render:sgFlower}
     ],
     self:{ groups:[{title:"Subjekt & Prädikat", fragen:KRIT_SATZGLIED}], form:KRIT_SATZGLIED_FORM }
   },
@@ -7371,7 +7500,7 @@ function openModule(id){
   // Vorgangsbeschreibung folgt dem globalen Thema, wenn ein passender Ablauf existiert
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
   save();
-  subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; redeIdx=0; zeitIdx=0;
+  subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; umIdx=0; redeIdx=0; zeitIdx=0;
   gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; gwsCatIdx=0; gwsIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null; tennis=null; fussball=null; schach=null; schAufIdx=0; schLekStep=0;
   scoreRuns={};
