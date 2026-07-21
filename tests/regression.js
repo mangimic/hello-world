@@ -1014,11 +1014,17 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 7fv) Test-Training (Könnernachweis-Simulator) ----------
   section("Test-Training (Könnernachweis)");
   await fresh(); await setLevel(3);
-  check("Startseite hat die Test-Training-Kachel", (await page.locator(".test-kachel").count()) === 1);
+  check("Startseite hat die Test-Training-Kachel (Klasse 3)", (await page.locator(".test-kachel").count()) === 1);
+  await setLevel(4);
+  check("Klasse 4: Test-Kachel ausgeblendet (Tests sind Klasse-3-Stoff)", (await page.locator(".test-kachel").count()) === 0);
+  await setLevel(0);
+  check("„Alle“: Kachel da, beide Tests im Katalog", (await page.locator(".test-kachel").count()) === 1
+    && await page.evaluate(() => testsFuerKlasse().length === 2));
+  await setLevel(3);
   await page.locator(".test-kachel").click(); await page.waitForTimeout(150);
   check("Übersicht: 13 Punkte + Erst-Versuch-Regel + Start-Knopf", (await page.locator("#moduleContent").textContent()).includes("13 Punkte")
-    && (await page.locator("#testLos").count()) === 1);
-  await page.locator("#testLos").click(); await page.waitForTimeout(150);
+    && (await page.locator('.test-start[data-typ="sprache"]').count()) === 1);
+  await page.locator('.test-start[data-typ="sprache"]').click(); await page.waitForTimeout(150);
   check("Test: 11 gemischte Aufgaben, 13 Punkte, alle Typen dabei", await page.evaluate(() =>
     test.aufgaben.length === 11 && test.max === 13
     && test.aufgaben.filter(a => a.art === "wort").length === 3
@@ -1057,9 +1063,9 @@ function section(t) { console.log("\n== " + t + " =="); }
     openTestTraining();
     const t = document.getElementById("moduleContent").textContent;
     return t.includes("Deine letzten Tests") && t.includes("🧩 Sprache")
-      && !!document.getElementById("testLos") && !!document.getElementById("testLosVorgang"); }));
+      && document.querySelectorAll(".test-start").length === 2; }));
   // ---------- Vorgangsbeschreibungs-Test (Waffelrezept) ----------
-  await page.locator("#testLosVorgang").click(); await page.waitForTimeout(150);
+  await page.locator('.test-start[data-typ="vorgang"]').click(); await page.waitForTimeout(150);
   check("Vorgangs-Test startet mit der Vorlage (Zutaten, Schritte, Mustertext)", await page.evaluate(() => {
     const t = document.getElementById("moduleContent").textContent;
     return !!document.getElementById("vtStart")
