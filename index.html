@@ -461,8 +461,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.62.0";
+const APP_VERSION = "1.63.0";
 const RELEASE_NOTES = [
+  {v:"1.63.0", datum:"16.07.2026", punkte:[
+    "🎓 Die Tests im Test-Training gehören zu Klasse 3 und erscheinen jetzt nur noch dort (und bei „Alle“). In Klasse 4 ist die Test-Kachel ausgeblendet – eigene Klasse-4-Tests kommen bald und lassen sich dank Test-Katalog einfach ergänzen.",
+  ]},
   {v:"1.62.0", datum:"16.07.2026", punkte:[
     "📖 Der Vorgangsbeschreibungs-Test hat jetzt die komplette Vorlage – wie in der Schule: Aufgabe, Zutaten, Hilfsmittel, die 5 Bild-Schritte und ein Muster-Text (mit Vorlesen und Mitlese-Markierung). Erst lesen, dann Test – und während des Tests ist die Vorlage jederzeit über „📖 Vorlage ansehen“ aufklappbar.",
   ]},
@@ -6274,6 +6277,15 @@ const VT_WAHL=[
   {frage:"Welcher Satz ist richtig aufgeschrieben (groß angefangen, Punkt am Ende)?", punkte:1, bereich:"vform",
     o:[["Zum Schluss bestreue ich die Waffeln mit Puderzucker.",1],["zum Schluss bestreue ich die Waffeln mit Puderzucker",0],["zum schluss bestreue ich die waffeln mit puderzucker.",0]]}
 ];
+/* Test-Katalog mit Klassen-Zuordnung: die beiden bisherigen Tests sind
+   Klasse-3-Stoff. Neue Tests (z. B. für Klasse 4) einfach hier ergänzen. */
+const TEST_KATALOG=[
+  {typ:"sprache", titel:"🧩 Sprache untersuchen", untertitel:"Wörter · Satzglieder · Zeit &amp; Ort · Subjekt &amp; Prädikat", klassen:[3]},
+  {typ:"vorgang", titel:"📝 Vorgangsbeschreibung", untertitel:"Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form", klassen:[3]}
+];
+function testsFuerKlasse(){
+  return TEST_KATALOG.filter(t=>store.level===0 || t.klassen.includes(store.level));
+}
 let test=null;
 function testZieh(arr,n,filter){
   const p=(filter?arr.filter(filter):arr).slice(), out=[];
@@ -6319,18 +6331,19 @@ function openTestTraining(){
   const hist=(store.testHistorie||[]);
   const histHTML=hist.length?`<div class="card"><h3>📈 Deine letzten Tests</h3>${hist.slice().reverse().map(h=>
     `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":"🧩 Sprache"}</p>`).join("")}</div>`:"";
+  const verfuegbar=testsFuerKlasse();
+  const knoepfe=verfuegbar.length
+    ? verfuegbar.map(t=>`<button class="btn-primary mt test-start" data-typ="${t.typ}" style="width:100%;">${t.titel}<br>
+        <span style="font-size:13px; font-weight:400;">${t.untertitel}</span></button>`).join("")
+    : `<div class="hint">Für Klasse ${store.level} kommen bald eigene Tests – schau später wieder vorbei!</div>`;
   $("moduleContent").innerHTML=`
     <div class="card">
       <h2>🧪 Test-Training</h2>
       <p>Wie ein <b>Könnernachweis</b> in der Schule – und jede Antwort zählt
         beim <b>ersten Versuch</b>! Such dir einen Test aus (je 13 Punkte):</p>
-      <button class="btn-primary mt" id="testLos" style="width:100%;">🧩 Sprache untersuchen<br>
-        <span style="font-size:13px; font-weight:400;">Wörter · Satzglieder · Zeit &amp; Ort · Subjekt &amp; Prädikat</span></button>
-      <button class="btn-primary mt" id="testLosVorgang" style="width:100%;">📝 Vorgangsbeschreibung<br>
-        <span style="font-size:13px; font-weight:400;">Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form</span></button>
+      ${knoepfe}
     </div>${histHTML}`;
-  $("moduleContent").querySelector("#testLos").onclick=()=>testStart("sprache");
-  $("moduleContent").querySelector("#testLosVorgang").onclick=()=>testStart("vorgang");
+  $("moduleContent").querySelectorAll(".test-start").forEach(b=>b.onclick=()=>testStart(b.dataset.typ));
   addSpeakButtons($("moduleContent"));
   renderNav(); window.scrollTo(0,0);
 }
@@ -7827,13 +7840,15 @@ function buildModuleChooser(){
     div.onclick=()=>openGruppe(g.id);
     grid.appendChild(div);
   });
-  // Übungsbereich für Tests (Könnernachweis-Simulator)
-  const kachel=document.createElement("div");
-  kachel.className="choice gruppe test-kachel";
-  kachel.innerHTML=`<span class="emoji">🧪</span>Test-Training
-    <span class="card-lvl">Wie ein Könnernachweis – mit Punkten</span>`;
-  kachel.onclick=openTestTraining;
-  grid.appendChild(kachel);
+  // Übungsbereich für Tests – nur wenn es Tests für die gewählte Klasse gibt
+  if(testsFuerKlasse().length){
+    const kachel=document.createElement("div");
+    kachel.className="choice gruppe test-kachel";
+    kachel.innerHTML=`<span class="emoji">🧪</span>Test-Training
+      <span class="card-lvl">Wie ein Könnernachweis – mit Punkten</span>`;
+    kachel.onclick=openTestTraining;
+    grid.appendChild(kachel);
+  }
   const aktive=SPIELE_IDS.filter(spielAktiv);
   const halle=document.createElement("div");
   halle.className="choice gruppe spielhalle";
