@@ -1053,9 +1053,38 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Falsche Antwort: 0 Punkte, Lösung gezeigt, Weiter frei", await page.evaluate(() =>
     test.punkte === 0 && document.getElementById("testfb").textContent.includes("richtig ist")
     && !document.getElementById("testWeiter").disabled));
-  check("Übersicht zeigt die Test-Historie", await page.evaluate(() => {
+  check("Übersicht zeigt Historie + beide Test-Arten", await page.evaluate(() => {
     openTestTraining();
-    return document.getElementById("moduleContent").textContent.includes("Deine letzten Tests"); }));
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Deine letzten Tests") && t.includes("🧩 Sprache")
+      && !!document.getElementById("testLos") && !!document.getElementById("testLosVorgang"); }));
+  // ---------- Vorgangsbeschreibungs-Test (Waffelrezept) ----------
+  await page.locator("#testLosVorgang").click(); await page.waitForTimeout(150);
+  check("Vorgangs-Test: 9 Aufgaben, 13 P., Reihenfolge-Aufgabe dabei", await page.evaluate(() =>
+    test.typ === "vorgang" && test.aufgaben.length === 9 && test.max === 13
+    && test.aufgaben.filter(a => a.art === "folge").length === 1
+    && test.aufgaben.filter(a => a.art === "wahl").length === 8));
+  for (let k = 0; k < 9; k++) {
+    const art = await page.evaluate(() => test.aufgaben[test.idx].art);
+    if (art === "wahl") await page.locator('.test-opt[data-ok="1"]').click();
+    else for (let i = 0; i < 5; i++) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
+    await page.waitForTimeout(60);
+    await page.locator("#testWeiter").click(); await page.waitForTimeout(80);
+  }
+  check("Vorgangs-Test: 13/13, Historie kennt den Typ", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    const h = store.testHistorie[store.testHistorie.length - 1];
+    return t.includes("13 von 13 Punkten") && h.typ === "vorgang" && h.p === 13; }));
+  // Reihenfolge mit Fehler: falscher erster Schritt gibt 0 P. für diesen Schritt
+  await page.locator("#testNochmal").click(); await page.waitForTimeout(150);
+  await page.evaluate(() => { test.idx = 2; testFrage(); }); await page.waitForTimeout(100);
+  await page.locator('.test-chip[data-i="3"]').click(); await page.waitForTimeout(80);
+  check("Falscher Schritt: richtiger wird markiert, 0 P. dafür", await page.evaluate(() => {
+    const c1 = document.querySelector('.test-chip[data-i="0"]');
+    return c1.disabled && c1.textContent.startsWith("1.") && test.punkte === 0; }));
+  for (let i = 1; i < 5; i++) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
+  check("Teilpunkte: 4 von 5 Schritten = 4 P.", await page.evaluate(() =>
+    test.punkte === 4 && document.getElementById("testfb").textContent.includes("4 von 5")));
 
   // ---------- 7fw) Satzglieder: Umstellen & Zeit/Ort ----------
   section("Satzglieder umstellen & Zeit/Ort");
