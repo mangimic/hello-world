@@ -300,6 +300,8 @@ button.chip.on{background:var(--primary); color:#fff;}
   background:var(--soft); margin-bottom:6px;}
 .bw-rezept.zu{opacity:.55;}
 .bw-rezept .bw-craft{width:auto; flex:none; min-height:auto; padding:8px 12px; font-size:14px; white-space:nowrap;}
+/* Kontroll-Blick im Test-Training: gewählte Antwort vor dem Abgeben */
+.test-opt.gewaehlt{border:2.5px solid var(--primary); background:#dcecff;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
   display:flex; align-items:center; justify-content:center; padding:18px;}
 .zeit-karte{max-width:420px; text-align:center;}
@@ -461,8 +463,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.63.0";
+const APP_VERSION = "1.64.0";
 const RELEASE_NOTES = [
+  {v:"1.64.0", datum:"16.07.2026", punkte:[
+    "🤸 Bewegungspausen mit Leo: Nach 10 Minuten konzentriertem Lernen schlägt Leo eine kurze Bewegungspause vor (Hampelmänner, tief durchatmen …) – das bestes Mittel, damit der Kopf frisch bleibt. Die Pause zählt nicht als Lernzeit.",
+    "🔥 Fokus-Serie: Die App zählt, wie viele Aufgaben du AM STÜCK löst – dein Rekord steht auf der Startseite und in jeder Auswertung. Dranbleiben wird belohnt, nicht nur Richtigkeit!",
+    "🔍 Kontroll-Blick im Test-Training: Antwort erst auswählen, noch einmal genau hinschauen (umentscheiden erlaubt!) und dann bewusst abgeben – so wie es die Lehrerin mit „Sorgfalt und Genauigkeit“ meint.",
+  ]},
   {v:"1.63.0", datum:"16.07.2026", punkte:[
     "🎓 Die Tests im Test-Training gehören zu Klasse 3 und erscheinen jetzt nur noch dort (und bei „Alle“). In Klasse 4 ist die Test-Kachel ausgeblendet – eigene Klasse-4-Tests kommen bald und lassen sich dank Test-Katalog einfach ergänzen.",
   ]},
@@ -1149,6 +1156,7 @@ function runWrong(key, idx){ const r=scoreRuns[key]; if(r) r.wrong.add(idx); }
 function runCorrect(key, idx){
   const r=scoreRuns[key]; if(!r || r.scored.has(idx)) return;
   r.scored.add(idx); r.solved++; if(!r.wrong.has(idx)) r.first++;
+  fokusZaehle(); // Fokus-Serie: gelöste Aufgaben am Stück
 }
 function runReset(key){ delete scoreRuns[key]; }
 
@@ -1251,6 +1259,13 @@ function renderRunResult(host, key, onRepeat){
     }
   }
 
+  // ---- Fokus-Serie: Dranbleiben sichtbar machen ----
+  let fokusLine="";
+  if(fokusSerie>=3){
+    const rekord=store.fokusRekord||0;
+    fokusLine=`<div class="lvl-note${fokusSerie>=rekord?" up":""}">🔥 Fokus-Serie: <b>${fokusSerie} Aufgaben am Stück</b>${fokusSerie>=rekord?" – dein Rekord!":" · Rekord: "+rekord}</div>`;
+  }
+
   // ---- Stufen-Fortschritt: einmal je abgeschlossener Runde auswerten ----
   let unlockedTo=null, newCrown=false, levelLine="";
   const isField = !!FIELD_POOLS[key];
@@ -1285,6 +1300,7 @@ function renderRunResult(host, key, onRepeat){
       </div>
       ${levelLine}
       ${muenzLine}
+      ${fokusLine}
       <div style="display:flex; gap:10px; margin-top:12px;">
         <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
         <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
@@ -6360,16 +6376,32 @@ function testFrage(){
     <p class="muted" style="margin:0; font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.04em;">
       Aufgabe ${test.idx+1} von ${test.aufgaben.length} · ${a.punkte} ${a.punkte===1?"Punkt":"Punkte"} · Stand: ${String(test.punkte).replace(".",",")} P.</p>
     ${vorlage}`;
-  const fuss=`<div id="testfb"></div>
+  const fuss=`<button class="btn-secondary mt" id="testAbgeben" style="display:none; width:100%;">🔍 Kontroll-Blick gemacht? Abgeben!</button>
+    <div id="testfb"></div>
     <button class="btn-primary mt" id="testWeiter" disabled>Weiter</button></div>`;
-  const fertig=()=>{ beantwortet=true; c.querySelector("#testWeiter").disabled=false; };
+  // Kontroll-Blick (Sorgfalt): erst wählen, prüfen, DANN bewusst abgeben.
+  // Umentscheiden ist bis zum Abgeben erlaubt.
+  let testWahl=null;
+  const mitKontrollBlick=(werten)=>{
+    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
+      if(beantwortet) return;
+      testWahl=b;
+      c.querySelectorAll(".test-opt").forEach(x=>x.classList.toggle("gewaehlt", x===b));
+      c.querySelector("#testAbgeben").style.display="block";
+    });
+    c.querySelector("#testAbgeben").onclick=()=>{
+      if(beantwortet || !testWahl) return;
+      c.querySelector("#testAbgeben").style.display="none";
+      werten(testWahl);
+    };
+  };
+  const fertig=()=>{ beantwortet=true; c.querySelector("#testWeiter").disabled=false; fokusZaehle(); };
   const sag=(ok,text)=>{ const d=document.createElement("div"); d.className="feedback "+(ok?"ok":"tip");
     d.innerHTML=text; const fb=c.querySelector("#testfb"); fb.innerHTML=""; fb.appendChild(d); };
   if(a.art==="wort"){
     c.innerHTML=kopf+`<h2 style="margin:6px 0 4px;">Welches Wort ist <u>richtig</u> geschrieben?</h2>
       <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">${spielOptionenHTML(a.w,"test-opt","font-size:19px; padding:16px 6px;")}</div>`+fuss;
-    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
-      if(beantwortet) return;
+    mitKontrollBlick(b=>{
       c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.w===a.w.richtig) x.style.background="#d9f0dd"; });
       const ok=b.dataset.w===a.w.richtig;
       if(ok){ testPunkt(1); sag(true,"Richtig! +1 Punkt 🌟"); }
@@ -6439,8 +6471,7 @@ function testFrage(){
     c.innerHTML=kopf+`<h2 style="margin:6px 0 4px; font-size:18px;">${a.a.frage}</h2>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">${opts.map(([t,ok])=>
         `<button class="btn-secondary test-opt" data-ok="${ok}" style="font-size:16px; text-align:left;">${t}</button>`).join("")}</div>`+fuss;
-    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
-      if(beantwortet) return;
+    mitKontrollBlick(b=>{
       c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.ok==="1") x.style.background="#d9f0dd"; });
       if(b.dataset.ok==="1"){ testPunkt(a.punkte); sag(true,"Richtig! +"+a.punkte+" Punkt 🌟"); }
       else sag(false,"Die richtige Antwort ist grün markiert. (0 P.)");
@@ -6478,8 +6509,7 @@ function testFrage(){
       <div class="example-box">${a.a.satz}</div>
       <div style="display:flex; flex-direction:column; gap:8px; margin-top:10px;">${opts.map(([t,ok])=>
         `<button class="btn-secondary test-opt" data-ok="${ok}" style="font-size:16px;">${t}</button>`).join("")}</div>`+fuss;
-    c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
-      if(beantwortet) return;
+    mitKontrollBlick(b=>{
       c.querySelectorAll(".test-opt").forEach(x=>{ x.disabled=true; if(x.dataset.ok==="1") x.style.background="#d9f0dd"; });
       if(b.dataset.ok==="1"){ testPunkt(1); sag(true,"Genau diese Frage! +1 Punkt 🌟"); }
       else sag(false,"Die richtige Frage ist grün markiert. (0 P.)");
@@ -7511,6 +7541,7 @@ let store = {
   profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
   profilHistorie:[],            // alle Schatzsuchen: [{datum, r, g}] (max. 20)
   testHistorie:[],              // Test-Training: [{datum, p, max}] (max. 10)
+  fokusRekord:0,                // längste Fokus-Serie (Aufgaben am Stück)
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -7584,6 +7615,7 @@ function load(){
     // Migration: Profil aus v1.52/1.53 ohne Historie -> als ersten Eintrag übernehmen
     if(store.profil && !(store.profilHistorie||[]).length)
       store.profilHistorie=[{ datum:store.profil.datum, r:store.profil.r, g:store.profil.g }];
+    if(d.fokusRekord>=0) store.fokusRekord=Math.min(999, parseInt(d.fokusRekord,10)||0);
     if(Array.isArray(d.testHistorie)){
       store.testHistorie=d.testHistorie
         .filter(h=>h && h.p>=0 && h.max>0)
@@ -7682,9 +7714,13 @@ function zeitStart(){
   if(zeitTicker) return;
   zeitTicker=setInterval(()=>{
     if(document.visibilityState==="hidden") return;
-    const z=zeitHeute(); z.sek+=5; save();
-    zeitAnzeige();
-    if(zeitAbgelaufen()) zeitSperren();
+    if(!fokusPauseAktiv){ // Bewegungspause zählt nicht als Lernzeit
+      const z=zeitHeute(); z.sek+=5; save();
+      zeitAnzeige();
+      if(zeitAbgelaufen()) zeitSperren();
+    }
+    if(fokusLernaktiv() && !fokusPauseAktiv) fokusSek+=5;
+    fokusPruefen();
   }, 5000);
 }
 function zeitSperren(){
@@ -7705,6 +7741,63 @@ function zeitSperren(){
 }
 function zeitEntsperren(){ const d=$("zeitSperre"); if(d) d.remove(); }
 function zeitPruefen(){ zeitAnzeige(); if(zeitAbgelaufen()) zeitSperren(); else zeitEntsperren(); }
+
+/* ============================================================
+   FOKUS-PAKET (nach dem Zeugnis 2025/26: Konzentration über
+   längere Zeiträume, schnelles Ermüden, Sorgfalt)
+   1) Fokus-Runden: nach ~10 Min konzentriertem Lernen schlägt Leo
+      eine 2-Minuten-BEWEGUNGSPAUSE vor (bestes Mittel gegen
+      Aufmerksamkeits-Ermüdung). Pausenzeit zählt nicht als Lernzeit.
+   2) Fokus-Serie: gelöste Aufgaben AM STÜCK (Abstand < 90 s) werden
+      gezählt – Dranbleiben wird belohnt, nicht nur Richtigkeit.
+      Rekord wird gespeichert (store.fokusRekord).
+   3) Kontroll-Blick: siehe Test-Training (Antwort erst wählen,
+      dann bewusst abgeben).
+   ============================================================ */
+const FOKUS_PAUSE_NACH=600; // Sekunden Lernen bis zur Bewegungspause
+const FOKUS_PAUSEN=[
+  "Mach 10 Hampelmänner!",
+  "Schüttel Arme und Beine kräftig aus!",
+  "Öffne das Fenster und atme 5-mal ganz tief durch!",
+  "Hüpfe 10-mal auf der Stelle – so hoch du kannst!",
+  "Kreise deine Arme 10-mal rückwärts wie ein Adler!",
+  "Stell dich auf ein Bein und zähle bis 15 – dann das andere Bein!"
+];
+let fokusSek=0, fokusPauseAktiv=false, fokusSerie=0, fokusLetzte=0;
+function fokusLernaktiv(){
+  const sc=$("screen-content");
+  return !!sc && sc.classList.contains("active") && (!!activeModuleId || !!test || !!ew);
+}
+// Gelöste Aufgabe zählen: < 90 s seit der letzten -> Serie wächst
+function fokusZaehle(){
+  const jetzt=Date.now();
+  fokusSerie=(jetzt-fokusLetzte<90000)?fokusSerie+1:1;
+  fokusLetzte=jetzt;
+  if(fokusSerie>(store.fokusRekord||0)){ store.fokusRekord=fokusSerie; save(); }
+}
+function fokusPruefen(){
+  if(!fokusPauseAktiv && fokusSek>=FOKUS_PAUSE_NACH && fokusLernaktiv()) fokusPauseZeigen();
+}
+function fokusPauseZeigen(){
+  if($("fokusPause")) return;
+  fokusPauseAktiv=true;
+  const idee=FOKUS_PAUSEN[Math.floor(Math.random()*FOKUS_PAUSEN.length)];
+  const o=document.createElement("div");
+  o.className="zeit-sperre"; o.id="fokusPause";
+  o.innerHTML=`<div class="card" style="max-width:340px; width:100%; text-align:center;">
+    <div style="font-size:44px;">🦁🤸</div>
+    <h2 style="margin:6px 0;">Bewegungspause!</h2>
+    <p>Du bist schon <b>10 Minuten</b> voll dabei – richtig stark${store.name?", "+store.name:""}!
+      Kurz auftanken, dann läuft der Kopf wieder rund:</p>
+    <div class="hint" style="text-align:left;">🤸 ${idee}</div>
+    <button class="btn-primary mt" id="fokusWeiter" style="width:100%;">Fertig – weiter lernen! 💪</button>
+    <button class="linklike" id="fokusSpaeter" style="margin-top:6px; font-size:13px;">Gleich – ich mache erst die Aufgabe fertig</button>
+  </div>`;
+  document.body.appendChild(o);
+  speak("Bewegungspause! "+idee);
+  o.querySelector("#fokusWeiter").onclick=()=>{ stopSpeak(); fokusSek=0; fokusPauseAktiv=false; o.remove(); };
+  o.querySelector("#fokusSpaeter").onclick=()=>{ stopSpeak(); fokusSek=Math.max(0,FOKUS_PAUSE_NACH-120); fokusPauseAktiv=false; o.remove(); };
+}
 
 // Freundliche Info, wenn ein Spiel noch nicht freigeschaltet ist
 function spieleGesperrt(id){
@@ -7858,6 +7951,14 @@ function buildModuleChooser(){
     <span class="card-lvl">${aktive.map(id=>MODULES[id].emoji).join(" ")}${aktive.length?" · ":""}${badge}</span>`;
   halle.onclick=openSpielhalle;
   grid.appendChild(halle);
+  // Fokus-Rekord: Dranbleiben sichtbar machen
+  if((store.fokusRekord||0)>=3){
+    const f=document.createElement("p");
+    f.id="fokusBadge"; f.className="muted";
+    f.style.cssText="grid-column:1 / -1; text-align:center; font-size:13.5px; margin:2px 0 0;";
+    f.textContent=`🔥 Deine längste Fokus-Serie: ${store.fokusRekord} Aufgaben am Stück`;
+    grid.appendChild(f);
+  }
   muenzAnzeige();
 }
 function openModule(id){
