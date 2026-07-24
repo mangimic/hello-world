@@ -91,10 +91,11 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
-  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Spielhalle",
-    (await page.locator("#moduleChooser .choice").count()) === 5
+  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Fit-für-4 + Spielhalle",
+    (await page.locator("#moduleChooser .choice").count()) === 6
     && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1
-    && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1);
+    && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1
+    && (await page.locator("#moduleChooser .choice.fit4-kachel").count()) === 1);
   check("Startseite: Fach-Einstieg statt Thema-Wahl", await page.evaluate(() =>
     !!document.getElementById("fachRow")
     && document.getElementById("fachRow").textContent.includes("Deutsch")
@@ -1115,6 +1116,47 @@ function section(t) { console.log("\n== " + t + " =="); }
   for (let i = 1; i < 5; i++) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
   check("Teilpunkte: 4 von 5 Schritten = 4 P.", await page.evaluate(() =>
     test.punkte === 4 && document.getElementById("testfb").textContent.includes("4 von 5")));
+
+  // ---------- 7ft) Fit für Klasse 4 (Vorbereitungsbereich) ----------
+  section("Fit für Klasse 4");
+  await fresh(); await setLevel(3);
+  check("Kachel bei Klasse 3 sichtbar, bei „Alle“ nicht", (await page.locator(".fit4-kachel").count()) === 1
+    && await page.evaluate(() => { store.level = 0; buildModuleChooser();
+      const weg = !document.querySelector(".fit4-kachel");
+      store.level = 3; buildModuleChooser(); return weg; }));
+  await page.locator(".fit4-kachel").click(); await page.waitForTimeout(150);
+  check("Intro erklärt Klasse-4-Stoff + Programm", (await page.locator("#moduleContent").textContent()).includes("das oder dass")
+    && (await page.locator("#fit4Los").count()) === 1);
+  await page.locator("#fit4Los").click(); await page.waitForTimeout(150);
+  check("Programm gestartet: 7 Stationen, 0 Sterne, Basis gespeichert", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return store.fit4 && !store.fit4.fertig && t.includes("0 / 7")
+      && document.querySelectorAll(".fit4-geh").length === 7; }));
+  await page.locator(".fit4-geh").first().click(); await page.waitForTimeout(200);
+  check("„Los!“ führt direkt ins passende Lernfeld", await page.evaluate(() =>
+    activeModuleId === "gws"));
+  // Fortschritt simulieren: 5 Lernfeld-Stationen + beide Tests bestanden
+  await page.evaluate(() => {
+    ["gws:dopp", "satzglied", "doppel", "dd", "faelle"].forEach(k => {
+      store.progress[k] = store.progress[k] || { unlocked: 1, runs: 0 };
+      store.progress[k].runs = (store.progress[k].runs || 0) + 1;
+    });
+    store.testHistorie = (store.testHistorie || []).concat([
+      { datum: "x", p: 9, max: 13, typ: "sprache" }, { datum: "x", p: 10, max: 13, typ: "vorgang" }]);
+    save(); openFit4();
+  });
+  await page.waitForTimeout(150);
+  check("Alle Stationen ⭐: Urkunde + 3 Münzen (einmalig) + Klasse-4-Knopf", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    const m1 = store.muenzen;
+    openFit4(); // erneut öffnen darf NICHT nochmal belohnen
+    return t.includes("URKUNDE") && t.includes("7 / 7") && store.fit4.fertig
+      && m1 === 3 && store.muenzen === 3
+      && !!document.getElementById("fit4Klasse4"); }));
+  await page.locator("#fit4Klasse4").click(); await page.waitForTimeout(150);
+  check("Umstellen auf Klasse 4: Filter gesetzt, Kachel zeigt „Geschafft“", await page.evaluate(() =>
+    store.level === 4 && document.getElementById("screen-home").classList.contains("active")
+    && document.querySelector(".fit4-kachel").textContent.includes("Geschafft")));
 
   // ---------- 7fu) Fokus-Paket: Bewegungspause + Fokus-Serie ----------
   section("Fokus-Paket (Konzentration)");
