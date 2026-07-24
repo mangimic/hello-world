@@ -1037,13 +1037,13 @@ function section(t) { console.log("\n== " + t + " =="); }
       return { art: x.art, richtig: x.w ? x.w.richtig : null, n: x.a && x.a.teile ? x.a.teile.length : 0,
         zeit: x.a ? x.a.zeit : null, ort: x.a ? x.a.ort : null, ziel: x.ziel || null,
         subj: x.a ? x.a.subj : null, praed: x.a ? x.a.praed : null }; });
-    if (a.art === "wort") await page.locator(`.test-opt[data-w="${a.richtig}"]`).click();
+    if (a.art === "wort") { await page.locator(`.test-opt[data-w="${a.richtig}"]`).click(); await page.locator("#testAbgeben").click(); }
     else if (a.art === "um") { const folge = [2, 1, 0].concat(Array.from({ length: a.n - 3 }, (_, j) => j + 3));
       for (const i of folge) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(30); } }
     else if (a.art === "zo") { await page.locator(`.test-chip[data-i="${a.zeit}"]`).click(); await page.waitForTimeout(60);
       if (a.ort === null) await page.locator("#testZoKeine").click(); else await page.locator(`.test-chip[data-i="${a.ort}"]`).click(); }
     else if (a.art === "sp") await page.locator(`.test-chip[data-i="${a.ziel === "Subjekt" ? a.subj : a.praed}"]`).click();
-    else await page.locator('.test-opt[data-ok="1"]').click();
+    else { await page.locator('.test-opt[data-ok="1"]').click(); await page.locator("#testAbgeben").click(); }
     await page.waitForTimeout(60);
     await page.locator("#testWeiter").click(); await page.waitForTimeout(80);
   }
@@ -1055,8 +1055,19 @@ function section(t) { console.log("\n== " + t + " =="); }
   // Zweiter Test: erste Aufgabe absichtlich falsch -> 0 P + Lösung
   await page.locator("#testNochmal").click(); await page.waitForTimeout(150);
   const testF = await page.evaluate(() => test.aufgaben[0].w.falsch);
-  await page.locator(`.test-opt[data-w="${testF}"]`).click(); await page.waitForTimeout(80);
-  check("Falsche Antwort: 0 Punkte, Lösung gezeigt, Weiter frei", await page.evaluate(() =>
+  await page.locator(`.test-opt[data-w="${testF}"]`).click(); await page.waitForTimeout(60);
+  check("Kontroll-Blick: erst wählen (markiert), noch nichts gewertet", await page.evaluate(() =>
+    test.punkte === 0 && !document.getElementById("testfb").textContent
+    && document.querySelector(".test-opt.gewaehlt")
+    && document.getElementById("testAbgeben").style.display === "block"));
+  // Umentscheiden vor dem Abgeben ist erlaubt – Markierung wandert mit
+  const testR = await page.evaluate(() => test.aufgaben[0].w.richtig);
+  await page.locator(`.test-opt[data-w="${testR}"]`).click(); await page.waitForTimeout(40);
+  check("Umentscheiden: Markierung wandert zur neuen Wahl", await page.evaluate(r =>
+    document.querySelector(".test-opt.gewaehlt").dataset.w === r, testR));
+  await page.locator(`.test-opt[data-w="${testF}"]`).click(); await page.waitForTimeout(40);
+  await page.locator("#testAbgeben").click(); await page.waitForTimeout(80);
+  check("Falsche Antwort nach Abgeben: 0 Punkte, Lösung gezeigt, Weiter frei", await page.evaluate(() =>
     test.punkte === 0 && document.getElementById("testfb").textContent.includes("richtig ist")
     && !document.getElementById("testWeiter").disabled));
   check("Übersicht zeigt Historie + beide Test-Arten", await page.evaluate(() => {
@@ -1085,7 +1096,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     return offen && box.style.display === "none"; }));
   for (let k = 0; k < 9; k++) {
     const art = await page.evaluate(() => test.aufgaben[test.idx].art);
-    if (art === "wahl") await page.locator('.test-opt[data-ok="1"]').click();
+    if (art === "wahl") { await page.locator('.test-opt[data-ok="1"]').click(); await page.locator("#testAbgeben").click(); }
     else for (let i = 0; i < 5; i++) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
     await page.waitForTimeout(60);
     await page.locator("#testWeiter").click(); await page.waitForTimeout(80);
@@ -1104,6 +1115,33 @@ function section(t) { console.log("\n== " + t + " =="); }
   for (let i = 1; i < 5; i++) { await page.locator(`.test-chip[data-i="${i}"]`).click(); await page.waitForTimeout(40); }
   check("Teilpunkte: 4 von 5 Schritten = 4 P.", await page.evaluate(() =>
     test.punkte === 4 && document.getElementById("testfb").textContent.includes("4 von 5")));
+
+  // ---------- 7fu) Fokus-Paket: Bewegungspause + Fokus-Serie ----------
+  section("Fokus-Paket (Konzentration)");
+  await fresh(); await setLevel(3);
+  check("Fokus-Serie zählt gelöste Aufgaben am Stück + Rekord", await page.evaluate(() => {
+    for (let i = 0; i < 5; i++) fokusZaehle();
+    return fokusSerie === 5 && store.fokusRekord === 5; }));
+  await page.reload(); await page.waitForTimeout(300);
+  check("Rekord bleibt gespeichert + Badge auf der Startseite", await page.evaluate(() => {
+    const b = document.getElementById("fokusBadge");
+    return store.fokusRekord === 5 && b && b.textContent.includes("5 Aufgaben am Stück"); }));
+  await openMod("Subjekte", null);
+  check("Nach 10 Min Lernen: Leo schlägt Bewegungspause vor", await page.evaluate(() => {
+    fokusSek = 600; fokusPruefen();
+    const o = document.getElementById("fokusPause");
+    return o && o.textContent.includes("Bewegungspause") && !!document.getElementById("fokusWeiter"); }));
+  await page.locator("#fokusSpaeter").click(); await page.waitForTimeout(100);
+  check("„Gleich“ verschiebt die Pause um 2 Minuten", await page.evaluate(() =>
+    !document.getElementById("fokusPause") && fokusSek === 480));
+  await page.evaluate(() => { fokusSek = 600; fokusPruefen(); });
+  await page.locator("#fokusWeiter").click(); await page.waitForTimeout(100);
+  check("„Fertig“ beendet die Pause und setzt den Zähler zurück", await page.evaluate(() =>
+    !document.getElementById("fokusPause") && fokusSek === 0 && !fokusPauseAktiv));
+  check("Auf der Startseite löst der Zähler keine Pause aus", await page.evaluate(() => {
+    goHome(); fokusSek = 600; fokusPruefen();
+    const da = !!document.getElementById("fokusPause");
+    fokusSek = 0; return !da; }));
 
   // ---------- 7fw) Satzglieder: Umstellen & Zeit/Ort ----------
   section("Satzglieder umstellen & Zeit/Ort");
