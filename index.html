@@ -463,8 +463,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.64.0";
+const APP_VERSION = "1.65.0";
 const RELEASE_NOTES = [
+  {v:"1.65.0", datum:"17.07.2026", punkte:[
+    "🎒 Neu auf der Startseite: „Fit für Klasse 4“ – dein Sommer-Programm nach der 3. Klasse! 7 Stationen: Klasse-3-Stoff festigen (Wörter, Satzglieder, Rechtschreibung, beide Tests) und Klasse-4-Stoff schnuppern (das/dass, die 4 Fälle).",
+    "🎓 Für jede geschaffte Station gibt es einen ⭐ – die App erkennt deinen Fortschritt automatisch. Am Ende warten eine Urkunde, 3 Spiel-Münzen und der große Knopf: „Jetzt auf Klasse 4 umstellen!“",
+  ]},
   {v:"1.64.0", datum:"16.07.2026", punkte:[
     "🤸 Bewegungspausen mit Leo: Nach 10 Minuten konzentriertem Lernen schlägt Leo eine kurze Bewegungspause vor (Hampelmänner, tief durchatmen …) – das bestes Mittel, damit der Kopf frisch bleibt. Die Pause zählt nicht als Lernzeit.",
     "🔥 Fokus-Serie: Die App zählt, wie viele Aufgaben du AM STÜCK löst – dein Rekord steht auf der Startseite und in jeder Auswertung. Dranbleiben wird belohnt, nicht nur Richtigkeit!",
@@ -6560,6 +6564,117 @@ function testErgebnis(){
 }
 
 /* ============================================================
+   FIT FÜR KLASSE 4 – Vorbereitungsbereich nach der 3. Klasse
+   Sommer-Programm mit 7 Stationen: Klasse-3-Kernstoff festigen
+   (Wörter, Satzglieder, Rechtschreibung, beide Tests) und
+   Klasse-4-Stoff SCHNUPPERN (das/dass, die 4 Fälle).
+   Fortschritt wird automatisch erkannt (runs-Zähler der Lernfelder
+   bzw. Test-Historie seit Programm-Start). Am Ende: Urkunde,
+   3 Münzen und der Umstell-Knopf auf Klasse 4.
+   ============================================================ */
+function fit4GwsRuns(){ return GWS_KATEGORIEN.reduce((a,k)=>a+(((store.progress["gws:"+k.id]||{}).runs)||0),0); }
+function fit4Runs(k){ return ((store.progress[k]||{}).runs)||0; }
+function fit4TestOk(typ){
+  const f=store.fit4; if(!f) return false;
+  return (store.testHistorie||[]).slice(f.testsBasis||0).some(h=>h.typ===typ && h.p/h.max>=0.6);
+}
+function fit4Stationen(){
+  const b=(store.fit4&&store.fit4.basis)||{};
+  return [
+    {emoji:"🔤", titel:"Wörter-Runde", text:"Übe eine Runde im Grundwortschatz.",
+      done:fit4GwsRuns()>(b.gws||0), geh:()=>openModule("gws")},
+    {emoji:"🧩", titel:"Satzglieder-Runde", text:"Übe eine Runde Satzglieder oder Umstellen.",
+      done:fit4Runs("satzglied")>(b.satzglied||0), geh:()=>openModule("satzglieder")},
+    {emoji:"🔡", titel:"Rechtschreib-Runde", text:"Übe eine Runde doppelte Mitlaute.",
+      done:fit4Runs("doppel")>(b.doppel||0), geh:()=>openModule("doppel")},
+    {emoji:"🆕", titel:"Schnuppern: das oder dass?", text:"Dein erster Klasse-4-Stoff!",
+      done:fit4Runs("dd")>(b.dd||0), geh:()=>openModule("dassdas")},
+    {emoji:"🆕", titel:"Schnuppern: Die 4 Fälle", text:"Noch ein Blick in Klasse 4!",
+      done:fit4Runs("faelle")>(b.faelle||0), geh:()=>openModule("faelle")},
+    {emoji:"🧪", titel:"Sprache-Test bestehen", text:"Schaffe mehr als die Hälfte der Punkte.",
+      done:fit4TestOk("sprache"), geh:()=>openTestTraining()},
+    {emoji:"📝", titel:"Vorgangs-Test bestehen", text:"Schaffe mehr als die Hälfte der Punkte.",
+      done:fit4TestOk("vorgang"), geh:()=>openTestTraining()}
+  ];
+}
+function openFit4(){
+  if(zeitAbgelaufen()){ zeitSperren(); return; }
+  stopSpeak();
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  if(!store.fit4){ fit4Intro(); } else { fit4Plan(); }
+  renderNav(); window.scrollTo(0,0);
+}
+function fit4Intro(){
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2>🎒 Fit für Klasse 4!</h2>
+      <p>Die 3. Klasse ist geschafft – stark! 🎉 Mit diesem Sommer-Programm
+        startest du sicher in die 4. Klasse.</p>
+      <div class="hint"><b>Das ist neu in Klasse 4:</b><br>
+        🆕 das oder dass? · 🆕 die 4 Fälle (Nominativ, Genitiv, Dativ, Akkusativ) ·
+        schwierigere Wörter · längere Texte · der Lese-Kompass (VERA-Training)</div>
+      <p style="margin-top:10px;"><b>Dein Programm: 7 Stationen.</b> Du festigst den
+        Klasse-3-Stoff und schnupperst schon in Klasse 4 hinein. Für jede geschaffte
+        Station gibt es einen Stern – am Ende warten eine <b>Urkunde</b> und
+        <b>3 Spiel-Münzen</b>! 🎓</p>
+      <button class="btn-primary mt" id="fit4Los" style="width:100%;">Programm starten! 🚀</button>
+    </div>`;
+  $("moduleContent").querySelector("#fit4Los").onclick=()=>{
+    store.fit4={ start:new Date().toLocaleDateString("de-DE"),
+      basis:{ gws:fit4GwsRuns(), satzglied:fit4Runs("satzglied"), doppel:fit4Runs("doppel"),
+        dd:fit4Runs("dd"), faelle:fit4Runs("faelle") },
+      testsBasis:(store.testHistorie||[]).length, fertig:null };
+    save(); fit4Plan();
+  };
+  addSpeakButtons($("moduleContent"));
+}
+function fit4Plan(){
+  const st=fit4Stationen(), fertig=st.filter(s=>s.done).length, f=store.fit4;
+  // Alles geschafft? Belohnung einmalig vergeben
+  if(fertig===st.length && !f.fertig){
+    f.fertig=new Date().toLocaleDateString("de-DE");
+    store.muenzen=(store.muenzen||0)+3;
+    save();
+  }
+  const zeilen=st.map(s=>`
+    <div style="display:flex; align-items:center; gap:10px; background:var(--soft, #e7eefb); border-radius:14px; padding:10px 12px; margin-bottom:8px;${s.done?"opacity:.85;":""}">
+      <span style="font-size:26px; flex:none;">${s.done?"⭐":s.emoji}</span>
+      <div style="flex:1; min-width:0;"><b>${s.titel}</b><br><span class="muted" style="font-size:13.5px;">${s.text}</span></div>
+      ${s.done?`<span style="font-size:20px;">✅</span>`:`<button class="btn-primary btn-small fit4-geh" style="min-height:auto; padding:8px 14px; width:auto;">Los!</button>`}
+    </div>`).join("");
+  const urkunde=f.fertig?`
+    <div class="card" style="text-align:center; border:3px solid #f4b942; background:linear-gradient(120deg,#fdf6e3,#fbecc4);">
+      <div style="font-size:44px;">🎓🏆</div>
+      <h2 style="margin:4px 0;">URKUNDE</h2>
+      <p style="margin:2px 0;"><b>${spielerName()==="Du"?"Du hast":spielerName()+" hat"} alle 7 Stationen geschafft</b><br>
+        und ist damit offiziell <b>FIT FÜR KLASSE 4</b>!</p>
+      <p class="muted" style="font-size:13px;">Abgeschlossen am ${f.fertig} · Belohnung: 🪙 3 Münzen</p>
+      ${store.level!==4?`<button class="btn-primary mt" id="fit4Klasse4" style="width:100%;">🚀 Jetzt auf Klasse 4 umstellen!</button>`:`<p style="font-weight:700;">🚀 Klasse 4 ist eingestellt – viel Erfolg!</p>`}
+    </div>`:"";
+  $("moduleContent").innerHTML=`
+    ${urkunde}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+        <h2 style="margin:0;">🎒 Fit für Klasse 4</h2>
+        <span style="font-weight:800; white-space:nowrap;">⭐ ${fertig} / ${st.length}</span>
+      </div>
+      <div class="ew-pfad" style="margin-top:8px;">${st.map(s=>`<div class="ew-schritt${s.done?" an":""}"></div>`).join("")}<span style="font-size:20px;">🎓</span></div>
+      <p class="muted" style="margin:4px 0 10px;">Seit ${f.start} · Geschaffte Stationen bekommen einen ⭐.</p>
+      ${zeilen}
+    </div>`;
+  const c=$("moduleContent");
+  c.querySelectorAll(".fit4-geh").forEach((b,i)=>{
+    const offen=st.filter(s=>!s.done);
+    b.onclick=()=>offen[i].geh();
+  });
+  const k4=c.querySelector("#fit4Klasse4");
+  if(k4) k4.onclick=()=>{ store.level=4; save(); goHome(); };
+  addSpeakButtons(c);
+}
+
+/* ============================================================
    EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
    Beim ersten Start (oder über den Elternbereich) ermittelt die App
    das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
@@ -7542,6 +7657,7 @@ let store = {
   profilHistorie:[],            // alle Schatzsuchen: [{datum, r, g}] (max. 20)
   testHistorie:[],              // Test-Training: [{datum, p, max}] (max. 10)
   fokusRekord:0,                // längste Fokus-Serie (Aufgaben am Stück)
+  fit4:null,                    // Fit-für-Klasse-4-Programm: {start, basis, testsBasis, fertig}
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -7616,6 +7732,13 @@ function load(){
     if(store.profil && !(store.profilHistorie||[]).length)
       store.profilHistorie=[{ datum:store.profil.datum, r:store.profil.r, g:store.profil.g }];
     if(d.fokusRekord>=0) store.fokusRekord=Math.min(999, parseInt(d.fokusRekord,10)||0);
+    if(d.fit4 && typeof d.fit4==="object" && d.fit4.basis && typeof d.fit4.basis==="object"){
+      const bi=k=>Math.max(0, parseInt(d.fit4.basis[k],10)||0);
+      store.fit4={ start:typeof d.fit4.start==="string"?d.fit4.start:"",
+        basis:{ gws:bi("gws"), satzglied:bi("satzglied"), doppel:bi("doppel"), dd:bi("dd"), faelle:bi("faelle") },
+        testsBasis:Math.max(0, parseInt(d.fit4.testsBasis,10)||0),
+        fertig:typeof d.fit4.fertig==="string"?d.fit4.fertig:null };
+    }
     if(Array.isArray(d.testHistorie)){
       store.testHistorie=d.testHistorie
         .filter(h=>h && h.p>=0 && h.max>0)
@@ -7941,6 +8064,19 @@ function buildModuleChooser(){
       <span class="card-lvl">Wie ein Könnernachweis – mit Punkten</span>`;
     kachel.onclick=openTestTraining;
     grid.appendChild(kachel);
+  }
+  // Vorbereitungsbereich „Fit für Klasse 4" (nach der 3. Klasse)
+  if(store.level===3 || store.level===4){
+    const st4=store.fit4?fit4Stationen():null;
+    const info=store.fit4
+      ? (store.fit4.fertig?"🎓 Geschafft!":"⭐ "+st4.filter(s=>s.done).length+" / "+st4.length+" Stationen")
+      : "Dein Sommer-Programm";
+    const fit=document.createElement("div");
+    fit.className="choice gruppe fit4-kachel";
+    fit.innerHTML=`<span class="emoji">🎒</span>Fit für Klasse 4
+      <span class="card-lvl">${info}</span>`;
+    fit.onclick=openFit4;
+    grid.appendChild(fit);
   }
   const aktive=SPIELE_IDS.filter(spielAktiv);
   const halle=document.createElement("div");
