@@ -511,8 +511,15 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.69.0";
+const APP_VERSION = "1.70.0";
 const RELEASE_NOTES = [
+  {v:"1.70.0", datum:"27.07.2026", punkte:[
+    "🧳 NEU: Leos große Sommer-Reise – dein Ferienprogramm als Abenteuer-Geschichte! Leo packt den Rucksack und nimmt dich mit: 🏕️ Zeltplatz, 🥾 Pfadfinder-Wanderung, 🎣 See, 🏠 Ferienwohnung, ⚽ Sportplatz-Turnier, 🌌 eine Nacht unter freiem Himmel, 🏨 Hotel am Meer – und am Ende die 💎 Schatzbucht.",
+    "🗺️ Eine echte Reisekarte zeigt deine Route: Geschaffte Etappen leuchten golden mit ⭐, Leo 🦁 steht immer an deinem aktuellen Ort.",
+    "✅ Jede Etappe hat nur 2–3 kleine Aufträge: eine Deutsch-Runde, eine Mathe-Runde – und oft Lesen 📖 in deinem EIGENEN Buch (Papier zählt, gern mit Taschenlampe im Zelt!). Eine Etappe pro Tag reicht völlig – immer nur die aktuelle Etappe ist offen, so bleibt alles übersichtlich.",
+    "🎒 Die Reise bereitet dich Schritt für Schritt auf Klasse 4 vor: das/dass, die 4 Fälle, Satzglieder, Wortarten, Rechtschreibung – plus alle 5 Mathe-Bereiche. Das Finale sind der Sprache-Test und das Mathe-Kompass-Training.",
+    "🪙 Jede geschaffte Etappe bringt 1 Münze, am Ziel warten die Reise-Urkunde und 3 Extra-Münzen."
+  ]},
   {v:"1.69.0", datum:"27.07.2026", punkte:[
     "🎮🔢 Mathe in den Spielen: Beim See-Abenteuer, Tennis-Match, Fußball-Match und in der Blockwelt ist jetzt etwa jede zweite Frage eine Mathe-Aufgabe (Kopfrechnen, Nachbarzehner, Zahlenfolgen …) – gemischt mit den Wörter-Fragen.",
     "🌱🔥 Die Steigerung bleibt: Leichte Fragen nutzen leichte Aufgaben, schwere Fragen echtes Kompass-Niveau – mit 3 gemischten Antworten und Erklär-Tipp wie gewohnt.",
@@ -6883,6 +6890,237 @@ function fit4Plan(){
 }
 
 /* ============================================================
+   LEOS GROSSE SOMMER-REISE – Ferienprogramm als Reise-Geschichte
+   8 Etappen von Zeltplatz bis Schatzbucht (Camping, Pfadfinder-
+   Wanderung, See, Ferienwohnung, Sportplatz, Nacht unterm
+   Sternenhimmel, Hotel am Meer) – jede Etappe mischt eine kleine
+   Deutsch-Runde, eine Mathe-Runde und LESEN IM EIGENEN BUCH.
+   Konzentrations-freundlich: EINE Etappe pro Tag empfohlen, immer
+   nur die aktuelle Etappe offen (klare Struktur, absehbares Ende),
+   2-3 kleine Aufträge, jede Etappe gibt 1 Münze, am Ende Urkunde.
+   Fortschritt wird automatisch erkannt (runs-Zähler, Spielbesuche,
+   Test-Historie); Lese-Aufträge bestätigt das Kind selbst.
+   ============================================================ */
+const FERIEN_ETAPPEN=[
+  {emoji:"🏕️", name:"Zeltplatz am Waldrand",
+   story:"Rucksack gepackt, Zelt aufgebaut – die große Sommer-Reise beginnt! Heute Nacht schlafen wir im Zelt.",
+   auftraege:[
+     {id:"e1w", emoji:"🔤", text:"Wörter-Runde: Proviant für den Kopf", typ:"runde", key:"gws", modul:"gws"},
+     {id:"e1m", emoji:"🧮", text:"Rechnen-Runde: Zeltstangen, Heringe, Proviant", typ:"runde", key:"mrechnen", modul:"mrechnen"},
+     {id:"e1l", emoji:"🔦", text:"Lies 10 Minuten in deinem Buch – gern mit Taschenlampe im Zelt!", typ:"lesen"}
+   ]},
+  {emoji:"🥾", name:"Pfadfinder-Wanderung",
+   story:"Wie bei den Pfadfindern: Karte lesen, Stiefel schnüren, los! Auf dem Gipfel schmeckt das Vesper doppelt gut.",
+   auftraege:[
+     {id:"e2s", emoji:"🧩", text:"Satzglieder-Runde: Sätze umstellen wie Wegweiser", typ:"runde", key:"satzglied", modul:"satzglieder"},
+     {id:"e2m", emoji:"🔢", text:"Zahlen-Runde: Kilometer und Höhenmeter", typ:"runde", key:"mzahlen", modul:"mzahlen"}
+   ]},
+  {emoji:"🎣", name:"Der stille See",
+   story:"Ein See wie aus dem Bilderbuch! Leo wirft die Angel aus: „Psst … die dicken Fische beißen nur bei schlauen Anglern.“",
+   auftraege:[
+     {id:"e3sp", emoji:"🎣", text:"Geh im See-Abenteuer angeln (1 Besuch)", typ:"spiel", module:["spiel"]},
+     {id:"e3d", emoji:"🔡", text:"Rechtschreib-Runde: doppelte Mitlaute am Lagerfeuer", typ:"runde", key:"doppel", modul:"doppel"}
+   ]},
+  {emoji:"🏠", name:"Ferienwohnung im Dorf",
+   story:"Eine Ferienwohnung mit eigener Küche! Wir kaufen ein und kochen selbst – Leo will unbedingt Pfannkuchen.",
+   auftraege:[
+     {id:"e4dd", emoji:"🔤", text:"das oder dass? Dein Klasse-4-Stoff!", typ:"runde", key:"dd", modul:"dassdas"},
+     {id:"e4g", emoji:"💶", text:"Größen-Runde: Einkaufen, Geld und Rückgeld", typ:"runde", key:"mgroessen", modul:"mgroessen"},
+     {id:"e4l", emoji:"📖", text:"Lies 10 Minuten in deinem Buch – auf dem Balkon?", typ:"lesen"}
+   ]},
+  {emoji:"⚽", name:"Turnier auf dem Sportplatz",
+   story:"Im Feriendorf ist Turniertag! Leo feuert dich an: „Erst das Köpfchen, dann der Sieg!“",
+   auftraege:[
+     {id:"e5sp", emoji:"🏆", text:"Spiele ein Tennis- oder Fußball-Match (1 Besuch)", typ:"spiel", module:["tennis","fussball"]},
+     {id:"e5w", emoji:"🏷️", text:"Wortarten-Runde: Nomen, Verben, Adjektive", typ:"runde", key:"wa", modul:"wortarten"}
+   ]},
+  {emoji:"🌌", name:"Nacht unter freiem Himmel",
+   story:"Heute kein Zelt: nur Schlafsack, Wiese und tausend Sterne – genau wie bei deiner Pfadfinder-Tour!",
+   auftraege:[
+     {id:"e6z", emoji:"🎲", text:"Zufalls-Runde: Ist eine Sternschnuppe sicher, möglich oder unmöglich?", typ:"runde", key:"mdaten", modul:"mdaten"},
+     {id:"e6l", emoji:"🌠", text:"Lies 15 Minuten in deinem Buch – mit Taschenlampe unterm Sternenhimmel!", typ:"lesen"}
+   ]},
+  {emoji:"🏨", name:"Hotel am Meer",
+   story:"Endspurt mit Meerblick! Morgens Wellen, nachmittags Sandburgen – und Leo bestellt Kakao aufs Zimmer.",
+   auftraege:[
+     {id:"e7f", emoji:"🎯", text:"Die 4 Fälle: Klasse-4-Training mit Aussicht", typ:"runde", key:"faelle", modul:"faelle"},
+     {id:"e7geo", emoji:"📐", text:"Formen-Runde: Sandburgen, Muscheln, Flächen", typ:"runde", key:"mgeo", modul:"mgeo"}
+   ]},
+  {emoji:"💎", name:"Die Schatzbucht",
+   story:"Die letzte Etappe! In der Schatzbucht wartet die Truhe – sie öffnet sich nur für echte Klasse-4-Profis.",
+   auftraege:[
+     {id:"e8t1", emoji:"🧩", text:"Bestehe den Sprache-Test (mehr als die Hälfte der Punkte)", typ:"test", testTyp:"sprache"},
+     {id:"e8t2", emoji:"🔢", text:"Bestehe das Mathe-Kompass-Training (mehr als die Hälfte)", typ:"test", testTyp:"mathe"}
+   ]}
+];
+// Positionen der Etappen auf der Reisekarte (Wald unten -> Meer oben)
+const FERIEN_PUNKTE=[[42,208],[112,178],[62,138],[150,118],[238,148],[302,100],[222,62],[118,40]];
+function ferienRuns(key){ return key==="gws" ? fit4GwsRuns() : fit4Runs(key); }
+function ferienAuftragDone(a){
+  const f=store.ferien; if(!f) return false;
+  if(a.typ==="runde") return ferienRuns(a.key) > (f.base[a.id]||0);
+  if(a.typ==="spiel") return !!f.spiele[a.id];
+  if(a.typ==="lesen") return !!f.lesen[a.id];
+  if(a.typ==="test") return (store.testHistorie||[]).slice(f.testsBasis||0)
+    .some(h=>h.typ===a.testTyp && h.p/h.max>=0.6);
+  return false;
+}
+// Beim Betreten einer Etappe: Runden-Zählerstände als Basis merken
+function ferienBaseSetzen(ei){
+  const f=store.ferien;
+  (FERIEN_ETAPPEN[ei]||{auftraege:[]}).auftraege.forEach(a=>{
+    if(a.typ==="runde" && !(a.id in f.base)) f.base[a.id]=ferienRuns(a.key);
+  });
+}
+// Spielbesuch zählt für den aktuellen Reise-Auftrag (Hook aus openModule)
+function ferienSpielBesuch(id){
+  const f=store.ferien; if(!f || f.fertig) return;
+  const et=FERIEN_ETAPPEN[f.etappe]; if(!et) return;
+  et.auftraege.forEach(a=>{
+    if(a.typ==="spiel" && a.module.includes(id) && !f.spiele[a.id]){ f.spiele[a.id]=heuteKey(); save(); }
+  });
+}
+// Etappen-Abschluss prüfen (beim Rendern): weiterreisen + Münze
+function ferienPruefen(){
+  const f=store.ferien; if(!f || f.fertig) return;
+  while(f.etappe<FERIEN_ETAPPEN.length && FERIEN_ETAPPEN[f.etappe].auftraege.every(ferienAuftragDone)){
+    if(f.etappe>=FERIEN_ETAPPEN.length-1){
+      f.fertig=new Date().toLocaleDateString("de-DE");
+      store.muenzen=(store.muenzen||0)+3;
+      break;
+    }
+    f.etappe++;
+    store.muenzen=(store.muenzen||0)+1;
+    ferienBaseSetzen(f.etappe);
+    toast("🧳 Etappe geschafft – weiter geht die Reise! +1 Münze 🪙");
+  }
+  save();
+}
+// Reisekarte: geschwungener Pfad mit Emoji-Stationen, Leo am Standort
+function ferienKarteSVG(){
+  const f=store.ferien, akt=f?f.etappe:0, P=FERIEN_PUNKTE;
+  const seg=(i)=>{ const [x1,y1]=P[i], [x2,y2]=P[i+1];
+    const mx=(x1+x2)/2, my=(y1+y2)/2 - 14;
+    return `M ${x1},${y1} Q ${mx},${my} ${x2},${y2}`; };
+  const wege=P.slice(0,-1).map((_,i)=>{
+    const geschafft = f && (i<akt || f.fertig);
+    return `<path d="${seg(i)}" fill="none" stroke="${geschafft?"#f4b942":"#c9d8ec"}"
+      stroke-width="5" stroke-linecap="round" stroke-dasharray="${geschafft?"none":"2 8"}"/>`; }).join("");
+  const marker=P.map(([x,y],i)=>{
+    const e=FERIEN_ETAPPEN[i], geschafft=f && (i<akt || f.fertig), hier=f && !f.fertig && i===akt;
+    return `<circle cx="${x}" cy="${y}" r="13" fill="${geschafft?"#fdf0d0":hier?"#dcecff":"#fff"}"
+        stroke="${geschafft?"#f4b942":hier?"#2f6db8":"#c9d8ec"}" stroke-width="2.5"/>
+      <text x="${x}" y="${y+5}" text-anchor="middle" font-size="14">${geschafft?"⭐":e.emoji}</text>
+      ${hier?`<text x="${x}" y="${y-17}" text-anchor="middle" font-size="16">🦁</text>`:""}`;
+  }).join("");
+  return `<svg viewBox="0 0 340 235" xmlns="http://www.w3.org/2000/svg" role="img"
+      aria-label="Reisekarte mit ${FERIEN_ETAPPEN.length} Etappen" style="width:100%; height:auto;">
+    <rect x="0" y="0" width="340" height="235" rx="14" fill="#eef7ee"/>
+    <path d="M 0,52 Q 55,30 120,44 T 250,36 T 340,44 L 340,0 L 0,0 Z" fill="#d5ecf7"/>
+    <text x="308" y="26" font-size="15">🌊</text><text x="272" y="38" font-size="11">⛵</text>
+    <text x="16" y="228" font-size="15">🌲</text><text x="318" y="225" font-size="15">🌲</text>
+    <text x="180" y="196" font-size="13">🏔️</text><text x="30" y="100" font-size="12">🌳</text>
+    ${wege}${marker}
+    ${f&&f.fertig?`<text x="170" y="24" text-anchor="middle" font-size="13" font-weight="bold" fill="#1e6b34">🏆 Reise geschafft!</text>`:""}
+  </svg>`;
+}
+function openFerien(){
+  if(zeitAbgelaufen()){ zeitSperren(); return; }
+  if(tagesformNoetig()) tagesformZeigen();
+  stopSpeak();
+  fokusUebung(false);
+  activeModuleId=null; activeSectionId=null;
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+  $("screen-content").classList.add("active");
+  if(!store.ferien){ ferienIntro(); } else { ferienPlan(); }
+  renderNav(); window.scrollTo(0,0);
+}
+function ferienIntro(){
+  $("moduleContent").innerHTML=`
+    <div class="card">
+      <h2>🧳 Leos große Sommer-Reise</h2>
+      <div class="ew-leo" style="margin:8px 0;"><span class="ew-kopf">🦁</span>
+        <div class="bubble">Ich habe den Rucksack gepackt! Kommst du mit? Vom <b>Zeltplatz</b> über
+        den <b>See</b> bis zum <b>Hotel am Meer</b> – und am Ende wartet die 💎 <b>Schatzbucht</b>!</div></div>
+      ${ferienKarteSVG()}
+      <p style="margin-top:10px;"><b>So funktioniert die Reise:</b></p>
+      <p class="muted" style="margin:4px 0;">🗺️ <b>8 Etappen</b> – am besten <b>eine pro Tag</b>, ganz ohne Eile.<br>
+        ✅ Jede Etappe hat nur <b>2–3 kleine Aufträge</b>: eine Deutsch-Runde, eine Mathe-Runde – und oft <b>Lesen in deinem eigenen Buch</b> 📖.<br>
+        🪙 Jede Etappe bringt <b>1 Münze</b>, am Ziel warten <b>Urkunde + 3 Münzen</b>.<br>
+        🎒 So bist du nach den Ferien fit für <b>Klasse 4</b>!</p>
+      <button class="btn-primary mt" id="ferienLos" style="width:100%;">Reise starten! 🧳</button>
+    </div>`;
+  $("moduleContent").querySelector("#ferienLos").onclick=()=>{
+    store.ferien={ start:new Date().toLocaleDateString("de-DE"), etappe:0, base:{}, spiele:{}, lesen:{},
+      testsBasis:(store.testHistorie||[]).length, fertig:null };
+    ferienBaseSetzen(0);
+    save(); ferienPlan();
+  };
+  addSpeakButtons($("moduleContent"));
+}
+function ferienPlan(){
+  ferienPruefen();
+  const f=store.ferien, akt=f.etappe, et=FERIEN_ETAPPEN[f.fertig?FERIEN_ETAPPEN.length-1:akt];
+  const urkunde=f.fertig?`
+    <div class="card" style="text-align:center; border:3px solid #f4b942; background:linear-gradient(120deg,#fdf6e3,#fbecc4);">
+      <div style="font-size:44px;">🧳🏆</div>
+      <h2 style="margin:4px 0;">REISE-URKUNDE</h2>
+      <p style="margin:2px 0;"><b>${spielerName()==="Du"?"Du hast":spielerName()+" hat"} alle ${FERIEN_ETAPPEN.length} Etappen geschafft</b><br>
+        – vom Zeltplatz bis zur 💎 Schatzbucht. Bereit für <b>Klasse 4</b>!</p>
+      <p class="muted" style="font-size:13px;">Reise vom ${f.start} bis ${f.fertig} · Belohnung: 🪙 3 Münzen</p>
+    </div>`:"";
+  const zeilen=et.auftraege.map(a=>{
+    const done=ferienAuftragDone(a);
+    let knopf="";
+    if(!done && !f.fertig){
+      if(a.typ==="lesen") knopf=`<button class="btn-primary btn-small ferien-lesen" data-a="${a.id}" style="min-height:auto; padding:8px 12px; width:auto;">✔️ Gelesen!</button>`;
+      else knopf=`<button class="btn-primary btn-small ferien-geh" data-a="${a.id}" style="min-height:auto; padding:8px 14px; width:auto;">Los!</button>`;
+    }
+    return `<div style="display:flex; align-items:center; gap:10px; background:var(--soft, #e7eefb); border-radius:14px; padding:10px 12px; margin-bottom:8px;${done?"opacity:.85;":""}">
+      <span style="font-size:24px; flex:none;">${done?"⭐":a.emoji}</span>
+      <div style="flex:1; min-width:0;"><span style="font-size:14.5px;"><b>${a.text}</b></span></div>
+      ${done?`<span style="font-size:19px;">✅</span>`:knopf}
+    </div>`;
+  }).join("");
+  const geschafft=FERIEN_ETAPPEN.slice(0,akt).length + (f.fertig?1:0);
+  $("moduleContent").innerHTML=`
+    ${urkunde}
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; gap:8px;">
+        <h2 style="margin:0;">🧳 Leos Sommer-Reise</h2>
+        <span style="font-weight:800; white-space:nowrap;">🗺️ ${f.fertig?FERIEN_ETAPPEN.length:akt} / ${FERIEN_ETAPPEN.length}</span>
+      </div>
+      ${ferienKarteSVG()}
+      <p class="muted" style="margin:6px 0 0; font-size:12.5px;">Unterwegs seit ${f.start} · Eine Etappe pro Tag reicht völlig – die Karte wartet auf dich.</p>
+    </div>
+    ${f.fertig?"":`<div class="card">
+      <h3 style="margin:0 0 2px;">${et.emoji} Etappe ${akt+1}: ${et.name}</h3>
+      <div class="ew-leo" style="margin:8px 0;"><span class="ew-kopf">🦁</span>
+        <div class="bubble">${et.story}</div></div>
+      ${zeilen}
+      <p class="muted" style="margin:4px 0 0; font-size:12.5px;">📖 Lese-Aufträge zählen auch mit jedem echten Buch – Papier ist sogar am schönsten!</p>
+    </div>`}`;
+  const c=$("moduleContent");
+  c.querySelectorAll(".ferien-geh").forEach(b=>b.onclick=()=>{
+    const a=et.auftraege.find(x=>x.id===b.dataset.a);
+    if(a.typ==="test"){
+      stopSpeak(); fokusUebung(false);
+      activeModuleId=null; activeSectionId=null;
+      document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
+      $("screen-content").classList.add("active");
+      testStart(a.testTyp); renderNav();
+    } else if(a.typ==="spiel"){ openModule(a.module[0]); }
+    else { openModule(a.modul); }
+  });
+  c.querySelectorAll(".ferien-lesen").forEach(b=>b.onclick=()=>{
+    const f2=store.ferien; f2.lesen[b.dataset.a]=heuteKey(); save();
+    toast("📖 Stark gelesen! Das gehört zu den besten Übungen überhaupt.");
+    ferienPlan();
+  });
+  addSpeakButtons(c);
+}
+
+/* ============================================================
    EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
    Beim ersten Start (oder über den Elternbereich) ermittelt die App
    das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
@@ -8306,6 +8544,7 @@ let store = {
   gws:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   fach:"deutsch",               // "deutsch" | "mathe"
+  ferien:null,                  // Leos Sommer-Reise: {start, etappe, base, spiele, lesen, testsBasis, fertig}
   mrechnen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mzahlen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -8331,6 +8570,17 @@ function load(){
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
     if(["deutsch","mathe"].includes(d.fach)) store.fach=d.fach;
+    if(d.ferien && typeof d.ferien==="object"){
+      const fe=d.ferien;
+      store.ferien={
+        start: typeof fe.start==="string" ? fe.start : new Date().toLocaleDateString("de-DE"),
+        etappe: Math.max(0, Math.min(FERIEN_ETAPPEN.length-1, parseInt(fe.etappe,10)||0)),
+        base: (fe.base && typeof fe.base==="object") ? fe.base : {},
+        spiele: (fe.spiele && typeof fe.spiele==="object") ? fe.spiele : {},
+        lesen: (fe.lesen && typeof fe.lesen==="object") ? fe.lesen : {},
+        testsBasis: Math.max(0, parseInt(fe.testsBasis,10)||0),
+        fertig: typeof fe.fertig==="string" ? fe.fertig : null };
+    }
     if(d.progress && typeof d.progress==="object"){
       Object.keys(d.progress).forEach(k=>{ const v=d.progress[k];
         if(v && typeof v==="object") store.progress[k]={
@@ -8883,6 +9133,19 @@ function buildModuleChooser(){
     kachel.onclick=openTestTraining;
     grid.appendChild(kachel);
   }
+  // 🧳 Leos Sommer-Reise (Ferienprogramm, Deutsch + Mathe + Lesen)
+  {
+    const fr=store.ferien;
+    const info = !fr ? "Dein Ferien-Abenteuer"
+      : fr.fertig ? "🏆 Reise geschafft!"
+      : `${FERIEN_ETAPPEN[fr.etappe].emoji} Etappe ${fr.etappe+1} von ${FERIEN_ETAPPEN.length}`;
+    const reise=document.createElement("div");
+    reise.className="choice gruppe ferien-kachel";
+    reise.innerHTML=`<span class="emoji">🧳</span>Leos Sommer-Reise
+      <span class="card-lvl">${info}</span>`;
+    reise.onclick=openFerien;
+    grid.appendChild(reise);
+  }
   // Vorbereitungsbereich „Fit für Klasse 4" (nach der 3. Klasse, Deutsch)
   if(fach==="deutsch" && (store.level===3 || store.level===4)){
     const st4=store.fit4?fit4Stationen():null;
@@ -8925,6 +9188,7 @@ function openModule(id){
     if((store.muenzen||0)<1){ spieleGesperrt(id); return; }
     store.muenzen--; save();
   }
+  if(SPIELE_IDS.includes(id)) ferienSpielBesuch(id); // Sommer-Reise: Spiel-Auftrag
   activeModuleId=id; store.lastModule=id;
   // Vorgangsbeschreibung folgt dem globalen Thema, wenn ein passender Ablauf existiert
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
