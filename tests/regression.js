@@ -945,6 +945,29 @@ function section(t) { console.log("\n== " + t + " =="); }
   const bwF = await page.evaluate(() => bw.frage.w.falsch);
   await page.locator(`.bw-opt[data-w="${bwF}"]`).click(); await page.waitForTimeout(120);
   check("Falsche Antwort: Tipp bleibt stehen", (await page.locator("#bwfb").textContent()).includes("richtig wäre"));
+  // Schummel-Schutz (v1.71): kein Umklicken, Denk-Pause vor dem nächsten Versuch
+  check("Streng: Nach falscher Antwort sind ALLE Antworten gesperrt", await page.evaluate(() =>
+    [...document.querySelectorAll(".bw-opt")].every(b => b.disabled)));
+  check("Streng: Umklicken auf die richtige Antwort bringt KEINE Blöcke", await page.evaluate(() => {
+    const s0 = Object.values(bwWelt().inv).reduce((a, b) => a + b, 0);
+    const r = [...document.querySelectorAll(".bw-opt")].find(b => b.dataset.w === bw.frage.w.richtig);
+    r.click();
+    return Object.values(bwWelt().inv).reduce((a, b) => a + b, 0) === s0;
+  }));
+  check("Streng: Nächster Versuch erst nach Denk-Pause (Countdown)", await page.evaluate(() => {
+    const w = document.getElementById("bwWeiter");
+    return w.disabled && /\(\d\)/.test(w.textContent);
+  }));
+  await page.locator("#bwWeiter").click(); await page.waitForTimeout(100);
+  // Fehlversuch-Serie: ab dem 3. Fehler in Folge längere Pause + Durchatmen-Hinweis
+  await page.evaluate(() => { bw.fehlSerie = 2; });
+  const bwF2 = await page.evaluate(() => bw.frage.w.falsch);
+  await page.locator(`.bw-opt[data-w="${bwF2}"]`).click(); await page.waitForTimeout(120);
+  check("Streng: 3. Fehler in Folge → längere Pause + Durchatmen-Hinweis", await page.evaluate(() => {
+    const w = document.getElementById("bwWeiter");
+    return document.getElementById("bwfb").textContent.includes("durchatmen")
+      && w.disabled && /\([5-8]\)/.test(w.textContent);
+  }));
   await page.locator("#bwWeiter").click(); await page.waitForTimeout(100);
   const bwR = await page.evaluate(() => bw.frage.w.richtig);
   await page.locator(`.bw-opt[data-w="${bwR}"]`).click(); await page.waitForTimeout(120);
