@@ -511,8 +511,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.70.0";
+const APP_VERSION = "1.71.0";
 const RELEASE_NOTES = [
+  {v:"1.71.0", datum:"27.07.2026", punkte:[
+    "🛡️ Schummel-Schutz in der Blockwelt (danke für den Hinweis aus der Beta!): Nach einer falschen Antwort sind ab sofort ALLE Antworten gesperrt – Umklicken auf die richtige Antwort bringt keine Blöcke mehr.",
+    "🧘 Denk-Pause statt Durchklicken: Der „Nächster Versuch“-Knopf zählt erst 3 Sekunden herunter (Blockwelt und See-Abenteuer). Wer 3-mal hintereinander daneben liegt, bekommt eine längere Atempause mit freundlichem Hinweis – Blöcke gibt es nur fürs Können.",
+    "✅ Danach kommt immer eine NEUE Frage – stures Raten lohnt sich nicht mehr, Nachdenken schon."
+  ]},
   {v:"1.70.0", datum:"27.07.2026", punkte:[
     "🧳 NEU: Leos große Sommer-Reise – dein Ferienprogramm als Abenteuer-Geschichte! Leo packt den Rucksack und nimmt dich mit: 🏕️ Zeltplatz, 🥾 Pfadfinder-Wanderung, 🎣 See, 🏠 Ferienwohnung, ⚽ Sportplatz-Turnier, 🌌 eine Nacht unter freiem Himmel, 🏨 Hotel am Meer – und am Ende die 💎 Schatzbucht.",
     "🗺️ Eine echte Reisekarte zeigt deine Route: Geschaffte Etappen leuchten golden mit ⭐, Leo 🦁 steht immer an deinem aktuellen Ort.",
@@ -5145,12 +5150,20 @@ function spielFragBox(){
       }
     }else{
       runWrong("spiel", qIdx);
-      d.innerHTML=`Oh – richtig wäre <b>„${q.w.richtig}“</b> gewesen!<br>💡 ${q.tipp}<br>Der ${f.name} ist noch dran – gleich kommt die nächste Frage.`;
-      weiter.textContent="🎣 Nächster Versuch";
-      weiter.disabled=false;
+      d.innerHTML=`Oh – richtig wäre <b>„${q.w.richtig}“</b> gewesen!<br>💡 ${q.tipp}<br>Der ${f.name} ist noch dran – gleich kommt eine <b>neue</b> Frage.`;
+      // Kurze Denk-Pause statt Durchklicken – geraten wird hier nicht!
+      weiter.disabled=true;
+      let rest=3;
+      weiter.textContent=`🎣 Nächster Versuch (${rest})`;
+      const tick=setInterval(()=>{
+        if(!weiter.isConnected){ clearInterval(tick); return; }
+        rest--;
+        if(rest<=0){ clearInterval(tick); weiter.disabled=false; weiter.textContent="🎣 Nächster Versuch"; }
+        else weiter.textContent=`🎣 Nächster Versuch (${rest})`;
+      }, spielT(1000));
       fb.innerHTML=""; fb.appendChild(d); fb.appendChild(weiter);
       focusFeedback(d,null);
-      weiter.onclick=()=>{ spiel.frage=spielFrage(q.schwer); spielFragBox(); };
+      weiter.onclick=()=>{ if(!weiter.disabled){ spiel.frage=spielFrage(q.schwer); spielFragBox(); } };
     }
   });
 }
@@ -6269,6 +6282,7 @@ function bwFrage(){
     const d=document.createElement("div");
     if(btn.dataset.w===q.w.richtig){
       box.querySelectorAll(".bw-opt").forEach(x=>x.disabled=true);
+      bw.fehlSerie=0;
       st.zaehler=(st.zaehler||0)+1;
       const normale=D.bloecke.filter(b=>!b.selten), seltene=D.bloecke.filter(b=>b.selten);
       const anzahl=schwer?D.belohnung.schwer:D.belohnung.leicht;
@@ -6291,15 +6305,33 @@ function bwFrage(){
       weiter.onclick=()=>{ box.innerHTML=""; bwPaletteAktualisieren(); bwVerdientAnzeigen(); };
       bwPaletteAktualisieren(); bwVerdientAnzeigen();
     } else {
+      // STRENG (kein Schummeln!): Nach einer falschen Antwort werden ALLE
+      // Antworten gesperrt – Umklicken bringt nichts mehr. Der nächste
+      // Versuch (mit NEUER Frage) startet erst nach einer kurzen
+      // Denk-Pause; bei mehreren Fehlversuchen in Folge wird sie länger.
+      box.querySelectorAll(".bw-opt").forEach(x=>{ x.disabled=true;
+        if(x.dataset.w===q.w.richtig) x.style.background="#d9f0dd"; });
+      bw.fehlSerie=(bw.fehlSerie||0)+1;
       d.className="feedback tip";
-      d.innerHTML=`Noch nicht – richtig wäre <b>„${q.w.richtig}“</b>. 💡 ${q.tipp}<br>Gleich kommt eine neue Frage!`;
+      d.innerHTML=`Noch nicht – richtig wäre <b>„${q.w.richtig}“</b>. 💡 ${q.tipp}`
+        +(bw.fehlSerie>=3
+          ? `<br>🧘 <b>Kurz durchatmen!</b> Blöcke gibt es nur fürs Können – lies die nächste Frage ganz in Ruhe.`
+          : `<br>Gleich kommt eine <b>neue</b> Frage!`);
       fb.innerHTML=""; fb.appendChild(d);
       focusFeedback(d,null);
       const weiter=document.createElement("button");
       weiter.className="btn-primary btn-small mt"; weiter.style.width="100%"; weiter.id="bwWeiter";
-      weiter.textContent="🎁 Nächster Versuch";
+      weiter.disabled=true;
+      let rest = bw.fehlSerie>=3 ? 8 : 3;
+      weiter.textContent=`🎁 Nächster Versuch (${rest})`;
+      const tick=setInterval(()=>{
+        if(!weiter.isConnected){ clearInterval(tick); return; }
+        rest--;
+        if(rest<=0){ clearInterval(tick); weiter.disabled=false; weiter.textContent="🎁 Nächster Versuch"; }
+        else weiter.textContent=`🎁 Nächster Versuch (${rest})`;
+      }, spielT(1000));
       fb.appendChild(weiter);
-      weiter.onclick=()=>bwFrage();
+      weiter.onclick=()=>{ if(!weiter.disabled) bwFrage(); };
     }
   });
 }
