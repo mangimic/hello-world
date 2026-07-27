@@ -301,7 +301,11 @@ button.chip.on{background:var(--primary); color:#fff;}
 .bw-rezept.zu{opacity:.55;}
 .bw-rezept .bw-craft{width:auto; flex:none; min-height:auto; padding:8px 12px; font-size:14px; white-space:nowrap;}
 /* Kontroll-Blick im Test-Training: gewählte Antwort vor dem Abgeben */
-.test-opt.gewaehlt{border:2.5px solid var(--primary); background:#dcecff;}
+.test-opt.gewaehlt, .gws-opt.gewaehlt{border:2.5px solid var(--primary); background:#dcecff;}
+/* Reizarme Anzeige (Elternbereich „Animationen: Reduziert" oder
+   System-Einstellung „Bewegung reduzieren") */
+.anim-reduziert *, .anim-reduziert *::before, .anim-reduziert *::after{
+  animation:none !important; transition:none !important;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
   display:flex; align-items:center; justify-content:center; padding:18px;}
 .zeit-karte{max-width:420px; text-align:center;}
@@ -463,8 +467,19 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.65.0";
+const APP_VERSION = "1.66.0";
 const RELEASE_NOTES = [
+  {v:"1.66.0", datum:"27.07.2026", punkte:[
+    "🚦 Tagesform-Frage: Beim ersten Üben des Tages fragt Leo, wie sich Lernen heute anfühlt (fit / normal / heute schwer). An schweren Tagen werden die Missionen automatisch kürzer und das Tagesziel kleiner – die Antwort gilt nur für den einen Tag und ist keine Bewertung. Eltern können die Frage abschalten.",
+    "⭐ Mini-Missionen: Jede Übung zählt jetzt in kleinen Missionen (3–5 Aufgaben). Nach jeder geschafften Mission gibt es eine kurze Rückmeldung – so bleibt der Einstieg leicht und das Ende absehbar.",
+    "🎯 Flexibles Tagesziel: Ist die eingestellte Zahl an Missionen geschafft, fragt die App: „Für heute fertig?“ oder freiwillig eine 🎁 Bonus-Mission. Aufhören beim Tagesziel ist immer ein Erfolg.",
+    "🛤️ Lernspur: Tage mit erreichtem Tagesziel bilden deine Lernspur – Wochenenden und Pausen bis 3 Tage unterbrechen sie nicht. Kein Verlust-Text, nur Motivation.",
+    "🚀 Leichter Start: Die Startseite schlägt täglich wechselnd bis zu 3 Lernfelder vor („Womit möchtest du starten?“) – die Karte verschwindet nach der ersten Mission des Tages.",
+    "🤸 Bewegungspausen einstellbar: Abstand 5/10/15 Minuten oder ganz aus (Elternbereich), mit neuen Übungs-Ideen. Überspringen ist immer erlaubt.",
+    "🔍 Kontroll-Blick einstellbar: Reduziert / Normal / Häufig – „Häufig“ aktiviert das bewusste Abgeben zusätzlich im Grundwortschatz-Training, bei einfachen Aufgaben wird es nicht erzwungen.",
+    "✨ Ruhigere Anzeige: Neue Eltern-Einstellung „Animationen: Reduziert“ schaltet Konfetti und Bewegungs-Effekte ab; die System-Einstellung „Bewegung reduzieren“ wird automatisch beachtet.",
+    "🔧 Neuer Eltern-Tab „🧭 Lernen“: Tagesform, Missionen pro Tag, Bonus, Pausen, Kontroll-Blick, Animationen – plus eine neutrale Lern-Übersicht der letzten 14 Lerntage (nur Zahlen, keine Bewertung, alles bleibt auf dem Gerät)."
+  ]},
   {v:"1.65.0", datum:"17.07.2026", punkte:[
     "🎒 Neu auf der Startseite: „Fit für Klasse 4“ – dein Sommer-Programm nach der 3. Klasse! 7 Stationen: Klasse-3-Stoff festigen (Wörter, Satzglieder, Rechtschreibung, beide Tests) und Klasse-4-Stoff schnuppern (das/dass, die 4 Fälle).",
     "🎓 Für jede geschaffte Station gibt es einen ⭐ – die App erkennt deinen Fortschritt automatisch. Am Ende warten eine Urkunde, 3 Spiel-Münzen und der große Knopf: „Jetzt auf Klasse 4 umstellen!“",
@@ -1279,7 +1294,8 @@ function renderRunResult(host, key, onRepeat){
     const mastered = total>0 && solved===total;
     if(!r.done){
       r.done=true; p.runs=(p.runs||0)+1;
-      if(mastered && lvl<maxL){ p.unlocked=Math.max(p.unlocked||1, lvl+1); if(!ovr) unlockedTo=lvl+1; }
+      // Tagesform ROT: heute keine automatische Erhöhung der Schwierigkeit
+      if(mastered && lvl<maxL && tagesModus()!=="rot"){ p.unlocked=Math.max(p.unlocked||1, lvl+1); if(!ovr) unlockedTo=lvl+1; }
       else if(mastered && lvl>=maxL && first===total && !p.crown){ p.crown=true; newCrown=true; }
       save();
     }
@@ -1305,6 +1321,18 @@ function renderRunResult(host, key, onRepeat){
       ${levelLine}
       ${muenzLine}
       ${fokusLine}
+      ${(()=>{ // Tagesziel erreicht? EINMAL fragen: Feierabend oder freiwillige Bonus-Mission
+        const t=lernTagHeute();
+        if(!(t.z && !t.q)) return "";
+        const spur=lernspur();
+        const spurText=spur>1?`Du setzt deine Lernspur fort – Tag ${spur}! 🛤️`:`Heute beginnt eine neue Lernspur. 🛤️`;
+        return `<div class="lvl-note up" id="zielWahl" style="text-align:left;">
+          🎯 <b>Dein Lernziel für heute ist geschafft!</b> ${spurText}
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <button class="btn-secondary btn-small" id="zielFertig" style="flex:1;">😊 Für heute fertig</button>
+            ${(store.bonusErlaubt!==false && t.bo<1)?`<button class="btn-primary btn-small" id="zielBonus" style="flex:1;">🎁 Eine Bonus-Mission</button>`:""}
+          </div></div>`;
+      })()}
       <div style="display:flex; gap:10px; margin-top:12px;">
         <button class="btn-primary btn-small" id="runAgain" style="flex:1;">🔁 Nochmal üben</button>
         <button class="btn-green btn-small" id="runBlume" style="flex:1;">🌱 Meine Blume</button>
@@ -1314,6 +1342,13 @@ function renderRunResult(host, key, onRepeat){
   host.querySelector("#runAgain").onclick=()=>{ runReset(key); onRepeat(); window.scrollTo(0,0); };
   host.querySelector("#runBlume").onclick=()=>goSection("blume");
   host.querySelector("#runBack").onclick=goHome;
+  const zf=host.querySelector("#zielFertig");
+  if(zf) zf.onclick=()=>{ const t=lernTagHeute(); t.q=true; save();
+    toast("Für heute ist dein Lernziel erreicht. Bis morgen! 👋"); goHome(); };
+  const zb=host.querySelector("#zielBonus");
+  if(zb) zb.onclick=()=>{ const t=lernTagHeute(); t.q=true; t.bo=1; missionAufg=0; save();
+    toast("🎁 Bonus-Mission: "+missionLaenge()+" Aufgaben – dann ist Feierabend!");
+    const w=host.querySelector("#zielWahl"); if(w) w.style.display="none"; };
   if(unlockedTo) setTimeout(()=>celebrateLevelUp(unlockedTo), 260);
   else if(newCrown) setTimeout(()=>celebrateCrown(), 260);
 }
@@ -1322,7 +1357,7 @@ function renderRunResult(host, key, onRepeat){
 let _confettiRAF=null;
 function startConfetti(){
   const cv=$("lvlupCanvas"); if(!cv) return;
-  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const reduce = animReduziert();
   const ctx=cv.getContext("2d"); if(!ctx) return;
   const w=cv.width=cv.offsetWidth||window.innerWidth, h=cv.height=cv.offsetHeight||window.innerHeight;
   const colors=["#4a7fd6","#f5c451","#ef8fb3","#5bb98c","#f0872f"];
@@ -4490,12 +4525,13 @@ function renderSpellPaged(host, K, key){
     <button type="button" class="speak-btn" id="gwsSpeak">🔊 Vorlesen</button>
     <p>Welches Wort ist <b>richtig</b> geschrieben?</p>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">${spielOptionenHTML(w, "gws-opt", "font-size:20px;")}</div>
+    <button class="btn-secondary btn-small mt" id="gwsAbgeben" style="display:none; width:100%;">🔍 Kontroll-Blick gemacht? Abgeben!</button>
     <div id="gwsfb"></div>
     <button class="btn-primary btn-small mt" id="gwsNext" style="width:100%;">Weiter</button>`;
   const gsp=host.querySelector("#gwsSpeak");
   if(gsp){ if(speechOK()) gsp.onclick=()=>speak("Welches Wort ist richtig geschrieben? "+w.richtig.replace(/^(der|die|das) /,"")); else gsp.style.display="none"; }
   const fb=host.querySelector("#gwsfb");
-  host.querySelectorAll(".gws-opt").forEach(btn=>btn.onclick=()=>{
+  const werten=(btn)=>{
     if(answered) return;
     const correct = btn.dataset.w===w.richtig; answered=true;
     if(correct) runCorrect(key,i); else runWrong(key,i);
@@ -4504,7 +4540,22 @@ function renderSpellPaged(host, K, key){
                           : ("Fast! Richtig ist <b>"+w.richtig+"</b>. "+K.tipp);
     fb.innerHTML=""; fb.appendChild(d);
     focusFeedback(d, correct?null:host.querySelector("#gwsNext"));
-  });
+  };
+  // Kontroll-Blick nur bei Eltern-Einstellung „häufig" – GWS-Aufgaben sind
+  // einfach, deshalb wird der Extra-Schritt hier nicht standardmäßig erzwungen.
+  const abg=host.querySelector("#gwsAbgeben");
+  let gwsWahl=null;
+  if(store.kontrollBlick==="haeufig"){
+    host.querySelectorAll(".gws-opt").forEach(btn=>btn.onclick=()=>{
+      if(answered) return;
+      gwsWahl=btn;
+      host.querySelectorAll(".gws-opt").forEach(x=>x.classList.toggle("gewaehlt", x===btn));
+      abg.style.display="block";
+    });
+    abg.onclick=()=>{ if(answered || !gwsWahl) return; abg.style.display="none"; werten(gwsWahl); };
+  } else {
+    host.querySelectorAll(".gws-opt").forEach(btn=>btn.onclick=()=>{ if(!answered) werten(btn); });
+  }
   host.querySelector("#gwsNext").onclick=()=>{
     if(!answered){ needAnswer(fb, "Wähle zuerst ein Wort – dann geht es weiter."); return; }
     gwsIdx=i+1; renderSpellPaged(host, K, key); window.scrollTo(0,0); };
@@ -6344,6 +6395,7 @@ function testStart(typ){
 function testPunkt(n){ test.punkte+=n; test.bereiche[test.aufgaben[test.idx].bereich].p+=n; }
 function openTestTraining(){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
+  if(tagesformNoetig()) tagesformZeigen();
   stopSpeak();
   activeModuleId=null; activeSectionId=null; test=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -6387,6 +6439,10 @@ function testFrage(){
   // Umentscheiden ist bis zum Abgeben erlaubt.
   let testWahl=null;
   const mitKontrollBlick=(werten)=>{
+    if(store.kontrollBlick==="reduziert"){ // Eltern-Einstellung: direkt werten
+      c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{ if(!beantwortet) werten(b); });
+      return;
+    }
     c.querySelectorAll(".test-opt").forEach(b=>b.onclick=()=>{
       if(beantwortet) return;
       testWahl=b;
@@ -6599,6 +6655,7 @@ function fit4Stationen(){
 }
 function openFit4(){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
+  if(tagesformNoetig()) tagesformZeigen();
   stopSpeak();
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -7122,6 +7179,7 @@ function admHeader(active){
       <button class="chip${active==="stufen"?" on":""}" data-tab="stufen">🎯 Stufen</button>
       <button class="chip${active==="woerter"?" on":""}" data-tab="woerter">📚 Wörter</button>
       <button class="chip${active==="spiele"?" on":""}" data-tab="spiele">🎮 Spiele &amp; Zeit</button>
+      <button class="chip${active==="lernen"?" on":""}" data-tab="lernen">🧭 Lernen</button>
       <button class="chip${active==="vorlesen"?" on":""}" data-tab="vorlesen">🔊 Vorlesen</button>
     </div></div>`;
 }
@@ -7131,6 +7189,7 @@ function admBindTabs(c){
 function renderAdmin(c){
   if(adminTab==="woerter") renderAdminWoerter(c);
   else if(adminTab==="spiele") renderAdminSpiele(c);
+  else if(adminTab==="lernen") renderAdminLernen(c);
   else if(adminTab==="vorlesen") renderAdminVorlesen(c);
   else renderAdminStufen(c);
 }
@@ -7279,6 +7338,108 @@ function renderAdminSpiele(c){
     const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
     c.querySelector("#spieleStatus").style.display="block";
   };
+}
+
+/* --- Tab „Lernen": Tagesform-Frage, Mini-Missionen, Bewegungspausen,
+   Kontroll-Blick, Animationen – plus eine neutrale Lern-Übersicht der
+   letzten Lerntage (nur Fakten, keine Bewertung, keine Diagnose). --- */
+function renderAdminLernen(c){
+  const zielBtns=[2,3,4,5,6].map(v=>
+    `<button class="seg${(store.missionsZiel||4)===v?" on":""}" data-mziel="${v}">${v}</button>`).join("");
+  const intBtns=[5,10,15].map(v=>
+    `<button class="seg${(store.pausenIntervall||10)===v?" on":""}" data-pint="${v}">${v} Min</button>`).join("");
+  const kb=store.kontrollBlick||"normal";
+  const MODI={gruen:"💪 fit", gelb:"🙂 normal", rot:"🌧️ schwer"};
+  const tage=(store.lerntage||[]).slice(-14).reverse();
+  const zeilen=tage.map(e=>{
+    const d=new Date(e.t+"T12:00:00");
+    const dat=isNaN(d)?e.t:d.toLocaleDateString("de-DE",{weekday:"short", day:"2-digit", month:"2-digit"});
+    return `<tr><td>${dat}</td><td>${MODI[e.m]||"–"}</td><td style="text-align:center;">${e.mi||0}${e.bo?" +🎁":""}</td><td style="text-align:center;">${e.z?"🎯":"–"}</td></tr>`;
+  }).join("");
+  const spur=lernspur();
+  c.innerHTML = admHeader("lernen") + `
+    <div class="card">
+      <h3>🚦 Tagesform-Frage</h3>
+      <p class="muted">Beim ersten Üben des Tages fragt Leo, wie sich Lernen
+        heute anfühlt. Die Antwort passt nur den <b>Umfang des Tages</b> an
+        (kürzere Missionen an schweren Tagen) – sie gilt nur für diesen einen
+        Tag und ist keine Bewertung des Kindes.</p>
+      <div class="seg-line"><span class="seg-label">Frage stellen</span>
+        <div class="seg-row">
+          <button class="seg${store.tagesformAktiv!==false?" on":""}" data-tf="1">An</button>
+          <button class="seg${store.tagesformAktiv===false?" on":""}" data-tf="0">Aus</button>
+        </div></div>
+    </div>
+    <div class="card">
+      <h3>🎯 Mini-Missionen &amp; Tagesziel</h3>
+      <p class="muted">Die Übungen zählen in kleinen Missionen (3–5 Aufgaben).
+        Das Tagesziel ist geschafft, wenn diese Zahl an Missionen erreicht ist –
+        an „schweren" Tagen automatisch eine weniger. Danach darf das Kind
+        freiwillig eine Bonus-Mission dranhängen.</p>
+      <div class="seg-line"><span class="seg-label">Missionen pro Tag</span>
+        <div class="seg-row">${zielBtns}</div></div>
+      <div class="seg-line"><span class="seg-label">Bonus-Mission</span>
+        <div class="seg-row">
+          <button class="seg${store.bonusErlaubt!==false?" on":""}" data-bonus="1">An</button>
+          <button class="seg${store.bonusErlaubt===false?" on":""}" data-bonus="0">Aus</button>
+        </div></div>
+    </div>
+    <div class="card">
+      <h3>🤸 Bewegungspausen</h3>
+      <p class="muted">Nach längerem Üben am Stück schlägt die App eine kurze
+        Bewegungspause vor (Hampelmänner, Strecken …). Das Kind kann sie
+        immer überspringen.</p>
+      <div class="seg-line"><span class="seg-label">Pausen</span>
+        <div class="seg-row">
+          <button class="seg${store.pausenAktiv!==false?" on":""}" data-pause="1">An</button>
+          <button class="seg${store.pausenAktiv===false?" on":""}" data-pause="0">Aus</button>
+        </div></div>
+      <div class="seg-line"><span class="seg-label">Abstand</span>
+        <div class="seg-row">${intBtns}</div></div>
+    </div>
+    <div class="card">
+      <h3>🔍 Kontroll-Blick (gegen schnelles Durchklicken)</h3>
+      <p class="muted">Im Test-Training wird eine Antwort erst gewählt und dann
+        bewusst <b>abgegeben</b>. „Häufig" schaltet den Extra-Schritt zusätzlich
+        im Wörter-Training ein, „Reduziert" überall aus.</p>
+      <div class="seg-line"><span class="seg-label">Kontroll-Blick</span>
+        <div class="seg-row">
+          <button class="seg${kb==="reduziert"?" on":""}" data-kb="reduziert">Reduziert</button>
+          <button class="seg${kb==="normal"?" on":""}" data-kb="normal">Normal</button>
+          <button class="seg${kb==="haeufig"?" on":""}" data-kb="haeufig">Häufig</button>
+        </div></div>
+    </div>
+    <div class="card">
+      <h3>✨ Anzeige ruhiger stellen</h3>
+      <p class="muted">„Reduziert" schaltet Animationen und Konfetti ab –
+        hilfreich, wenn Bewegung auf dem Bildschirm ablenkt.</p>
+      <div class="seg-line"><span class="seg-label">Animationen</span>
+        <div class="seg-row">
+          <button class="seg${(store.animationen||"normal")==="normal"?" on":""}" data-anim="normal">Normal</button>
+          <button class="seg${store.animationen==="reduziert"?" on":""}" data-anim="reduziert">Reduziert</button>
+        </div></div>
+      <div class="lvl-note" id="lernenStatus" style="text-align:left; display:none;">✅ <b>Gespeichert.</b></div>
+    </div>
+    <div class="card">
+      <h3>📈 Lern-Übersicht</h3>
+      <p class="muted">Die letzten Lerntage – nur Zahlen, keine Bewertung.
+        ${spur>0?`Aktuelle Lernspur: <b>${spur} ${spur===1?"Tag":"Tage"}</b> mit erreichtem Tagesziel.`:""}</p>
+      ${tage.length?`<div style="overflow-x:auto;"><table style="width:100%; border-collapse:collapse; font-size:14.5px;">
+        <tr style="text-align:left;"><th style="padding:4px 6px;">Tag</th><th style="padding:4px 6px;">Tagesform</th><th style="padding:4px 6px; text-align:center;">Missionen</th><th style="padding:4px 6px; text-align:center;">Ziel</th></tr>
+        ${zeilen}</table></div>
+      <p class="muted" style="margin-top:8px; font-size:12.5px;">🎁 = freiwillige Bonus-Mission · Die Tagesform sagt nur, wie sich der Tag angefühlt hat.</p>`
+      :`<p class="muted">Noch keine Lerntage aufgezeichnet – die Übersicht füllt sich beim Üben.</p>`}
+    </div>`;
+  admBindTabs(c);
+  const neu=()=>{ save(); const y=window.scrollY; renderAdminLernen(c); window.scrollTo(0,y);
+    c.querySelector("#lernenStatus").style.display="block"; };
+  c.querySelectorAll(".seg[data-tf]").forEach(b=>b.onclick=()=>{ store.tagesformAktiv=b.dataset.tf==="1"; neu(); });
+  c.querySelectorAll(".seg[data-mziel]").forEach(b=>b.onclick=()=>{ store.missionsZiel=parseInt(b.dataset.mziel,10); neu(); });
+  c.querySelectorAll(".seg[data-bonus]").forEach(b=>b.onclick=()=>{ store.bonusErlaubt=b.dataset.bonus==="1"; neu(); });
+  c.querySelectorAll(".seg[data-pause]").forEach(b=>b.onclick=()=>{ store.pausenAktiv=b.dataset.pause==="1"; neu(); });
+  c.querySelectorAll(".seg[data-pint]").forEach(b=>b.onclick=()=>{ store.pausenIntervall=parseInt(b.dataset.pint,10); neu(); });
+  c.querySelectorAll(".seg[data-kb]").forEach(b=>b.onclick=()=>{ store.kontrollBlick=b.dataset.kb; neu(); });
+  c.querySelectorAll(".seg[data-anim]").forEach(b=>b.onclick=()=>{ store.animationen=b.dataset.anim; animAnwenden(); neu(); });
 }
 
 /* --- Tab „Stufen": feste Stufe global / je Klassenstufe / je Bereich.
@@ -7658,6 +7819,15 @@ let store = {
   testHistorie:[],              // Test-Training: [{datum, p, max}] (max. 10)
   fokusRekord:0,                // längste Fokus-Serie (Aufgaben am Stück)
   fit4:null,                    // Fit-für-Klasse-4-Programm: {start, basis, testsBasis, fertig}
+  tagesformAktiv:true,          // Tagesform-Abfrage vor der ersten Lerneinheit des Tages
+  tagesform:{ tag:"", modus:"" },// NUR heutige Tagesform ("gruen"|"gelb"|"rot"|""), keine Fähigkeitseinstufung
+  missionsZiel:4,               // Mini-Missionen bis zum Tagesziel (rot: eine weniger)
+  bonusErlaubt:true,            // 1 freiwillige Bonus-Mission nach dem Tagesziel
+  pausenAktiv:true,             // Bewegungspausen an/aus
+  pausenIntervall:10,           // Minuten Fokuszeit bis zur Bewegungspause
+  kontrollBlick:"normal",       // "reduziert" | "normal" | "haeufig"
+  animationen:"normal",         // "normal" | "reduziert" | "aus"
+  lerntage:[],                  // lokaler Verlauf: [{t,m,mi,bo,z,q}] (max. 60, anonym, nur auf dem Gerät)
   muenzenAktiv:true,            // Spiele müssen freigeschaltet werden (1 Münze je Spielbesuch)
   muenzen:0,                    // verdiente Spiel-Münzen (1 je gut gelöster Übungsrunde)
   vorgang:{ rezept:"waffel", self:{ groups:[[0,0,0,0],[0,0,0,0]], form:[false,false,false,false] } },
@@ -7732,6 +7902,25 @@ function load(){
     if(store.profil && !(store.profilHistorie||[]).length)
       store.profilHistorie=[{ datum:store.profil.datum, r:store.profil.r, g:store.profil.g }];
     if(d.fokusRekord>=0) store.fokusRekord=Math.min(999, parseInt(d.fokusRekord,10)||0);
+    // Fokus-/Tagesform-Paket (v1.66) – Migration: alte Stände haben die Felder nicht
+    if(d.tagesformAktiv===false) store.tagesformAktiv=false;
+    if(d.tagesform && typeof d.tagesform==="object" && typeof d.tagesform.tag==="string"
+      && ["gruen","gelb","rot",""].includes(d.tagesform.modus))
+      store.tagesform={ tag:d.tagesform.tag, modus:d.tagesform.modus };
+    if([2,3,4,5,6].includes(parseInt(d.missionsZiel,10))) store.missionsZiel=parseInt(d.missionsZiel,10);
+    if(d.bonusErlaubt===false) store.bonusErlaubt=false;
+    if(d.pausenAktiv===false) store.pausenAktiv=false;
+    if([5,10,15].includes(parseInt(d.pausenIntervall,10))) store.pausenIntervall=parseInt(d.pausenIntervall,10);
+    if(["reduziert","normal","haeufig"].includes(d.kontrollBlick)) store.kontrollBlick=d.kontrollBlick;
+    if(["normal","reduziert","aus"].includes(d.animationen)) store.animationen=d.animationen;
+    if(Array.isArray(d.lerntage)){
+      store.lerntage=d.lerntage
+        .filter(e=>e && typeof e.t==="string")
+        .map(e=>({ t:e.t, m:["gruen","gelb","rot"].includes(e.m)?e.m:"",
+          mi:Math.max(0,parseInt(e.mi,10)||0), bo:Math.max(0,parseInt(e.bo,10)||0),
+          z:e.z===true, q:e.q===true }))
+        .slice(-60);
+    }
     if(d.fit4 && typeof d.fit4==="object" && d.fit4.basis && typeof d.fit4.basis==="object"){
       const bi=k=>Math.max(0, parseInt(d.fit4.basis[k],10)||0);
       store.fit4={ start:typeof d.fit4.start==="string"?d.fit4.start:"",
@@ -7884,7 +8073,10 @@ const FOKUS_PAUSEN=[
   "Öffne das Fenster und atme 5-mal ganz tief durch!",
   "Hüpfe 10-mal auf der Stelle – so hoch du kannst!",
   "Kreise deine Arme 10-mal rückwärts wie ein Adler!",
-  "Stell dich auf ein Bein und zähle bis 15 – dann das andere Bein!"
+  "Stell dich auf ein Bein und zähle bis 15 – dann das andere Bein!",
+  "Steh auf und strecke dich 5-mal ganz lang zur Decke!",
+  "Hole einen blauen Gegenstand und bring ihn zurück!",
+  "Gehe einmal langsam zur Tür und wieder zurück!"
 ];
 let fokusSek=0, fokusPauseAktiv=false, fokusSerie=0, fokusLetzte=0;
 function fokusLernaktiv(){
@@ -7897,9 +8089,122 @@ function fokusZaehle(){
   fokusSerie=(jetzt-fokusLetzte<90000)?fokusSerie+1:1;
   fokusLetzte=jetzt;
   if(fokusSerie>(store.fokusRekord||0)){ store.fokusRekord=fokusSerie; save(); }
+  missionFortschritt(); // Mini-Missionen zählen auf demselben Hook
 }
+function fokusPauseNach(){ return (store.pausenIntervall||10)*60; }
 function fokusPruefen(){
-  if(!fokusPauseAktiv && fokusSek>=FOKUS_PAUSE_NACH && fokusLernaktiv()) fokusPauseZeigen();
+  if(store.pausenAktiv===false) return;
+  if(!fokusPauseAktiv && fokusSek>=fokusPauseNach() && fokusLernaktiv()) fokusPauseZeigen();
+}
+/* --- Toast: kurze, nicht blockierende Rückmeldung (pointer-events:none,
+   aria-live) – unterbricht nie den Lernfluss. --- */
+let toastTimer=null;
+function toast(text, ms){
+  let el=$("appToast");
+  if(!el){
+    el=document.createElement("div");
+    el.id="appToast"; el.className="toast";
+    el.setAttribute("role","status"); el.setAttribute("aria-live","polite");
+    document.body.appendChild(el);
+  }
+  el.textContent=text;
+  el.classList.add("an");
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer=setTimeout(()=>el.classList.remove("an"), ms||2400);
+}
+
+/* --- Tagesform: freiwillige Abfrage vor der ersten Lerneinheit des
+   Tages. Gilt NUR heute (keine Fähigkeitseinstufung), passt Missions-
+   Länge, Tagesziel und Stufen-Anstieg an. --- */
+/* Reizarme Anzeige: Eltern-Einstellung „reduziert" oder Systemwunsch
+   (prefers-reduced-motion) schalten Animationen und Konfetti ab. */
+function animReduziert(){
+  return store.animationen==="reduziert" ||
+    !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}
+function animAnwenden(){
+  document.documentElement.classList.toggle("anim-reduziert", animReduziert());
+}
+function tagesModus(){
+  return (store.tagesform && store.tagesform.tag===heuteKey()) ? (store.tagesform.modus||"") : "";
+}
+function tagesformNoetig(){
+  return store.tagesformAktiv!==false && (!store.tagesform || store.tagesform.tag!==heuteKey());
+}
+function tagesformSetzen(modus){
+  store.tagesform={ tag:heuteKey(), modus:modus };
+  const t=lernTagHeute(); t.m=modus; save();
+}
+function tagesformZeigen(){
+  if($("tagesform")) return;
+  const o=document.createElement("div");
+  o.className="zeit-sperre"; o.id="tagesform";
+  o.innerHTML=`<div class="card" style="max-width:360px; width:100%; text-align:center;">
+    <div style="font-size:38px;">🦁</div>
+    <h2 style="margin:6px 0;">Wie fühlt sich Lernen heute an?</h2>
+    <div style="display:flex; flex-direction:column; gap:8px; margin-top:8px;">
+      <button class="btn-secondary tf-wahl" data-m="gruen" aria-label="Ich bin fit" style="text-align:left;">💪 <b>Ich bin fit</b></button>
+      <button class="btn-secondary tf-wahl" data-m="gelb" aria-label="Ganz normal" style="text-align:left;">🙂 <b>Ganz normal</b></button>
+      <button class="btn-secondary tf-wahl" data-m="rot" aria-label="Heute ist es schwer" style="text-align:left;">🌧️ <b>Heute ist es schwer</b></button>
+    </div>
+    <button class="linklike" id="tfSkip" style="margin-top:10px; font-size:13px;">Einfach loslegen</button>
+  </div>`;
+  document.body.appendChild(o);
+  o.querySelectorAll(".tf-wahl").forEach(b=>b.onclick=()=>{
+    tagesformSetzen(b.dataset.m); o.remove();
+    toast(b.dataset.m==="rot"
+      ? "Alles gut – heute machen wir kleine Schritte. 💙"
+      : "Super – los geht's! Nur "+missionLaenge()+" Aufgaben bis zur ersten Mini-Mission.");
+  });
+  o.querySelector("#tfSkip").onclick=()=>{ tagesformSetzen(""); o.remove(); };
+}
+
+/* --- Mini-Missionen: kleine Einheiten aus 3–5 gelösten Aufgaben, als
+   Zähl-Schicht über ALLEN bestehenden Übungen (Hook: fokusZaehle).
+   Rot = kürzer + Tagesziel eine Mission früher + Stufen steigen nicht. --- */
+function lernTagHeute(){
+  store.lerntage=store.lerntage||[];
+  let t=store.lerntage[store.lerntage.length-1];
+  if(!t || t.t!==heuteKey()){
+    t={ t:heuteKey(), m:tagesModus(), mi:0, bo:0, z:false, q:false };
+    store.lerntage.push(t);
+    store.lerntage=store.lerntage.slice(-60);
+  }
+  return t;
+}
+function missionLaenge(){ return tagesModus()==="rot" ? 3 : tagesModus()==="gruen" ? 5 : 4; }
+function tagesMissionsZiel(){
+  const ziel=store.missionsZiel||4;
+  return tagesModus()==="rot" ? Math.max(2, ziel-1) : ziel;
+}
+let missionAufg=0; // gelöste Aufgaben in der laufenden Mini-Mission (Laufzeit)
+function missionFortschritt(){
+  missionAufg++;
+  if(missionAufg<missionLaenge()) return;
+  missionAufg=0;
+  const t=lernTagHeute(); t.mi++;
+  const ziel=tagesMissionsZiel();
+  if(!t.z && t.mi>=ziel){
+    t.z=true;
+    toast("🎯 Tagesziel geschafft – "+t.mi+" Mini-Missionen! Mach die Runde in Ruhe fertig.");
+  } else if(t.z && t.bo>0){
+    toast("🎁 Bonus-Mission geschafft – jetzt ist wirklich Feierabend! 🎉");
+  } else {
+    toast("⭐ Mini-Mission "+t.mi+" von "+ziel+" geschafft!");
+  }
+  save();
+}
+/* Lernspur: Lerntage mit erreichtem Tagesziel; Lücken bis 3 Tage
+   (Wochenende, krank, Urlaub) schützen die Spur. Kein Verlust-Text. */
+function lernspur(){
+  const tage=(store.lerntage||[]).filter(e=>e.z);
+  let n=0, letzt=null;
+  for(let i=tage.length-1;i>=0;i--){
+    const d=new Date(tage[i].t);
+    if(letzt && (letzt-d)/86400000>3.5) break;
+    n++; letzt=d;
+  }
+  return n;
 }
 function fokusPauseZeigen(){
   if($("fokusPause")) return;
@@ -7918,8 +8223,9 @@ function fokusPauseZeigen(){
   </div>`;
   document.body.appendChild(o);
   speak("Bewegungspause! "+idee);
-  o.querySelector("#fokusWeiter").onclick=()=>{ stopSpeak(); fokusSek=0; fokusPauseAktiv=false; o.remove(); };
-  o.querySelector("#fokusSpaeter").onclick=()=>{ stopSpeak(); fokusSek=Math.max(0,FOKUS_PAUSE_NACH-120); fokusPauseAktiv=false; o.remove(); };
+  o.querySelector("#fokusWeiter").onclick=()=>{ stopSpeak(); fokusSek=0; fokusPauseAktiv=false; o.remove();
+    toast("Bereit für die nächste kleine Mission? 💪"); };
+  o.querySelector("#fokusSpaeter").onclick=()=>{ stopSpeak(); fokusSek=Math.max(0,fokusPauseNach()-120); fokusPauseAktiv=false; o.remove(); };
 }
 
 // Freundliche Info, wenn ein Spiel noch nicht freigeschaltet ist
@@ -8046,6 +8352,27 @@ function buildModuleChooser(){
     k.querySelector("#ewSpaeter").onclick=()=>{ ewSpaeter=true; buildModuleChooser(); };
     grid.appendChild(k);
   }
+  // Start-Hilfe mit kleiner Wahl (max 3 Vorschläge): senkt die
+  // Einstiegshürde und verschwindet nach der ersten Mini-Mission des Tages.
+  const letzterTag=(store.lerntage||[])[(store.lerntage||[]).length-1];
+  const schonGestartet = !!(letzterTag && letzterTag.t===heuteKey() && letzterTag.mi>0);
+  if((store.profil || ewSpaeter || store.level===0) && !schonGestartet){
+    const felder=MODUL_GRUPPEN.flatMap(g=>gruppenModule(g)).filter(id=>!SPIELE_IDS.includes(id));
+    if(felder.length>=2){
+      const off=Math.floor(Date.now()/86400000)%felder.length; // täglich andere Vorschläge
+      const wahl=Array.from({length:Math.min(3,felder.length)},(_,i)=>felder[(off+i)%felder.length]);
+      const s=document.createElement("div");
+      s.className="card ew-karte";
+      s.innerHTML=`<div class="ew-leo" style="margin-bottom:8px;"><span class="ew-kopf">🦁</span>
+          <div class="bubble" style="background:#fff;"><b>Womit möchtest du starten?</b>
+          Nur ${missionLaenge()} Aufgaben – dann ist deine erste Mini-Mission geschafft! 🚀${lernspur()>0?`<br>🛤️ Deine Lernspur hält seit ${lernspur()===1?"1 Tag":lernspur()+" Tagen"} – heute geht sie weiter!`:``}</div></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+          ${wahl.map(id=>`<button class="btn-secondary btn-small start-wahl" data-mod="${id}" style="flex:1; min-width:90px;">${MODULES[id].emoji} ${MODULES[id].name}</button>`).join("")}
+        </div>`;
+      s.querySelectorAll(".start-wahl").forEach(b=>b.onclick=()=>openModule(b.dataset.mod));
+      grid.appendChild(s);
+    }
+  }
   MODUL_GRUPPEN.forEach(g=>{
     const mods=gruppenModule(g);
     if(!mods.length) return;
@@ -8099,6 +8426,9 @@ function buildModuleChooser(){
 }
 function openModule(id){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
+  if(tagesformNoetig()) tagesformZeigen(); // freiwillig, legt sich über die Einheit
+  else if(missionAufg===0 && !lernTagHeute().mi && !SPIELE_IDS.includes(id))
+    toast("Nur "+missionLaenge()+" Aufgaben – dann ist die erste Mini-Mission geschafft!");
   // Spiele müssen freigeschaltet werden: 1 Münze je Spielbesuch
   if(SPIELE_IDS.includes(id) && store.muenzenAktiv){
     if((store.muenzen||0)<1){ spieleGesperrt(id); return; }
@@ -8176,6 +8506,7 @@ function navItem(icon,label,onclick,active){
    ============================================================ */
 document.addEventListener("DOMContentLoaded",()=>{
   load();
+  animAnwenden();
   buildLevelRow();
   buildModuleChooser();
   const ni=$("nameInput");
