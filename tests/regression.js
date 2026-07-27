@@ -1032,7 +1032,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     && await page.evaluate(() => testsFuerKlasse().length === 2));
   await setLevel(3);
   await page.locator(".test-kachel").click(); await page.waitForTimeout(150);
-  check("Übersicht: 13 Punkte + Erst-Versuch-Regel + Start-Knopf", (await page.locator("#moduleContent").textContent()).includes("13 Punkte")
+  check("Übersicht: Erst-Versuch-Regel + Start-Knopf", (await page.locator("#moduleContent").textContent()).includes("ersten Versuch")
     && (await page.locator('.test-start[data-typ="sprache"]').count()) === 1);
   await page.locator('.test-start[data-typ="sprache"]').click(); await page.waitForTimeout(150);
   check("Test: 11 gemischte Aufgaben, 13 Punkte, alle Typen dabei", await page.evaluate(() =>
@@ -1669,6 +1669,100 @@ function section(t) { console.log("\n== " + t + " =="); }
     document.documentElement.scrollHeight <= window.innerHeight));
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => goHome()); await page.waitForTimeout(100);
+
+  // ---------- 8e) Mathe (Kompass 4 Mathematik) ----------
+  section("Mathe: Fach, Übungen & Kompass-Training (v1.68)");
+  await fresh();
+  // Datenqualität: 5 Bereiche à 12+12 Aufgaben, Lösung nie doppelt
+  check("Mathe-Daten: 5 Bereiche, je 12 leichte + 12 Kompass-Aufgaben", await page.evaluate(() =>
+    MATHE_KEYS.length === 5 && MATHE_KEYS.every(k =>
+      MATHE_DATEN[k].easy.length === 12 && MATHE_DATEN[k].hard.length === 12)));
+  check("Mathe-Daten: immer 2 Falsch-Antworten, Lösung nie darunter", await page.evaluate(() =>
+    MATHE_KEYS.every(k => MATHE_DATEN[k].easy.concat(MATHE_DATEN[k].hard).every(a =>
+      a.x.length === 2 && !a.x.includes(a.r) && a.tipp && a.f))));
+  // Fach-Umschaltung auf der Startseite
+  await page.locator('#fachRow .level-btn[data-fach="mathe"]').click(); await page.waitForTimeout(150);
+  check("Fach Mathe: 2 Mathe-Gruppen + Spielhalle, Deutsch-Kacheln weg", await page.evaluate(() => {
+    const t = document.getElementById("moduleChooser").textContent;
+    return t.includes("Zahlen & Rechnen") && t.includes("Formen, Größen & Daten")
+      && t.includes("Spielhalle") && !t.includes("Sätze & Grammatik") && !t.includes("Fit für Klasse 4");
+  }));
+  check("Fach übersteht Reload", await page.evaluate(() => { save(); load(); return store.fach === "mathe"; }));
+  // Mathe-Gruppe: keine Deutsch-Themen-Wahl
+  await page.evaluate(() => openGruppe("mzahlrech")); await page.waitForTimeout(150);
+  check("Mathe-Gruppe: 2 Lernfelder, keine Themen-Wahl", await page.evaluate(() =>
+    document.querySelectorAll("#gruppenGrid .choice").length === 2
+    && !document.getElementById("moduleContent").textContent.includes("Thema")));
+  // Rechnen: Lernen-Seite + Übung mit voller Anbindung
+  await page.evaluate(() => openModule("mrechnen")); await page.waitForTimeout(200);
+  check("Rechnen: Lernen-Seite mit Strategie-Tipp", (await page.locator("#moduleContent").textContent()).includes("stellenweise"));
+  await page.evaluate(() => goSection("ueben")); await page.waitForTimeout(200);
+  check("Mathe-Übung: Fokus-Modus + Stufen-Anzeige", await page.evaluate(() =>
+    document.getElementById("screen-content").classList.contains("uebung-fokus")
+    && /Aktive Stufe \d\/3/.test(document.querySelector(".lvl-badge").textContent)));
+  check("Klasse 3: Start auf Stufe 1 (Aufwärmen)", await page.evaluate(() => {
+    store.level = 3; return fieldLevel("mrechnen") === 1; }));
+  check("Klasse 4: Start auf Stufe 2 (Kompass-Niveau)", await page.evaluate(() => {
+    store.level = 4; const l = fieldLevel("mrechnen"); store.level = 3; return l === 2; }));
+  // ohne Antwort blockiert; richtige Antwort zählt für Runde + Mission
+  await page.locator("#mNext").click(); await page.waitForTimeout(80);
+  check("Mathe: ohne Antwort blockiert", /zuerst/i.test(await page.locator("#mfb").textContent()));
+  const mRichtig = await page.evaluate(() => gwsChunk("mrechnen").S[matheIdx].r);
+  const mBtns = page.locator(".mathe-opt");
+  for (let k = 0; k < await mBtns.count(); k++) {
+    if ((await mBtns.nth(k).textContent()) === mRichtig) { await mBtns.nth(k).click(); break; }
+  }
+  await page.waitForTimeout(120);
+  check("Mathe: richtige Antwort erkannt + Erklär-Tipp", /Richtig/.test(await page.locator("#mfb").textContent()));
+  check("Mathe zählt für Runde und Mini-Mission", await page.evaluate(() =>
+    scoreRuns["mrechnen"].solved === 1 && missionAufg >= 1));
+  // Runde komplett lösen -> Auswertung mit Stufen-System
+  await page.locator("#mNext").click(); await page.waitForTimeout(100);
+  let mg = 0;
+  while (mg++ < 14) {
+    if (await page.locator("#runAgain").count()) break;
+    const ri = await page.evaluate(() => gwsChunk("mrechnen").S[matheIdx] ? gwsChunk("mrechnen").S[matheIdx].r : null);
+    if (!ri) break;
+    const bb = page.locator(".mathe-opt");
+    for (let k = 0; k < await bb.count(); k++) {
+      if ((await bb.nth(k).textContent()) === ri) { await bb.nth(k).click(); break; }
+    }
+    await page.waitForTimeout(40);
+    await page.locator("#mNext").click(); await page.waitForTimeout(60);
+  }
+  ovl = await closeOverlay();
+  check("Mathe-Runde perfekt: Stufe 2 freigeschaltet", ovl === "Stufe 2 freigeschaltet!", String(ovl));
+  check("Mathe-Auswertung mit Blume erreicht", (await page.locator("#runAgain").count()) === 1);
+  // Blatt: schriftliches Rechnen
+  await page.evaluate(() => goSection("blatt")); await page.waitForTimeout(120);
+  check("Rechnen-Arbeitsblatt (schriftlich, mit der Hand)", (await page.locator("#worksheet").textContent()).includes("1691 + 268"));
+  // Mathe-Test im Test-Training (nur Fach Mathe + Klasse 4)
+  await page.evaluate(() => { store.level = 4; save(); goHome(); }); await page.waitForTimeout(120);
+  await page.evaluate(() => openTestTraining()); await page.waitForTimeout(150);
+  check("Fach Mathe: nur der Mathe-Test wird angeboten", await page.evaluate(() =>
+    [...document.querySelectorAll(".test-start")].map(b => b.dataset.typ).join(",") === "mathe"));
+  await page.locator('.test-start[data-typ="mathe"]').click(); await page.waitForTimeout(250);
+  check("Mathe-Test: 12 Aufgaben aus 5 Bereichen", await page.evaluate(() =>
+    test.aufgaben.length === 12 && test.max === 12 && Object.keys(test.bereiche).length === 5));
+  // Erste Aufgabe mit Kontroll-Blick richtig lösen
+  const tRichtig = await page.evaluate(() => { const o = test.aufgaben[0].a.o.find(x => x[1] === 1); return o[0]; });
+  const tOpts = page.locator(".test-opt");
+  for (let k = 0; k < await tOpts.count(); k++) {
+    if ((await tOpts.nth(k).textContent()).trim() === tRichtig) { await tOpts.nth(k).click(); break; }
+  }
+  await page.waitForTimeout(100);
+  await page.locator("#testAbgeben").click(); await page.waitForTimeout(120);
+  check("Mathe-Test: Kontroll-Blick + Punkt bei richtiger Antwort", await page.evaluate(() => test.punkte === 1));
+  // Bei Fach Deutsch taucht der Mathe-Test nicht auf
+  check("Fach Deutsch: kein Mathe-Test im Katalog", await page.evaluate(() => {
+    store.fach = "deutsch"; const ohne = !testsFuerKlasse().some(t => t.typ === "mathe");
+    store.fach = "mathe"; save(); return ohne;
+  }));
+  // Kein Scrollen auf kleinem Handy
+  await page.setViewportSize({ width: 360, height: 640 });
+  check("Mathe-Übung passt ohne Scrollen (360×640)", await passt("mzahlen", "ueben"));
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.evaluate(() => { store.fach = "deutsch"; save(); goHome(); }); await page.waitForTimeout(100);
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
