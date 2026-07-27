@@ -177,6 +177,32 @@ function section(t) { console.log("\n== " + t + " =="); }
   const unlocked = await page.evaluate(() => document.querySelectorAll(".sticker:not(.locked)").length);
   check("30 Sticker-Plätze, 1 freigeschaltet (5 Sterne)", albumOk && unlocked === 1, "unlocked=" + unlocked);
 
+  // ---------- Puzzle 3x3: alle Teile sichtbar (Quer- und Hochformat) ----------
+  section("Puzzle 3x3 passt auf den Bildschirm");
+  for (const vp of [{ width: 900, height: 430, name: "Querformat" }, { width: 420, height: 820, name: "Hochformat" }]) {
+    const ctx2 = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+    const p2 = await ctx2.newPage();
+    await p2.addInitScript(() => localStorage.setItem("leon.counts", JSON.stringify({ puzzle: 4 })));
+    await p2.goto(APP);
+    await p2.waitForTimeout(300);
+    await p2.click('[data-game="puzzle"]');
+    await p2.waitForTimeout(400);
+    const res = await p2.evaluate(() => {
+      const tiles = document.querySelectorAll(".pz-tile");
+      const cells = document.querySelectorAll(".pz-cell");
+      let out = 0;
+      const all = [...tiles, ...cells];
+      all.forEach((el) => {
+        const r = el.getBoundingClientRect();
+        if (r.left < 0 || r.top < 0 || r.right > innerWidth || r.bottom > innerHeight) out++;
+      });
+      return { tiles: tiles.length, cells: cells.length, out };
+    });
+    check(`${vp.name}: 9 Teile + 9 Felder, alle im Bild`, res.tiles === 9 && res.cells === 9 && res.out === 0,
+      `tiles=${res.tiles} cells=${res.cells} außerhalb=${res.out}`);
+    await ctx2.close();
+  }
+
   section("Abschluss");
   check("5 Sterne gesammelt", (await stars()) === 5, "stars=" + (await stars()));
   check("Keine JS-Fehler insgesamt", errors.length === 0, errors.join(" | "));
