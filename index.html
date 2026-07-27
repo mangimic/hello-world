@@ -443,8 +443,8 @@ button.locked{opacity:.45; pointer-events:none;}
     <div class="card">
       <h2>Dein Fach</h2>
       <div class="level-row" id="fachRow">
-        <button class="level-btn active" type="button">📗 Deutsch</button>
-        <button class="level-btn fach-bald" type="button" disabled>🔢 Mathe – bald</button>
+        <button class="level-btn" type="button" data-fach="deutsch">📗 Deutsch</button>
+        <button class="level-btn" type="button" data-fach="mathe">🔢 Mathe</button>
         <button class="level-btn fach-bald" type="button" disabled>🌍 Sachkunde – bald</button>
       </div>
     </div>
@@ -511,8 +511,16 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.67.0";
+const APP_VERSION = "1.68.0";
 const RELEASE_NOTES = [
+  {v:"1.68.0", datum:"27.07.2026", punkte:[
+    "🔢 NEU: Mathe ist da! Auf der Startseite kannst du jetzt zwischen 📗 Deutsch und 🔢 Mathe umschalten. Grundlage ist der Kompass 4 Mathematik (Klasse 4) – mit denselben Aufgabentypen wie im echten Test.",
+    "🧮 5 Mathe-Bereiche: Rechnen (Plus, Minus, Mal, Geteilt mit Rechentricks), Zahlen-Profi (Nachbarzehner, Stellenwerte, Zahlenfolgen, Zahlenmauern), Formen & Flächen (Spiegelachsen, Würfelnetze, Flächen vergleichen), Größen & Sachaufgaben (Geld, Uhrzeit, Längen schätzen) und Daten & Zufall (sicher/möglich/unmöglich, Tabellen).",
+    "🎯 Stufen wie in Deutsch: Stufe 1 ist zum Aufwärmen, ab Stufe 2 übst du auf Kompass-Niveau. In Klasse 4 startest du direkt auf Stufe 2 – Eltern können die Stufe jederzeit festlegen.",
+    "🧪 Mathe-Test im Test-Training: 12 Aufgaben quer durch alle 5 Bereiche, mit Punkten, Kontroll-Blick und Historie – wie ein echter Könnernachweis.",
+    "🖨️ Arbeitsblatt „Schriftlich rechnen“: Die großen Plus- und Minus-Aufgaben übst du mit der Hand auf Papier – wie im Test.",
+    "⭐ Alles zählt mit: Mathe-Runden bringen Spiel-Münzen, zählen für Mini-Missionen, Tagesziel und Lernspur. Fokus-Modus ohne Scrollen, sofortiges Feedback mit Erklär-Tipp bei jeder Aufgabe."
+  ]},
   {v:"1.67.0", datum:"27.07.2026", punkte:[
     "🔍 Fokus-Modus beim Üben: Während einer Übung wird alles ausgeblendet bzw. verkleinert, was nichts mit der Aufgabe zu tun hat (kompakter Kopf, kleinere Abstände, keine Illustrationen). Alle Kern-Übungen passen jetzt ohne Scrollen auf einen kleinen Handy-Bildschirm – automatisch geprüft.",
     "📚 Regel-Gruppen zum Durchklicken: Beim Grundwortschatz wählst du zuerst deine Regel-Gruppe auf einer eigenen Seite – erst dann kommt die Übung, ganz ohne lange Liste darüber. Mit „↩️ Gruppe wechseln“ kommst du jederzeit zurück. Genauso beim Kompass-Bereich „Sprache“.",
@@ -1256,7 +1264,8 @@ function needAnswer(fb, text){
    Stufe frei. Die Fortschritte werden gespeichert (store.progress).
    Stufe 1 = Aufwärmen · 2 = Fortgeschritten · 3 = Profi.
    ============================================================ */
-const MOD_FIELD = {subjekt:"subj",praedikat:"praed",satzglieder:"satzglied",rede:"rede",zeit:"zeit",grossklein:"gk",dassdas:"dd",wortarten:"wa",faelle:"faelle",doppel:"doppel"};
+const MOD_FIELD = {subjekt:"subj",praedikat:"praed",satzglieder:"satzglied",rede:"rede",zeit:"zeit",grossklein:"gk",dassdas:"dd",wortarten:"wa",faelle:"faelle",doppel:"doppel",
+  mrechnen:"mrechnen",mzahlen:"mzahlen",mgeo:"mgeo",mgroessen:"mgroessen",mdaten:"mdaten"};
 const LEVEL_NAME = {1:"Aufwärmen",2:"Fortgeschritten",3:"Profi"};
 const FIELD_POOLS = {
   subj:()=>({easy:SUBJ_THEMEN[store.thema].saetze, hard:SUBJ_K4[store.thema]}),
@@ -1270,7 +1279,13 @@ const FIELD_POOLS = {
   gk:()=>({easy:GK_THEMEN[store.thema].saetze, hard:[]}),
   dd:()=>({easy:DD_THEMEN[store.thema].saetze, hard:[]}),
   faelle:()=>({easy:FAELLE_THEMEN[store.thema].saetze, hard:[]}),
-  doppel:()=>({easy:DOPPEL_THEMEN[store.thema].woerter, hard:[]})
+  doppel:()=>({easy:DOPPEL_THEMEN[store.thema].woerter, hard:[]}),
+  // Mathe: Stufe 1 = Aufwärmen, Stufe 2/3 = Kompass-Niveau (Klasse 4)
+  mrechnen:()=>MATHE_DATEN.mrechnen,
+  mzahlen:()=>MATHE_DATEN.mzahlen,
+  mgeo:()=>MATHE_DATEN.mgeo,
+  mgroessen:()=>MATHE_DATEN.mgroessen,
+  mdaten:()=>MATHE_DATEN.mdaten
 };
 function fieldProg(key){ if(!store.progress[key]) store.progress[key]={unlocked:1,runs:0,crown:false}; return store.progress[key]; }
 function fieldHard(key){ const h=FIELD_POOLS[key]().hard; return (h&&h.length)?h:null; }
@@ -6375,7 +6390,12 @@ const TEST_BEREICHE={ recht:{name:"🔤 Rechtschreibung", modul:"gws", sektion:n
   vinhalt:{name:"📋 Inhalt (Zutaten & Schritte)", modul:"vorgang", sektion:null},
   vaufbau:{name:"🔢 Richtige Reihenfolge", modul:"vorgang", sektion:null},
   vsprache:{name:"🗣️ Sprache (Sätze & Form)", modul:"vorgang", sektion:null},
-  vform:{name:"✍️ Groß schreiben & Punkt", modul:"grossklein", sektion:null} };
+  vform:{name:"✍️ Groß schreiben & Punkt", modul:"grossklein", sektion:null},
+  mrech:{name:"🧮 Rechnen", modul:"mrechnen", sektion:null},
+  mzahl:{name:"🔢 Zahlen-Profi", modul:"mzahlen", sektion:null},
+  mgeo:{name:"📐 Formen & Flächen", modul:"mgeo", sektion:null},
+  mgroe:{name:"⏰ Größen & Sachaufgaben", modul:"mgroessen", sektion:null},
+  mdat:{name:"🎲 Daten & Zufall", modul:"mdaten", sektion:null} };
 /* Vorgangsbeschreibungs-Test (nach dem Bewertungsbogen „Waffelrezept"):
    prüft genau die Schul-Kriterien – Überschrift, vollständige Zutaten,
    Schritte GENAU und in RICHTIGER Reihenfolge, Präsens, gleiche Form,
@@ -6440,10 +6460,12 @@ const VT_WAHL=[
    Klasse-3-Stoff. Neue Tests (z. B. für Klasse 4) einfach hier ergänzen. */
 const TEST_KATALOG=[
   {typ:"sprache", titel:"🧩 Sprache untersuchen", untertitel:"Wörter · Satzglieder · Zeit &amp; Ort · Subjekt &amp; Prädikat", klassen:[3]},
-  {typ:"vorgang", titel:"📝 Vorgangsbeschreibung", untertitel:"Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form", klassen:[3]}
+  {typ:"vorgang", titel:"📝 Vorgangsbeschreibung", untertitel:"Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form", klassen:[3]},
+  {typ:"mathe", titel:"🔢 Mathe: Kompass-Training", untertitel:"Rechnen · Zahlen · Formen · Größen · Daten – wie der Kompass 4", klassen:[4], fach:"mathe"}
 ];
 function testsFuerKlasse(){
-  return TEST_KATALOG.filter(t=>store.level===0 || t.klassen.includes(store.level));
+  return TEST_KATALOG.filter(t=>(t.fach||"deutsch")===(store.fach||"deutsch"))
+    .filter(t=>store.level===0 || t.klassen.includes(store.level));
 }
 let test=null;
 function testZieh(arr,n,filter){
@@ -6462,6 +6484,20 @@ function testStart(typ){
       idx:0, punkte:0, max:13, start:Date.now(),
       bereiche:{vinhalt:{p:0,max:3}, vaufbau:{p:0,max:5}, vsprache:{p:0,max:4}, vform:{p:0,max:1}} };
     return testVorgangVorlage(); // erst die Vorlage lesen – wie in der Schule
+  }
+  if(typ==="mathe"){
+    // Kompass-4-Mathe-Training: 12 Aufgaben quer durch alle 5 Bereiche,
+    // gezogen aus den Kompass-Niveau-Pools (hard) – jede Runde neu gemischt.
+    const zieh=(key,n,bereich)=>testZieh(MATHE_DATEN[key].hard,n).map(it=>({
+      art:"wahl", punkte:1, bereich:bereich,
+      a:{frage:it.f, o:[[it.r,1],[it.x[0],0],[it.x[1],0]]}
+    }));
+    const aufgaben=[].concat(
+      zieh("mrechnen",3,"mrech"), zieh("mzahlen",3,"mzahl"),
+      zieh("mgeo",2,"mgeo"), zieh("mgroessen",2,"mgroe"), zieh("mdaten",2,"mdat"));
+    test={ typ:typ, aufgaben:aufgaben, idx:0, punkte:0, max:12, start:Date.now(),
+      bereiche:{mrech:{p:0,max:3}, mzahl:{p:0,max:3}, mgeo:{p:0,max:2}, mgroe:{p:0,max:2}, mdat:{p:0,max:2}} };
+    return testFrage();
   }
   const wort=s=>{ let pool=gwsNiveauPool([s]); if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
     const t=pool[Math.floor(Math.random()*pool.length)];
@@ -6491,7 +6527,7 @@ function openTestTraining(){
   $("screen-content").classList.add("active");
   const hist=(store.testHistorie||[]);
   const histHTML=hist.length?`<div class="card"><h3>📈 Deine letzten Tests</h3>${hist.slice().reverse().map(h=>
-    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":"🧩 Sprache"}</p>`).join("")}</div>`:"";
+    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":h.typ==="mathe"?"🔢 Mathe":"🧩 Sprache"}</p>`).join("")}</div>`:"";
   const verfuegbar=testsFuerKlasse();
   const knoepfe=verfuegbar.length
     ? verfuegbar.map(t=>`<button class="btn-primary mt test-start" data-typ="${t.typ}" style="width:100%;">${t.titel}<br>
@@ -6501,7 +6537,7 @@ function openTestTraining(){
     <div class="card">
       <h2>🧪 Test-Training</h2>
       <p>Wie ein <b>Könnernachweis</b> in der Schule – und jede Antwort zählt
-        beim <b>ersten Versuch</b>! Such dir einen Test aus (je 13 Punkte):</p>
+        beim <b>ersten Versuch</b>! Such dir einen Test aus:</p>
       ${knoepfe}
     </div>${histHTML}`;
   $("moduleContent").querySelectorAll(".test-start").forEach(b=>b.onclick=()=>testStart(b.dataset.typ));
@@ -7722,6 +7758,266 @@ function renderAdminWoerter(c){
    MODUL-REGISTRIERUNG
    Neues Lernfeld = einfach hier ein weiteres Objekt ergänzen.
    ============================================================ */
+/* ============================================================
+   MATHE (Fach 🔢) – Übungen und Test auf Grundlage des
+   Kompass 4 Mathematik (IBBW, Haupttermin 2025): gleiche
+   Aufgabentypen, eigener kuratierter Aufgaben-Vorrat.
+   Konzept wie Deutsch: kurze Pakete, sofortiges Feedback mit
+   Erklär-Tipp, Stufen (leicht -> Kompass-Niveau), Mini-Missionen
+   und Fokus-Modus laufen automatisch mit.
+   ============================================================ */
+const MATHE_DATEN={
+  mrechnen:{
+    easy:[
+      {f:"356 + 123 = ?", r:"479", x:["469","489"], tipp:"Rechne stellenweise: erst die Einer, dann Zehner, dann Hunderter."},
+      {f:"487 − 234 = ?", r:"253", x:["263","243"], tipp:"400−200=200, 80−30=50, 7−4=3."},
+      {f:"45 + 38 = ?", r:"83", x:["73","84"], tipp:"45+38 = 45+40−2."},
+      {f:"92 − 47 = ?", r:"45", x:["55","44"], tipp:"92−47 = 92−50+3."},
+      {f:"6 · 7 = ?", r:"42", x:["36","48"], tipp:"Das kleine Einmaleins: 6·7=42."},
+      {f:"63 : 9 = ?", r:"7", x:["6","8"], tipp:"Frag dich: 9 mal was ist 63?"},
+      {f:"230 + 150 = ?", r:"380", x:["370","390"], tipp:"200+100=300 und 30+50=80."},
+      {f:"560 − 280 = ?", r:"280", x:["380","270"], tipp:"560−200=360, dann noch −80."},
+      {f:"3 · 25 = ?", r:"75", x:["65","85"], tipp:"25+25+25 = 75."},
+      {f:"96 : 8 = ?", r:"12", x:["11","14"], tipp:"80:8=10 und 16:8=2 → 10+2."},
+      {f:"407 + 95 = ?", r:"502", x:["492","512"], tipp:"Trick: 407+100−5."},
+      {f:"811 − 406 = ?", r:"405", x:["415","395"], tipp:"811−400=411, dann noch −6."}
+    ],
+    hard:[
+      {f:"1691 + 268 = ?", r:"1959", x:["1859","1949"], tipp:"Schriftlich: Einer 1+8=9, Zehner 9+6=15 → 5 und Übertrag!"},
+      {f:"1739 − 658 = ?", r:"1081", x:["1181","1121"], tipp:"Schriftlich rechnen – beim Hunderter musst du entbündeln."},
+      {f:"5 · 18 = ?", r:"90", x:["80","95"], tipp:"5·18 = 5·20 − 5·2 = 100−10."},
+      {f:"6 · 38 = ?", r:"228", x:["218","238"], tipp:"6·38 = 6·40 − 6·2 = 240−12."},
+      {f:"48 : 4 = ?", r:"12", x:["11","16"], tipp:"40:4=10 und 8:4=2."},
+      {f:"2456 + 1378 = ?", r:"3834", x:["3734","3824"], tipp:"Schriftlich – achte auf die Überträge!"},
+      {f:"3405 − 1287 = ?", r:"2118", x:["2218","2128"], tipp:"Schriftlich – bei den Einern brauchst du einen Übertrag."},
+      {f:"7 · 46 = ?", r:"322", x:["312","332"], tipp:"7·46 = 7·40 + 7·6 = 280+42."},
+      {f:"96 : 6 = ?", r:"16", x:["14","18"], tipp:"60:6=10 und 36:6=6."},
+      {f:"Lena rechnet 478 − 97 mit einem Trick: „Zuerst 478 − 100 = 378.“ Was muss sie jetzt noch rechnen?", r:"378 + 3", x:["378 − 3","378 + 97"], tipp:"Sie hat 3 zu viel abgezogen – die kommen wieder dazu."},
+      {f:"Rechne geschickt: 299 + 156 = ?", r:"455", x:["445","465"], tipp:"Trick: 300 + 156 − 1."},
+      {f:"1000 − 763 = ?", r:"237", x:["247","337"], tipp:"763 + 237 = 1000. Ergänze bis 800, dann bis 1000."}
+    ]
+  },
+  mzahlen:{
+    easy:[
+      {f:"Wie heißen die Nachbarzehner von 346?", r:"340 und 350", x:["345 und 355","300 und 400"], tipp:"Nachbarzehner sind die Zehnerzahlen direkt davor und danach."},
+      {f:"Wie heißen die Nachbarhunderter von 782?", r:"700 und 800", x:["780 und 790","770 und 800"], tipp:"Nachbarhunderter sind volle Hunderter."},
+      {f:"Welche Zahl liegt genau in der Mitte zwischen 40 und 60?", r:"50", x:["45","55"], tipp:"Von 40 und von 60 gleich weit weg."},
+      {f:"Setze die Zahlenfolge fort: 5, 10, 15, 20, ?", r:"25", x:["30","24"], tipp:"Es geht immer +5 weiter."},
+      {f:"H = 2, Z = 4, E = 6. Wie heißt die Zahl?", r:"246", x:["264","426"], tipp:"2 Hunderter, 4 Zehner, 6 Einer."},
+      {f:"Welche Zahl ist am größten?", r:"998", x:["989","899"], tipp:"Vergleiche zuerst die Hunderter, dann die Zehner."},
+      {f:"Zahlenmauer: Unten stehen 2 und 3 nebeneinander. Welche Zahl steht auf dem Stein darüber?", r:"5", x:["6","1"], tipp:"In der Zahlenmauer wird immer addiert: 2+3."},
+      {f:"Setze die Zahlenfolge fort: 30, 27, 24, ?", r:"21", x:["22","20"], tipp:"Es geht immer −3 weiter."},
+      {f:"Wie heißen die Nachbarzehner von 605?", r:"600 und 610", x:["605 und 615","500 und 700"], tipp:"605 liegt zwischen den Zehnern 600 und 610."},
+      {f:"Welche Zahl liegt genau in der Mitte zwischen 120 und 140?", r:"130", x:["125","135"], tipp:"120 +10 und 140 −10."},
+      {f:"Welche Zahl ist gerade?", r:"52", x:["47","61"], tipp:"Gerade Zahlen enden auf 0, 2, 4, 6 oder 8."},
+      {f:"Was bedeutet die 7 in der Zahl 372?", r:"7 Zehner (70)", x:["7 Einer (7)","7 Hunderter (700)"], tipp:"Die mittlere Stelle ist die Zehnerstelle."}
+    ],
+    hard:[
+      {f:"Wie heißen die Nachbarzehner von 7496?", r:"7490 und 7500", x:["7495 und 7505","7400 und 7500"], tipp:"Die Zehner direkt vor und nach 7496."},
+      {f:"Wie heißen die Nachbartausender von 6280?", r:"6000 und 7000", x:["6200 und 6300","5000 und 7000"], tipp:"Volle Tausender davor und danach."},
+      {f:"H = 5, Z = 13, E = 2. Wie heißt die Zahl?", r:"632", x:["5132","532"], tipp:"13 Zehner sind 130 – also 500+130+2."},
+      {f:"Welche Zahl liegt genau in der Mitte zwischen 750 und 850?", r:"800", x:["775","825"], tipp:"Von beiden Zahlen 50 entfernt."},
+      {f:"Welche Zahl liegt genau in der Mitte zwischen 340 und 480?", r:"410", x:["400","420"], tipp:"Der Abstand ist 140 – die Hälfte davon ist 70. 340+70."},
+      {f:"Setze fort: 460, 510, 490, 540, 520, ?", r:"570", x:["500","550"], tipp:"Die Regel ist: erst +50, dann −20."},
+      {f:"Welche Regel steckt in der Folge 460, 510, 490, 540, 520?", r:"erst +50, dann −20", x:["immer +50","erst +30, dann −10"], tipp:"460→510 ist +50, 510→490 ist −20 – im Wechsel."},
+      {f:"Zahlenmauer mit 20, 25 und 30 in der ersten Reihe: Wann wird der Deckstein am größten?", r:"Wenn die größte Zahl in der Mitte steht", x:["Wenn die größte Zahl außen steht","Die Reihenfolge ist egal"], tipp:"Die mittlere Zahl wird zweimal mitgezählt!"},
+      {f:"Zahlenmauer: erste Reihe 20 | 30 | 25. Wie groß ist der Deckstein?", r:"105", x:["95","100"], tipp:"20+30=50 und 30+25=55, dann 50+55."},
+      {f:"Setze fort: 1200, 1150, 1250, 1200, 1300, ?", r:"1250", x:["1350","1400"], tipp:"Die Regel: erst −50, dann +100."},
+      {f:"Welche Zahl liegt näher an 5000: 4890 oder 5120?", r:"4890", x:["5120","beide gleich nah"], tipp:"4890 ist 110 entfernt, 5120 ist 120 entfernt."},
+      {f:"Runde 3467 auf den nächsten Hunderter.", r:"3500", x:["3400","3000"], tipp:"Die Zehnerziffer 6 sagt: aufrunden."}
+    ]
+  },
+  mgeo:{
+    easy:[
+      {f:"Wie viele Ecken hat ein Rechteck?", r:"4", x:["3","6"], tipp:"Rechteck = 4 Ecken, 4 rechte Winkel."},
+      {f:"Wie viele Spiegelachsen hat ein Quadrat?", r:"4", x:["2","1"], tipp:"Zwei durch die Seitenmitten und zwei durch die Ecken."},
+      {f:"Welche Figur hat keine Ecken?", r:"Kreis", x:["Dreieck","Quadrat"], tipp:"Der Kreis ist ganz rund."},
+      {f:"Wie viele Flächen hat ein Würfel?", r:"6", x:["4","8"], tipp:"Denk an einen Spielwürfel: oben, unten und 4 Seiten."},
+      {f:"Figur A besteht aus 6 Kästchen, Figur B auch aus 6 Kästchen – nur anders gelegt. Was gilt?", r:"Die Flächen sind gleich groß", x:["Figur A ist größer","Figur B ist größer"], tipp:"Zähle die Kästchen – die Form ist egal!"},
+      {f:"Wie viele Spiegelachsen hat ein Rechteck (das kein Quadrat ist)?", r:"2", x:["4","1"], tipp:"Nur durch die Seitenmitten – nicht durch die Ecken!"},
+      {f:"Welcher Körper kann rollen?", r:"Kugel", x:["Würfel","Quader"], tipp:"Rund rollt!"},
+      {f:"Aus wie vielen Quadraten besteht ein Würfelnetz?", r:"6", x:["5","8"], tipp:"So viele wie der Würfel Flächen hat."},
+      {f:"Wie viele Seiten hat ein Dreieck?", r:"3", x:["2","4"], tipp:"Drei Ecken, drei Seiten."},
+      {f:"Ein Turm aus Würfeln: 3 unten, 2 darauf, 1 ganz oben. Wie viele Würfel sind es?", r:"6", x:["5","7"], tipp:"3+2+1."},
+      {f:"Welcher Buchstabe hat eine senkrechte Spiegelachse?", r:"A", x:["F","G"], tipp:"Falte das A in der Mitte – beide Hälften passen aufeinander."},
+      {f:"Ein Quadrat hat 4 gleich lange …?", r:"Seiten", x:["Ecken","Kreise"], tipp:"Beim Quadrat sind alle Seiten gleich lang."}
+    ],
+    hard:[
+      {f:"Wie viele Spiegelachsen hat ein Kreis?", r:"Unendlich viele", x:["4","8"], tipp:"Jede Linie durch den Mittelpunkt ist eine Spiegelachse."},
+      {f:"6 Quadrate alle in einer Reihe nebeneinander – ergibt das ein Würfelnetz?", r:"Nein", x:["Ja","Nur bei großen Würfeln"], tipp:"Beim Falten überlappen sich die Flächen – Deckel und Boden fehlen."},
+      {f:"4 Quadrate in einer Reihe, 1 oben und 1 unten angehängt – ergibt das ein Würfelnetz?", r:"Ja", x:["Nein","Nur ohne den Deckel"], tipp:"Das ist das bekannteste Würfelnetz (T-Form/Kreuz)."},
+      {f:"Zwei gleiche rechtwinklige Dreiecke zusammengelegt können ein … ergeben.", r:"Rechteck", x:["Kreis","Fünfeck"], tipp:"Die schrägen Seiten aneinanderlegen!"},
+      {f:"Wie viele Spiegelachsen hat ein gleichseitiges Dreieck?", r:"3", x:["1","6"], tipp:"Eine durch jede Ecke zur gegenüberliegenden Seitenmitte."},
+      {f:"Figur A: 8 Kästchen. Figur B: ein Rechteck aus 2·4 Kästchen. Sind die Flächen gleich groß?", r:"Ja, beide 8 Kästchen", x:["Nein, A ist größer","Nein, B ist größer"], tipp:"2·4 = 8 – zählen schlägt schauen!"},
+      {f:"Welche Figur hat die größere Fläche: ein Quadrat aus 3·3 Kästchen oder ein Rechteck aus 2·5 Kästchen?", r:"Das Rechteck (10 > 9)", x:["Das Quadrat","Beide gleich groß"], tipp:"3·3=9 und 2·5=10."},
+      {f:"Wie viele Kanten hat ein Würfel?", r:"12", x:["8","6"], tipp:"4 oben, 4 unten und 4 senkrechte."},
+      {f:"Ein Rechteck ist 6 cm lang und 4 cm breit. Wie groß ist der Umfang?", r:"20 cm", x:["24 cm","10 cm"], tipp:"6+4+6+4 – einmal ganz außen herum."},
+      {f:"Welcher Buchstabe hat KEINE Spiegelachse?", r:"F", x:["A","M"], tipp:"A und M kann man senkrecht falten – F nicht."},
+      {f:"Ein Würfelgebäude: 3 Würfel in einer Reihe, auf dem mittleren steht noch einer. Wie viele Würfel siehst du von vorne?", r:"4", x:["3","6"], tipp:"Von vorne siehst du alle: 3 unten und 1 oben."},
+      {f:"Du drehst ein Puzzleteil um 90 Grad. Was ändert sich an seiner Fläche?", r:"Nichts – sie bleibt gleich groß", x:["Sie wird größer","Sie wird kleiner"], tipp:"Drehen verändert die Größe nie."}
+    ]
+  },
+  mgroessen:{
+    easy:[
+      {f:"1 Euro = ? Cent", r:"100 Cent", x:["10 Cent","1000 Cent"], tipp:"1 € = 100 ct."},
+      {f:"7:30 Uhr + 30 Minuten = ?", r:"8:00 Uhr", x:["7:60 Uhr","8:30 Uhr"], tipp:"30+30=60 Minuten = eine volle Stunde."},
+      {f:"1 m = ? cm", r:"100 cm", x:["10 cm","1000 cm"], tipp:"1 Meter = 100 Zentimeter."},
+      {f:"Wie lang ist etwa ein Schul-Lineal?", r:"30 cm", x:["30 mm","3 m"], tipp:"Ein Lineal ist ungefähr so lang wie dein Unterarm."},
+      {f:"3 € + 2,50 € = ?", r:"5,50 €", x:["5,80 €","6,50 €"], tipp:"3+2=5 Euro und 50 Cent dazu."},
+      {f:"10:15 Uhr + 1 Stunde = ?", r:"11:15 Uhr", x:["10:75 Uhr","11:45 Uhr"], tipp:"Nur die Stunde ändert sich."},
+      {f:"Wie schwer ist etwa eine Tafel Schokolade?", r:"100 g", x:["1 kg","10 g"], tipp:"Steht sogar auf der Packung!"},
+      {f:"1 km = ? m", r:"1000 m", x:["100 m","10 m"], tipp:"Kilo bedeutet tausend."},
+      {f:"Du bezahlst 7 € mit einem 10-€-Schein. Wie viel Rückgeld bekommst du?", r:"3 €", x:["2 €","4 €"], tipp:"7+3=10."},
+      {f:"Eine halbe Stunde = ? Minuten", r:"30 Minuten", x:["50 Minuten","15 Minuten"], tipp:"Eine Stunde hat 60 Minuten."},
+      {f:"2 m = ? cm", r:"200 cm", x:["20 cm","2000 cm"], tipp:"1 m = 100 cm, also 2·100."},
+      {f:"Eine Viertelstunde nach 9:00 Uhr ist es …?", r:"9:15 Uhr", x:["9:45 Uhr","9:25 Uhr"], tipp:"Eine Viertelstunde = 15 Minuten."}
+    ],
+    hard:[
+      {f:"Kai fährt eine Strecke von 286 km. 174 km ist er schon gefahren. Wie viele km muss er noch fahren?", r:"112 km", x:["122 km","102 km"], tipp:"286−174: erst −100, dann −74."},
+      {f:"Samira geht um 16:18 Uhr los und braucht 45 Minuten. Wann kommt sie an?", r:"17:03 Uhr", x:["16:63 Uhr","17:13 Uhr"], tipp:"16:18 + 42 Min = 17:00, dann noch 3 Minuten."},
+      {f:"4 Personen essen je 2 Kugeln Eis. Eine Kugel kostet 1,50 €. Was kostet das zusammen?", r:"12 €", x:["8 €","10 €"], tipp:"8 Kugeln · 1,50 € – oder 8 · 1 € + 8 · 50 ct."},
+      {f:"Das Eis kostet 12 €. Bezahlt wird mit einem 50-€-Schein. Wie viel Geld gibt es zurück?", r:"38 €", x:["48 €","42 €"], tipp:"12+38=50. Ergänze von 12 bis 50."},
+      {f:"Wie hoch ist ungefähr eine Zimmertür?", r:"2 m", x:["1 m","10 m"], tipp:"Ein Erwachsener passt aufrecht durch – mit etwas Platz."},
+      {f:"Wie breit ist ungefähr ein Finger?", r:"1 cm", x:["1 mm","10 cm"], tipp:"Miss nach – ziemlich genau 1 cm!"},
+      {f:"Wie breit ist ungefähr eine Bleistiftspitze?", r:"1 mm", x:["1 cm","5 cm"], tipp:"Winzig klein – Millimeter!"},
+      {f:"Wie lang ist ungefähr ein Fußballplatz?", r:"100 m", x:["10 km","100 cm"], tipp:"Etwa so weit wie 100 große Schritte."},
+      {f:"Tom springt 2,80 m weit, Alex 2,10 m. Wie viele cm ist Tom weiter gesprungen?", r:"70 cm", x:["7 cm","60 cm"], tipp:"2,80 m − 2,10 m = 0,70 m = 70 cm."},
+      {f:"3,5 km = ? m", r:"3500 m", x:["350 m","3050 m"], tipp:"3 km = 3000 m und 0,5 km = 500 m."},
+      {f:"Der Film beginnt um 19:45 Uhr und dauert 90 Minuten. Wann ist er zu Ende?", r:"21:15 Uhr", x:["20:75 Uhr","21:35 Uhr"], tipp:"19:45 + 15 Min = 20:00, dann noch 75 Minuten."},
+      {f:"250 cm = ? m", r:"2,50 m", x:["25 m","2,05 m"], tipp:"100 cm = 1 m, also 250 cm = 2 m und 50 cm."}
+    ]
+  },
+  mdaten:{
+    easy:[
+      {f:"Im Sack sind nur blaue Kugeln. Du ziehst eine Kugel. Was gilt?", r:"Es ist sicher, dass sie blau ist", x:["Es ist unmöglich, dass sie blau ist","Es ist nur möglich, dass sie blau ist"], tipp:"Wenn ALLE Kugeln blau sind, kann nichts anderes kommen."},
+      {f:"Du würfelst mit einem normalen Würfel (1 bis 6). Eine 7 zu würfeln ist …?", r:"unmöglich", x:["sicher","möglich"], tipp:"Die 7 gibt es auf dem Würfel gar nicht."},
+      {f:"Im Sack: 3 rote und 1 blaue Kugel. Welche Farbe ziehst du wahrscheinlicher?", r:"Rot", x:["Blau","Beide gleich"], tipp:"Von Rot sind mehr Kugeln im Sack."},
+      {f:"Weitsprung: Ida 1,90 m · Mina 2,50 m · Tom 2,80 m. Wer sprang am weitesten?", r:"Tom", x:["Mina","Ida"], tipp:"Vergleiche die Zahlen: 2,80 ist am größten."},
+      {f:"„Morgen regnet es.“ Das ist …?", r:"möglich", x:["sicher","unmöglich"], tipp:"Es kann regnen – muss aber nicht."},
+      {f:"Im Sack: 2 rote und 2 blaue Kugeln. Rot zu ziehen ist …?", r:"genauso wahrscheinlich wie Blau", x:["wahrscheinlicher als Blau","unmöglich"], tipp:"Gleich viele rote und blaue Kugeln!"},
+      {f:"Strichliste: 𝍸 𝍡 (5 Striche und 2 Striche). Wie viele sind das?", r:"7", x:["6","8"], tipp:"Das Bündel zählt 5, dazu die einzelnen Striche."},
+      {f:"Mit einem normalen Würfel eine Zahl von 1 bis 6 zu würfeln ist …?", r:"sicher", x:["möglich","unmöglich"], tipp:"Etwas anderes kann gar nicht kommen."},
+      {f:"Im Sack sind nur rote Kugeln. Eine blaue zu ziehen ist …?", r:"unmöglich", x:["möglich","sicher"], tipp:"Was nicht drin ist, kann nicht gezogen werden."},
+      {f:"Punkte-Tabelle: Anna 8 · Ben 12 · Carla 10. Wer hat die meisten Punkte?", r:"Ben", x:["Anna","Carla"], tipp:"12 ist die größte Zahl."},
+      {f:"Ein Glücksrad hat nur gelbe Felder. Gelb zu drehen ist …?", r:"sicher", x:["möglich","unmöglich"], tipp:"Alle Felder sind gelb."},
+      {f:"Im Sack: 1 rote und 5 blaue Kugeln. Rot zu ziehen ist …?", r:"möglich, aber unwahrscheinlich", x:["sicher","unmöglich"], tipp:"Eine rote ist drin – aber Blau kommt viel öfter."}
+    ],
+    hard:[
+      {f:"Sack A: 1 von 2 Kugeln ist weiß. Sack B: 2 von 4 Kugeln sind weiß. Wo gewinnst du (Weiß) eher?", r:"In beiden gleich", x:["In Sack A","In Sack B"], tipp:"1 von 2 und 2 von 4 – beides ist die Hälfte!"},
+      {f:"Es soll SICHER sein, eine blaue Kugel zu ziehen. Was muss gelten?", r:"Im Sack sind nur blaue Kugeln", x:["Im Sack ist mindestens eine blaue","Im Sack sind mehr blaue als rote"], tipp:"Sicher heißt: Es kann nichts anderes passieren."},
+      {f:"Es soll MÖGLICH sein, eine rote Kugel zu ziehen. Was muss gelten?", r:"Mindestens eine rote Kugel ist im Sack", x:["Alle Kugeln sind rot","Mehr als die Hälfte ist rot"], tipp:"Eine einzige rote reicht schon."},
+      {f:"Im Sack: 5 Kugeln, davon 4 weiße. Weiß zu ziehen ist …?", r:"sehr wahrscheinlich, aber nicht sicher", x:["sicher","unwahrscheinlich"], tipp:"Die eine andere Kugel kann trotzdem kommen."},
+      {f:"Weitsprung: Tom 2,80 m · David 3,00 m. Wie viel weiter sprang David?", r:"20 cm", x:["2 cm","30 cm"], tipp:"3,00 − 2,80 = 0,20 m."},
+      {f:"Glücksrad: 6 Felder – 3 blau, 2 rot, 1 gelb. Welche Farbe kommt am wahrscheinlichsten?", r:"Blau", x:["Rot","Gelb"], tipp:"Blau hat die meisten Felder."},
+      {f:"Münzwurf: Kopf zu werfen ist …?", r:"möglich – genauso wahrscheinlich wie Zahl", x:["sicher","unmöglich"], tipp:"Kopf und Zahl haben die gleiche Chance."},
+      {f:"Sack A: 1 von 3 Kugeln weiß. Sack B: 1 von 2 Kugeln weiß. Wo ist Gewinnen (Weiß) wahrscheinlicher?", r:"In Sack B", x:["In Sack A","In beiden gleich"], tipp:"Die Hälfte ist mehr als ein Drittel."},
+      {f:"Weitsprung: Mina 2,50 m · Alex 2,10 m. Wer sprang 40 cm weiter als Alex?", r:"Mina", x:["Niemand","Alex selbst"], tipp:"2,10 + 0,40 = 2,50."},
+      {f:"Welcher Satz stimmt?", r:"Es ist unmöglich, mit einem Würfel eine 0 zu würfeln", x:["Es ist sicher, morgen Schnee zu haben","Es ist unmöglich, dass eine Münze Kopf zeigt"], tipp:"Auf dem Würfel stehen nur 1 bis 6."},
+      {f:"Im Sack: 6 Kugeln, 3 davon weiß. Damit BEIDE Säcke die gleiche Gewinnchance haben, wie viele von 2 Kugeln müssen im anderen Sack weiß sein?", r:"1 von 2", x:["2 von 2","0 von 2"], tipp:"3 von 6 ist die Hälfte – 1 von 2 auch."},
+      {f:"Tabelle: Ida 1,90 m · Mina 2,50 m · Tom 2,80 m · Alex 2,10 m · David 3,00 m. Wer sprang genau 90 cm weiter als Ida?", r:"Tom", x:["Mina","David"], tipp:"1,90 + 0,90 = 2,80."}
+    ]
+  }
+};
+const MATHE_KEYS=["mrechnen","mzahlen","mgeo","mgroessen","mdaten"];
+const KRIT_MATHE=[
+  "Habe ich die Aufgabe genau gelesen?",
+  "Habe ich in Ruhe gerechnet oder überlegt?",
+  "Habe ich den Erklär-Tipp gelesen, wenn etwas falsch war?",
+  "Habe ich mehrere Aufgaben geschafft?"
+];
+const KRIT_MATHE_FORM=["Ich habe mir Zeit gelassen.","Ich habe den Kontroll-Blick gemacht.","Ich habe bei schweren Aufgaben nicht aufgegeben."];
+let matheIdx=0;
+// Generische Mathe-Übung: MC mit gemischten Antworten, voller Anschluss an
+// Runden-Auswertung, Stufen, Münzen und Mini-Missionen (wie alle Lernfelder).
+function matheUeben(c){
+  const key=activeModuleId, M=MODULES[key];
+  const ch=gwsChunk(key), S=ch.S;
+  runGet(key, S.length);
+  if(matheIdx>=S.length){ return renderRunResult(c, key, ()=>{ matheIdx=0; matheUeben(c); }); }
+  const i=matheIdx, a=S[i];
+  const opts=[a.r].concat(a.x).sort(()=>Math.random()-0.5);
+  let answered=false;
+  c.innerHTML=`
+    <div class="card">
+      <h2>${M.emoji} ${M.name}</h2>
+      <p class="muted">Aufgabe ${i+1} von ${S.length}${ch.n>1?` · Paket ${ch.ci+1} von ${ch.n}`:``}</p>
+      <div class="lvl-row">${fieldBadge(key)}</div>
+      <button type="button" class="speak-btn" id="mSpeak">🔊 Vorlesen</button>
+      <p style="font-size:17.5px; line-height:1.45;"><b>${a.f}</b></p>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;" id="mOpts"></div>
+      <div id="mfb"></div>
+      <button class="btn-primary btn-small mt" id="mNext" style="width:100%;">Weiter</button>
+    </div>`;
+  const sp=c.querySelector("#mSpeak");
+  if(sp){ if(speechOK()) sp.onclick=()=>speak(a.f.replace(/<[^>]+>/g,"")+". "+opts.join(". Oder: ")); else sp.style.display="none"; }
+  const fb=c.querySelector("#mfb"), box=c.querySelector("#mOpts");
+  opts.forEach(o=>{
+    const b=document.createElement("button");
+    b.className="btn-secondary mathe-opt"; b.textContent=o;
+    b.style.cssText="flex:1; min-width:96px; font-size:17px;";
+    b.onclick=()=>{
+      if(answered) return;
+      answered=true;
+      const correct = o===a.r;
+      if(correct) runCorrect(key,i); else runWrong(key,i);
+      box.querySelectorAll("button").forEach(x=>{ x.disabled=true; if(x.textContent===a.r) x.style.background="#d9f0dd"; });
+      const d=document.createElement("div"); d.className="feedback "+(correct?"ok":"tip");
+      d.innerHTML = correct ? ("Richtig! 🌟 "+(a.tipp||"")) : ("Fast! Richtig ist <b>"+a.r+"</b>. 💡 "+(a.tipp||""));
+      fb.innerHTML=""; fb.appendChild(d);
+      focusFeedback(d, correct?null:c.querySelector("#mNext"));
+    };
+    box.appendChild(b);
+  });
+  c.querySelector("#mNext").onclick=()=>{
+    if(!answered){ needAnswer(fb, "Wähle zuerst eine Antwort – dann geht es weiter."); return; }
+    matheIdx=i+1; matheUeben(c); window.scrollTo(0,0); };
+}
+// Kurze Strategie-Seiten je Bereich (Lernen)
+const MATHE_LERNEN={
+  mrechnen:{titel:"🧮 Rechnen", text:"Hier übst du <b>Plus, Minus, Mal und Geteilt</b> – wie im Kompass-Test.",
+    beispiele:"1691 + 268 · 1739 − 658 · 5 · 18 · 48 : 4",
+    tipp:"Rechne <b>stellenweise</b> (Einer, Zehner, Hunderter) und nutze <b>Tricks</b>: 478−97 = 478−100+3. Nach dem Rechnen: Kontroll-Blick – ist das Ergebnis ungefähr richtig?"},
+  mzahlen:{titel:"🔢 Zahlen-Profi", text:"Nachbarzehner, Stellenwerte, Zahlenfolgen, die Mitte finden und Zahlenmauern.",
+    beispiele:"Nachbarzehner von 7496 · H=5 Z=13 E=2 · 460, 510, 490, …",
+    tipp:"Bei Zahlenfolgen: Schau dir die <b>Sprünge</b> zwischen den Zahlen an – oft wechseln sich zwei Regeln ab (erst +50, dann −20)."},
+  mgeo:{titel:"📐 Formen & Flächen", text:"Figuren, Spiegelachsen, Würfelnetze und Flächen vergleichen.",
+    beispiele:"Spiegelachsen zählen · Würfelnetze prüfen · Kästchen zählen",
+    tipp:"Flächen vergleichst du am besten durch <b>Kästchen zählen</b> – die Form darf ganz unterschiedlich aussehen!"},
+  mgroessen:{titel:"⏰ Größen & Sachaufgaben", text:"Geld, Uhrzeiten, Längen – rechnen und schätzen wie im Alltag.",
+    beispiele:"16:18 Uhr + 45 Min · Rückgeld von 50 € · Tür ≈ 2 m",
+    tipp:"Bei Sachaufgaben: <b>Erst lesen, dann rechnen.</b> Frag dich: Was ist gesucht? Bei Uhrzeiten rechne erst bis zur vollen Stunde."},
+  mdaten:{titel:"🎲 Daten & Zufall", text:"Sicher, möglich oder unmöglich? Tabellen lesen und Gewinnchancen vergleichen.",
+    beispiele:"Kugeln im Sack · Glücksrad · Weitsprung-Tabelle",
+    tipp:"<b>Sicher</b> = es kann nichts anderes passieren. <b>Unmöglich</b> = es kann gar nicht passieren. Alles dazwischen ist <b>möglich</b>."}
+};
+function matheLernen(c){
+  const L=MATHE_LERNEN[activeModuleId];
+  c.innerHTML=`
+    <div class="card"><h2>${L.titel}</h2>
+      <p>${L.text}</p>
+      <div class="example-box">${L.beispiele}</div>
+      <p class="muted">Die Aufgaben kommen in kleinen Paketen. Stufe 1 ist zum Aufwärmen –
+        ab Stufe 2 übst du auf <b>Kompass-Niveau</b> (so wie im Test in Klasse 4).</p></div>
+    <div class="card"><div class="hint">💡 ${L.tipp}</div>
+      <button class="btn-primary" id="toUeben">Los: Aufgaben lösen</button></div>`;
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
+// Arbeitsblatt für schriftliches Rechnen (mit der Hand!)
+function matheSheet(c){
+  c.innerHTML=`
+    <div class="card"><h2>🖨️ Arbeitsblatt: Schriftlich rechnen</h2>
+      <p>Im Kompass-Test rechnest du <b>mit der Hand</b> – drucke das Blatt und übe schriftlich untereinander.</p>
+      <button class="btn-primary" id="printBtn">Arbeitsblatt drucken</button></div>
+    <div class="card"><h3>Vorschau</h3><div id="worksheet"></div></div>`;
+  const auf=["1691 + 268","1739 − 658","2456 + 1378","3405 − 1287","5 · 18","6 · 38","48 : 4","96 : 6"];
+  const inner=`<div class="ws-step"><div class="lead">Rechne schriftlich untereinander. Mach am Ende den Kontroll-Blick: Ist das Ergebnis ungefähr richtig?</div></div>`+
+    auf.map((a,i)=>`<div class="ws-step"><div class="lead">${i+1}. &nbsp; ${a} =</div>
+      <div class="writeline"></div><div class="writeline"></div></div>`).join("");
+  c.querySelector("#worksheet").innerHTML=inner;
+  c.querySelector("#printBtn").onclick=()=>printHTML(inner);
+}
+function matheFlower(c){ renderFlower(c, MODULES[activeModuleId].self, store[activeModuleId].self); }
+
 const MODULES = {
   vorgang:{
     id:"vorgang", name:"Vorgangs­beschreibung", emoji:"📝",
@@ -7890,6 +8186,53 @@ const MODULES = {
     sections:[
       {id:"bauen", icon:"🧱", label:"Bauen", render:bwRender}
     ]
+  },
+  // ---- Mathe (Kompass 4 Mathematik als Grundlage) ----
+  mrechnen:{
+    id:"mrechnen", name:"Rechnen", emoji:"🧮",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:matheLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blatt",  icon:"🖨️", label:"Blatt",  render:matheSheet},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Rechnen", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
+  },
+  mzahlen:{
+    id:"mzahlen", name:"Zahlen-Profi", emoji:"🔢",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:matheLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Zahlen-Profi", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
+  },
+  mgeo:{
+    id:"mgeo", name:"Formen & Flächen", emoji:"📐",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:matheLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Formen & Flächen", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
+  },
+  mgroessen:{
+    id:"mgroessen", name:"Größen & Sachaufgaben", emoji:"⏰",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:matheLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Größen & Sachaufgaben", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
+  },
+  mdaten:{
+    id:"mdaten", name:"Daten & Zufall", emoji:"🎲",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:matheLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Daten & Zufall", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
   }
 };
 
@@ -7938,7 +8281,13 @@ let store = {
   faelle:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   doppel:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   gws:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  fach:"deutsch",               // "deutsch" | "mathe"
+  mrechnen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  mzahlen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  mgroessen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  mdaten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -7954,9 +8303,11 @@ function load(){
       if(REZEPTE[d.vorgang.rezept]) store.vorgang.rezept=d.vorgang.rezept;
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
-    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass","gws"].forEach(m=>{
+    ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass","gws",
+     "mrechnen","mzahlen","mgeo","mgroessen","mdaten"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
+    if(["deutsch","mathe"].includes(d.fach)) store.fach=d.fach;
     if(d.progress && typeof d.progress==="object"){
       Object.keys(d.progress).forEach(k=>{ const v=d.progress[k];
         if(v && typeof v==="object") store.progress[k]={
@@ -8078,7 +8429,8 @@ let activeSectionId = null;
 // Welche Lernfelder gehören zu welcher Klassenstufe (mehrere möglich)
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
-  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4], tennis:[3,4], fussball:[3,4], schach:[3,4], blockwelt:[3,4]
+  zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4], tennis:[3,4], fussball:[3,4], schach:[3,4], blockwelt:[3,4],
+  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -8086,9 +8438,16 @@ function buildLevelRow(){
     b.onclick=()=>{ store.level=parseInt(b.dataset.level,10); save(); buildLevelRow(); buildModuleChooser(); };
   });
 }
+// Fach-Umschaltung (Deutsch / Mathe): filtert die Gruppen der Startseite
+function buildFachRow(){
+  document.querySelectorAll("#fachRow .level-btn[data-fach]").forEach(b=>{
+    b.classList.toggle("active", b.dataset.fach===(store.fach||"deutsch"));
+    b.onclick=()=>{ store.fach=b.dataset.fach; save(); buildFachRow(); buildModuleChooser(); };
+  });
+}
 // Setzt alle Übungs-Zähler zurück (bei Themenwechsel)
 function resetAllIdx(){
-  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=gwsCatIdx=gwsIdx=0;
+  subjIdx=frageIdx=praedIdx=sgIdx=sgPhase=redeIdx=zeitIdx=gkIdx=ddIdx=waIdx=faelleIdx=doppelIdx=kompLeseIdx=kompUebIdx=kompTextIdx=kompBereichIdx=gwsCatIdx=gwsIdx=matheIdx=0;
   vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null; tennis=null; fussball=null; schach=null; schAufIdx=0; schLekStep=0;
   scoreRuns={};
 }
@@ -8361,7 +8720,14 @@ const MODUL_GRUPPEN=[
    module:["subjekt","praedikat","satzglieder","rede","zeit","wortarten","faelle"]},
   {id:"recht", emoji:"🔤", titel:"Richtig schreiben",
    text:"Rechtschreibung und Grundwortschatz",
-   module:["grossklein","dassdas","doppel","gws"]}
+   module:["grossklein","dassdas","doppel","gws"]},
+  // ---- Mathe (eigenes Fach, Umschaltung über „Dein Fach") ----
+  {id:"mzahlrech", emoji:"🧮", titel:"Zahlen & Rechnen", fach:"mathe",
+   text:"Plus, Minus, Mal, Geteilt – und der Zahlenraum bis 10 000",
+   module:["mrechnen","mzahlen"]},
+  {id:"mwelt", emoji:"📐", titel:"Formen, Größen & Daten", fach:"mathe",
+   text:"Geometrie, Geld & Uhrzeit, Tabellen und Zufall",
+   module:["mgeo","mgroessen","mdaten"]}
 ];
 function gruppenModule(g){
   return g.module.filter(id=> store.level===0 || (MODUL_KLASSE[id]||[3,4]).includes(store.level));
@@ -8393,13 +8759,15 @@ function openGruppe(gid){
   $("screen-content").classList.add("active");
   const themaChips=THEMEN.map(t=>
     `<button class="chip${t.id===store.thema?" on":""}" data-thema="${t.id}" type="button">${t.emoji} ${t.name}</button>`).join("");
+  // Themen-Wahl steuert die DEUTSCH-Übungssätze – bei Mathe ausblenden
+  const themaBlock = g.fach==="mathe" ? "" : `
+      <p class="muted" style="margin:12px 0 4px;"><b>Thema</b> für die Übungssätze:</p>
+      <div class="chip-row" id="gruppenThema">${themaChips}</div>`;
   $("moduleContent").innerHTML=`
     <div class="card">
       <h2 style="margin:0 0 2px;">${g.emoji} ${g.titel}</h2>
       <p class="muted" style="margin:0 0 10px;">${g.text}</p>
-      <div class="choice-grid" id="gruppenGrid"></div>
-      <p class="muted" style="margin:12px 0 4px;"><b>Thema</b> für die Übungssätze:</p>
-      <div class="chip-row" id="gruppenThema">${themaChips}</div>
+      <div class="choice-grid" id="gruppenGrid"></div>${themaBlock}
     </div>`;
   const grid=$("gruppenGrid");
   gruppenModule(g).forEach(id=>grid.appendChild(moduleTile(id)));
@@ -8434,11 +8802,12 @@ function openSpielhalle(){
 }
 function buildModuleChooser(){
   const grid=$("moduleChooser"); grid.innerHTML="";
+  const fach=store.fach||"deutsch";
   // Schatzsuche-Einladung, bis die Einwertung ABGESCHLOSSEN ist
   // („Später" blendet nur für die laufende Sitzung aus).
   // Nur bei gewählter Klasse 3/4 – bei „Alle" (0) ausgeblendet,
   // denn die Treppe braucht eine Klassenstufe als Startpunkt.
-  if(!store.profil && !ewSpaeter && store.level!==0){
+  if(fach==="deutsch" && !store.profil && !ewSpaeter && store.level!==0){
     const k=document.createElement("div");
     k.className="card ew-karte";
     k.innerHTML=`<div class="ew-leo" style="margin-bottom:8px;"><span class="ew-kopf">🦁</span>
@@ -8454,8 +8823,9 @@ function buildModuleChooser(){
   // Einstiegshürde und verschwindet nach der ersten Mini-Mission des Tages.
   const letzterTag=(store.lerntage||[])[(store.lerntage||[]).length-1];
   const schonGestartet = !!(letzterTag && letzterTag.t===heuteKey() && letzterTag.mi>0);
-  if((store.profil || ewSpaeter || store.level===0) && !schonGestartet){
-    const felder=MODUL_GRUPPEN.flatMap(g=>gruppenModule(g)).filter(id=>!SPIELE_IDS.includes(id));
+  if((fach!=="deutsch" || store.profil || ewSpaeter || store.level===0) && !schonGestartet){
+    const felder=MODUL_GRUPPEN.filter(g=>(g.fach||"deutsch")===fach)
+      .flatMap(g=>gruppenModule(g)).filter(id=>!SPIELE_IDS.includes(id));
     if(felder.length>=2){
       const off=Math.floor(Date.now()/86400000)%felder.length; // täglich andere Vorschläge
       const wahl=Array.from({length:Math.min(3,felder.length)},(_,i)=>felder[(off+i)%felder.length]);
@@ -8471,7 +8841,7 @@ function buildModuleChooser(){
       grid.appendChild(s);
     }
   }
-  MODUL_GRUPPEN.forEach(g=>{
+  MODUL_GRUPPEN.filter(g=>(g.fach||"deutsch")===fach).forEach(g=>{
     const mods=gruppenModule(g);
     if(!mods.length) return;
     const div=document.createElement("div");
@@ -8490,8 +8860,8 @@ function buildModuleChooser(){
     kachel.onclick=openTestTraining;
     grid.appendChild(kachel);
   }
-  // Vorbereitungsbereich „Fit für Klasse 4" (nach der 3. Klasse)
-  if(store.level===3 || store.level===4){
+  // Vorbereitungsbereich „Fit für Klasse 4" (nach der 3. Klasse, Deutsch)
+  if(fach==="deutsch" && (store.level===3 || store.level===4)){
     const st4=store.fit4?fit4Stationen():null;
     const info=store.fit4
       ? (store.fit4.fertig?"🎓 Geschafft!":"⭐ "+st4.filter(s=>s.done).length+" / "+st4.length+" Stationen")
@@ -8537,7 +8907,7 @@ function openModule(id){
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
   save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; umIdx=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; kompWahlAktiv=true; gwsCatIdx=0; gwsIdx=0; gwsWahlAktiv=true; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; kompWahlAktiv=true; gwsCatIdx=0; gwsIdx=0; gwsWahlAktiv=true; matheIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
   vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null; tennis=null; fussball=null; schach=null; schAufIdx=0; schLekStep=0;
   scoreRuns={};
   goSection(MODULES[id].sections[0].id);
@@ -8611,6 +8981,7 @@ function navItem(icon,label,onclick,active){
 document.addEventListener("DOMContentLoaded",()=>{
   load();
   animAnwenden();
+  buildFachRow();
   buildLevelRow();
   buildModuleChooser();
   const ni=$("nameInput");
