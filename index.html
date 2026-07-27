@@ -306,6 +306,50 @@ button.chip.on{background:var(--primary); color:#fff;}
    System-Einstellung „Bewegung reduzieren") */
 .anim-reduziert *, .anim-reduziert *::before, .anim-reduziert *::after{
   animation:none !important; transition:none !important;}
+/* Nicht-blockierende Kurz-Meldung (Mini-Missionen, Tagesziel …):
+   schwebt über der unteren Navigation, nimmt keinen Platz im Inhalt ein */
+.toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%) translateY(14px);
+  background:#26313e; color:#fff; padding:10px 16px; border-radius:14px;
+  font-size:14.5px; font-weight:700; line-height:1.35;
+  max-width:min(92vw,420px); text-align:center; box-shadow:0 6px 24px rgba(0,0,0,.25);
+  opacity:0; pointer-events:none; transition:opacity .25s, transform .25s; z-index:70;}
+.toast.an{opacity:1; transform:translateX(-50%) translateY(0);}
+/* Fokus-Übung: während einer Übung zählt nur die Aufgabe – kompakter
+   Kopf, kleinere Abstände, keine Illustrationen. Ziel: die ganze
+   Aufgabe passt ohne Scrollen auf einen Handy-Schirm. */
+#screen-content.uebung-fokus .card{padding:12px 14px; margin-bottom:10px;}
+#screen-content.uebung-fokus .card h2{display:inline; font-size:16px; margin:0;}
+#screen-content.uebung-fokus .card h2+.muted{display:inline; margin-left:8px; font-size:13px;}
+#screen-content.uebung-fokus .card h3{font-size:16px; margin:0 0 2px;}
+#screen-content.uebung-fokus .card p{margin:6px 0;}
+#screen-content.uebung-fokus .lvl-row{margin:3px 0;}
+#screen-content.uebung-fokus .hint{padding:7px 10px; margin:6px 0; font-size:14px;}
+#screen-content.uebung-fokus .lvl-row .badge, #screen-content.uebung-fokus .lvl-row{font-size:12.5px;}
+#screen-content.uebung-fokus .linklike{font-size:12.5px; margin:2px 0;}
+#screen-content.uebung-fokus .back-btn{margin:2px 0 6px; padding:6px 12px; font-size:14px;}
+#screen-content.uebung-fokus .illu{display:none;}
+#screen-content.uebung-fokus .example-box{padding:8px 10px; margin:6px 0; font-size:14.5px;}
+#screen-content.uebung-fokus .speak-btn{padding:4px 10px; font-size:13px;}
+#screen-content.uebung-fokus .sentence-box{font-size:19px; line-height:1.9; margin:6px 0;}
+#screen-content.uebung-fokus .chip{padding:5px 9px; font-size:13.5px;}
+#screen-content.uebung-fokus .chip-row{margin:8px 0;}
+#screen-content.uebung-fokus .feedback{padding:9px 11px; margin-top:8px; font-size:14.5px;}
+/* Wahl-Seiten (Regel-Gruppe/Bereich) kompakt: 3 Spalten, kleine Kacheln */
+#screen-content.uebung-fokus .choice-grid{grid-template-columns:repeat(3,1fr); gap:5px; margin:6px 0;}
+#screen-content.uebung-fokus .choice{padding:7px 4px; font-size:12.5px;}
+#screen-content.uebung-fokus .choice .emoji{font-size:17px; margin-bottom:2px;}
+/* Knöpfe beim Üben etwas schlanker (Standard ist extra groß) */
+#screen-content.uebung-fokus .btn-primary{padding:12px; font-size:17px; min-height:46px;}
+#screen-content.uebung-fokus .mt{margin-top:8px;}
+.app:has(#screen-content.uebung-fokus){padding-top:calc(6px + var(--safe-top));}
+/* Aufklappbare Regel-/Info-Blöcke (Lernen-Seite + Übungskopf) */
+details.regel-klapp{border:1.5px solid var(--soft); border-radius:12px; margin:6px 0; background:#fff;}
+details.regel-klapp>summary{cursor:pointer; list-style:none; padding:10px 12px; font-weight:700;
+  display:flex; align-items:center; gap:8px;}
+details.regel-klapp>summary::-webkit-details-marker{display:none;}
+details.regel-klapp>summary::after{content:"▾"; margin-left:auto; color:var(--muted); transition:transform .2s;}
+details.regel-klapp[open]>summary::after{transform:rotate(180deg);}
+details.regel-klapp>.klapp-body{padding:0 12px 10px;}
 .zeit-sperre{position:fixed; inset:0; z-index:900; background:rgba(38,50,72,0.92);
   display:flex; align-items:center; justify-content:center; padding:18px;}
 .zeit-karte{max-width:420px; text-align:center;}
@@ -467,8 +511,15 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.66.0";
+const APP_VERSION = "1.67.0";
 const RELEASE_NOTES = [
+  {v:"1.67.0", datum:"27.07.2026", punkte:[
+    "🔍 Fokus-Modus beim Üben: Während einer Übung wird alles ausgeblendet bzw. verkleinert, was nichts mit der Aufgabe zu tun hat (kompakter Kopf, kleinere Abstände, keine Illustrationen). Alle Kern-Übungen passen jetzt ohne Scrollen auf einen kleinen Handy-Bildschirm – automatisch geprüft.",
+    "📚 Regel-Gruppen zum Durchklicken: Beim Grundwortschatz wählst du zuerst deine Regel-Gruppe auf einer eigenen Seite – erst dann kommt die Übung, ganz ohne lange Liste darüber. Mit „↩️ Gruppe wechseln“ kommst du jederzeit zurück. Genauso beim Kompass-Bereich „Sprache“.",
+    "📖 Aufklapp-Liste auf der Lernen-Seite: Die 12 Regel-Gruppen sind jetzt zugeklappt – erst antippen zeigt Regel und Beispiele. Die Lese-Check-Frage fragt nie nach zugeklapptem Text.",
+    "💡 Die Regel steht in der Übung hinter „Regel ansehen“ – ein Tipp auf Abruf statt Dauertext.",
+    "🔧 Behoben: Die Kurz-Meldungen der Mini-Missionen schwebten nicht über dem Inhalt, sondern machten die Seite unten länger. Jetzt erscheinen sie als echte Einblendung über der Navigation und verschwinden von selbst."
+  ]},
   {v:"1.66.0", datum:"27.07.2026", punkte:[
     "🚦 Tagesform-Frage: Beim ersten Üben des Tages fragt Leo, wie sich Lernen heute anfühlt (fit / normal / heute schwer). An schweren Tagen werden die Missionen automatisch kürzer und das Tagesziel kleiner – die Antwort gilt nur für den einen Tag und ist keine Bewertung. Eltern können die Frage abschalten.",
     "⭐ Mini-Missionen: Jede Übung zählt jetzt in kleinen Missionen (3–5 Aufgaben). Nach jeder geschafften Mission gibt es eine kurze Rückmeldung – so bleibt der Einstieg leicht und das Ende absehbar.",
@@ -1106,7 +1157,12 @@ function readGate(host, btn, text){
 // Sammelt den vorlesbaren Text der ersten Karten einer Erklär-Seite
 function pageText(c){
   let t="";
-  c.querySelectorAll(".card").forEach((card,i)=>{ if(i<3) t+=" "+card.textContent; });
+  c.querySelectorAll(".card").forEach((card,i)=>{ if(i>=3) return;
+    // zugeklappte Bereiche zählen nicht – die Lücken-Frage darf nur
+    // nach sichtbarem Text fragen
+    const cl=card.cloneNode(true);
+    cl.querySelectorAll("details:not([open])").forEach(d=>d.remove());
+    t+=" "+cl.textContent; });
   return t.replace(/\s+/g," ").trim().slice(0,600);
 }
 
@@ -2675,12 +2731,11 @@ function sgUmstellen(c){
   const weiterFrei=()=>{ answered=true; };
   if(a.art==="um"){
     c.innerHTML=kopf+`
-      <p>Baue den Satz <b>NEU</b> zusammen – stelle die Satzglieder um!</p>
       <div class="hint">Ausgangssatz: <b>${umSatzText(a.teile, a.teile.map((_,i)=>i))}</b><br>
-        <span class="muted" style="font-size:13.5px;">💡 Das Prädikat (Verb) bleibt an <b>2. Stelle</b>.</span></div>
+        <span class="muted" style="font-size:13.5px;">💡 Baue ihn <b>NEU</b> – das Prädikat (Verb) bleibt an <b>2. Stelle</b>.</span></div>
       <div class="chip-row" id="umBausteine">${a.teile.map((t,i)=>
         `<button class="chip um-chip" type="button" data-i="${i}">${t}</button>`).join("")}</div>
-      <div class="example-box" id="umBauZeile" style="min-height:34px;">&nbsp;</div>
+      <div class="example-box" id="umBauZeile" style="min-height:28px;">&nbsp;</div>
       <button class="linklike" id="umReset" style="font-size:13px;">🔄 Neu bauen</button>`+fuss;
     const zeile=c.querySelector("#umBauZeile"), fb=c.querySelector("#umfb");
     const chips=()=>c.querySelectorAll(".um-chip");
@@ -4057,21 +4112,35 @@ function komLesen(c){
   });
   renderQuizPaged(c.querySelector("#quizHost"), L.fragen, ()=>kompLeseIdx, v=>kompLeseIdx=v);
 }
+// Wie beim Grundwortschatz: erst Bereich wählen (eigene Seite), dann
+// nur die Übung – keine lange Chip-Liste über der Aufgabe.
+let kompWahlAktiv=true;
 function komUeben(c){
   if(kompBereichIdx>=KOMP_BEREICHE.length) kompBereichIdx=0;
+  if(kompWahlAktiv){
+    c.innerHTML = `
+    <div class="card"><h2>✏️ Sprache &amp; Rechtschreibung</h2>
+      <p class="muted">Wähle einen Bereich – du siehst sofort, ob es richtig war.</p>
+      <div class="choice-grid">${KOMP_BEREICHE.map((b,bi)=>
+        `<div class="choice komp-bereich" data-bi="${bi}" role="button" tabindex="0"><span class="emoji">${b.emoji}</span>${b.name}</div>`).join("")}
+      </div></div>`;
+    c.querySelectorAll(".komp-bereich").forEach(b=>{
+      const los=()=>{ kompWahlAktiv=false; kompBereichIdx=+b.dataset.bi; kompUebIdx=0; komUeben(c); window.scrollTo(0,0); };
+      b.onclick=los;
+      b.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); los(); } };
+    });
+    return;
+  }
   const B=KOMP_BEREICHE[kompBereichIdx];
   if(kompUebIdx>=B.items.length) kompUebIdx=0; // beendete Runde: frisch starten
-  const chooser = KOMP_BEREICHE.map((b,bi)=>
-    `<button class="chip${bi===kompBereichIdx?" on":""}" data-bi="${bi}">${b.emoji} ${b.name}</button>`).join("");
   c.innerHTML = `
-    <div class="card"><h2>✏️ Sprache &amp; Rechtschreibung</h2>
-      <p class="muted">Wähle einen Bereich. Du siehst sofort, ob es richtig war.</p>
-      <div class="chip-row">${chooser}</div></div>
-    <div class="card"><h3>${B.emoji} ${B.name}</h3><div id="quizHost"></div></div>`;
-  c.querySelectorAll(".chip[data-bi]").forEach(b=>b.onclick=()=>{
-    kompBereichIdx=+b.dataset.bi; kompUebIdx=0;
-    komUeben(c);
-  });
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0; flex:1;">${B.emoji} ${B.name}</h3>
+        <button class="linklike" id="kompWechsel" style="font-size:13px;">↩️ Bereich wechseln</button>
+      </div>
+      <div id="quizHost"></div></div>`;
+  c.querySelector("#kompWechsel").onclick=()=>{ kompWahlAktiv=true; komUeben(c); window.scrollTo(0,0); };
   renderQuizPaged(c.querySelector("#quizHost"), B.items, ()=>kompUebIdx, v=>kompUebIdx=v);
 }
 function komSheet(c){
@@ -4470,10 +4539,12 @@ GWS_KATEGORIEN.forEach(k=>{
 
 function gwsInfo(c){
   const total = GWS_KATEGORIEN.reduce((a,k)=>{ const e=gwsLists(k); return a+e.leicht.length+e.schwer.length; },0);
+  // Aufklapp-Liste statt langer Liste: erst antippen, dann Regel + Beispiele
   const rows = GWS_KATEGORIEN.map(k=>{
     const e=gwsLists(k); const all=e.leicht.concat(e.schwer);
-    return `<div class="example-box" style="margin-bottom:8px;"><b>${k.emoji} ${k.name}</b><br>${k.regel}<br>
-      <span class="muted">Beispiele: ${all.slice(0,4).map(w=>w.richtig).join(", ")}</span></div>`;
+    return `<details class="regel-klapp"><summary>${k.emoji} ${k.name}</summary>
+      <div class="klapp-body">${k.regel}<br>
+      <span class="muted">Beispiele: ${all.slice(0,4).map(w=>w.richtig).join(", ")}</span></div></details>`;
   }).join("");
   c.innerHTML=`
     <div class="card"><h2>📚 Grundwortschatz üben</h2>
@@ -4495,23 +4566,40 @@ function gwsChunk(key){
   const ci=(fieldProg(key).runs||0)%n;
   return {S:full.slice(ci*CH, ci*CH+CH), ci:ci, n:n};
 }
+// Zwei Schritte statt langer Liste: erst Regel-Gruppe wählen (eigene
+// Seite), dann NUR die Übung – so passt alles ohne Scrollen auf den Schirm.
+let gwsWahlAktiv=true;
 function gwsUeben(c){
   if(gwsCatIdx>=GWS_KATEGORIEN.length) gwsCatIdx=0;
+  if(gwsWahlAktiv) return gwsWahl(c);
   const K=GWS_KATEGORIEN[gwsCatIdx];
   const key="gws:"+K.id;
   if(gwsIdx>=gwsChunk(key).S.length) gwsIdx=0;
-  const chooser = GWS_KATEGORIEN.map((k,ki)=>
-    `<button class="chip${ki===gwsCatIdx?" on":""}" data-ki="${ki}">${k.emoji} ${k.name}</button>`).join("");
+  c.innerHTML=`
+    <div class="card">
+      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <h3 style="margin:0; flex:1;">${K.emoji} ${K.name}</h3>
+        <button class="linklike" id="gwsWechsel" style="font-size:13px;">↩️ Gruppe wechseln</button>
+      </div>
+      <div class="lvl-row">${fieldBadge(key)}</div>
+      <details class="regel-klapp"><summary>💡 Regel ansehen</summary>
+        <div class="klapp-body">${K.regel}</div></details>
+      <div id="gwsHost"></div></div>`;
+  c.querySelector("#gwsWechsel").onclick=()=>{ gwsWahlAktiv=true; gwsUeben(c); window.scrollTo(0,0); };
+  renderSpellPaged(c.querySelector("#gwsHost"), K, key);
+}
+function gwsWahl(c){
   c.innerHTML=`
     <div class="card"><h2>📚 Grundwortschatz</h2>
-      <p class="muted">Wähle eine Regel-Gruppe. Welches Wort ist richtig geschrieben?</p>
-      <div class="chip-row">${chooser}</div></div>
-    <div class="card"><h3>${K.emoji} ${K.name}</h3>
-      <div class="lvl-row">${fieldBadge(key)}</div>
-      <div class="hint">${K.regel}</div>
-      <div id="gwsHost"></div></div>`;
-  c.querySelectorAll(".chip[data-ki]").forEach(b=>b.onclick=()=>{ gwsCatIdx=+b.dataset.ki; gwsIdx=0; gwsUeben(c); });
-  renderSpellPaged(c.querySelector("#gwsHost"), K, key);
+      <p class="muted">Wähle eine Regel-Gruppe – dann geht es direkt los!</p>
+      <div class="choice-grid">${GWS_KATEGORIEN.map((k,ki)=>
+        `<div class="choice gws-gruppe" data-ki="${ki}" role="button" tabindex="0"><span class="emoji">${k.emoji}</span>${k.name}</div>`).join("")}
+      </div></div>`;
+  c.querySelectorAll(".gws-gruppe").forEach(b=>{
+    const los=()=>{ gwsWahlAktiv=false; gwsCatIdx=+b.dataset.ki; gwsIdx=0; gwsUeben(c); window.scrollTo(0,0); };
+    b.onclick=los;
+    b.onkeydown=(e)=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); los(); } };
+  });
 }
 // Paged „richtige Schreibung wählen" mit Bewertung + Stufen am Ende
 function renderSpellPaged(host, K, key){
@@ -6397,6 +6485,7 @@ function openTestTraining(){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
   if(tagesformNoetig()) tagesformZeigen();
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null; test=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -6422,6 +6511,7 @@ function openTestTraining(){
 function testFrage(){
   const c=$("moduleContent");
   if(test.idx>=test.aufgaben.length) return testErgebnis();
+  fokusUebung(true); // Test-Aufgaben ebenfalls ohne Ablenkung
   const a=test.aufgaben[test.idx];
   let beantwortet=false;
   const vorlage=test.typ==="vorgang"
@@ -6587,6 +6677,7 @@ function testFrage(){
   addSpeakButtons(c); window.scrollTo(0,0);
 }
 function testErgebnis(){
+  fokusUebung(false);
   const dauerMin=Math.max(1, Math.round((Date.now()-test.start)/60000));
   const anteil=test.punkte/test.max;
   const datum=new Date().toLocaleString("de-DE",{day:"2-digit",month:"2-digit",year:"numeric",hour:"2-digit",minute:"2-digit"})+" Uhr";
@@ -6657,6 +6748,7 @@ function openFit4(){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
   if(tagesformNoetig()) tagesformZeigen();
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -6762,6 +6854,7 @@ let ewSpaeter=false; // „Später": Einladung nur für DIESE Sitzung ausblenden
 function ewStartStufe(){ return store.level===3 ? 0 : 1; }
 function openEinwertung(){
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   ew={phase:"intro", nr:0, stufe:ewStartStufe(), punkte:[], gramNr:0, gramStufe:ewStartStufe(), gramPunkte:[], benutzt:[], frage:null};
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -6981,6 +7074,7 @@ function feedbackText(){
 }
 function openFeedback(){
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   fbForm={sterne:{}, texte:{}, bereiche:[], mitDaten:true};
   document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
@@ -7138,6 +7232,7 @@ async function feedbackSenden(){
    RELEASE NOTES („Was ist neu?")
    ============================================================ */
 function openNotes(){
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -7159,6 +7254,7 @@ function renderNotes(c){
 
 let adminCatIdx=0;
 function openAdmin(){
+  fokusUebung(false);
   stufenDraft=null; stufenSaved=false; // Stufen-Entwurf frisch vom gespeicherten Stand
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
@@ -8291,6 +8387,7 @@ function openGruppe(gid){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
   const g=MODUL_GRUPPEN.find(x=>x.id===gid); if(!g) return goHome();
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -8315,6 +8412,7 @@ function openGruppe(gid){
 function openSpielhalle(){
   if(zeitAbgelaufen()){ zeitSperren(); return; }
   stopSpeak();
+  fokusUebung(false);
   activeModuleId=null; activeSectionId=null;
   document.querySelectorAll(".screen").forEach(sc=>sc.classList.remove("active"));
   $("screen-content").classList.add("active");
@@ -8439,7 +8537,7 @@ function openModule(id){
   if(id==="vorgang" && REZEPTE[store.thema]) store.vorgang.rezept=store.thema;
   save();
   subjIdx=0; frageIdx=0; praedIdx=0; sgIdx=0; sgPhase=0; umIdx=0; redeIdx=0; zeitIdx=0;
-  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; gwsCatIdx=0; gwsIdx=0; vgTries=0; vgWritten=[false,false,false,false,false];
+  gkIdx=0; ddIdx=0; waIdx=0; faelleIdx=0; doppelIdx=0; kompLeseIdx=0; kompUebIdx=0; kompTextIdx=0; kompBereichIdx=0; kompWahlAktiv=true; gwsCatIdx=0; gwsIdx=0; gwsWahlAktiv=true; vgTries=0; vgWritten=[false,false,false,false,false];
   vgTab="basics"; vgOrd=null; vgAnfIdx=0; vgZut=null; spiel=null; tennis=null; fussball=null; schach=null; schAufIdx=0; schLekStep=0;
   scoreRuns={};
   goSection(MODULES[id].sections[0].id);
@@ -8459,6 +8557,7 @@ function goBack(){
 function goHome(){
   stopSpeak();
   zeitPruefen();
+  fokusUebung(false);
   activeSectionId=null;
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-home").classList.add("active");
@@ -8466,11 +8565,16 @@ function goHome(){
   renderNav();
   window.scrollTo(0,0);
 }
+// Übungs-Sections: hier wird der Fokus-Modus aktiv (kompakter Kopf,
+// nichts Ablenkendes – die Aufgabe passt ohne Scrollen auf den Schirm)
+const FOKUS_SECTIONS=["ueben","umstellen","aufgaben"];
+function fokusUebung(an){ $("screen-content").classList.toggle("uebung-fokus", !!an); }
 function goSection(secId){
   stopSpeak();
   const m=MODULES[activeModuleId];
   const sec=m.sections.find(s=>s.id===secId) || m.sections[0];
   activeSectionId=sec.id;
+  fokusUebung(FOKUS_SECTIONS.includes(sec.id));
   document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));
   $("screen-content").classList.add("active");
   const mc=$("moduleContent");

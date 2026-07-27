@@ -322,6 +322,12 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 4) Grundwortschatz: amtliche Wörter, Pakete, Stufen ----------
   section("Grundwortschatz");
   await fresh(); await setLevel(3); await openMod("Grundwortschatz", "Üben");
+  // Seit v1.67: erst Regel-Gruppe wählen (Klick-durch), dann Übung
+  check("Üben startet mit Regel-Gruppen-Wahl statt langer Liste", (await page.locator(".gws-gruppe").count()) === 12
+    && (await page.locator(".gws-opt").count()) === 0);
+  await page.locator(".gws-gruppe").first().click(); await page.waitForTimeout(120);
+  check("Nach der Wahl: nur die Übung + „Gruppe wechseln“", (await page.locator(".gws-opt").count()) > 0
+    && (await page.locator("#gwsWechsel").count()) === 1 && (await page.locator(".gws-gruppe").count()) === 0);
   let st = await page.evaluate(() => ({ lvl: fieldLevel("gws:dopp"), n: fieldPool("gws:dopp").length, w: fieldPool("gws:dopp")[0].richtig }));
   check("Stufe 1 = leichte amtliche Wörter (33)", st.lvl === 1 && st.n === 33 && st.w === "bitten", JSON.stringify(st));
   // Anti-Raten (v1.46): dritte Fehler-Variante + zufällige Antwort-Plätze
@@ -1547,6 +1553,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   // Kontroll-Blick „häufig": auch im Wörter-Training erst wählen, dann abgeben
   await page.evaluate(() => { store.kontrollBlick = "haeufig"; save(); });
   await openMod("Grundwortschatz", "Üben");
+  await page.locator(".gws-gruppe").first().click(); await page.waitForTimeout(100);
   await page.locator(".gws-opt").first().click(); await page.waitForTimeout(80);
   check("GWS häufig: Wahl markiert, noch nicht gewertet", (await page.locator("#gwsAbgeben").isVisible())
     && (await page.locator("#gwsfb .feedback").count()) === 0);
@@ -1555,6 +1562,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   // Standard: einfache Wörter-Aufgaben OHNE erzwungenen Extra-Schritt
   await page.evaluate(() => { store.kontrollBlick = "normal"; save(); });
   await openMod("Grundwortschatz", "Üben");
+  await page.locator(".gws-gruppe").first().click(); await page.waitForTimeout(100);
   await page.locator(".gws-opt").first().click(); await page.waitForTimeout(80);
   check("GWS normal: direkte Wertung (kein Zwang bei einfachen Aufgaben)",
     (await page.locator("#gwsfb .feedback").count()) === 1 && !(await page.locator("#gwsAbgeben").isVisible()));
@@ -1600,6 +1608,67 @@ function section(t) { console.log("\n== " + t + " =="); }
     store.lerntage = [{ t: heuteKey(), m: "", mi: 1, bo: 0, z: false, q: false }]; save(); goHome();
     return document.querySelectorAll(".start-wahl").length === 0;
   }));
+
+  // ---------- 8d) Fokus-Modus: Übung ohne Scrollen ----------
+  section("Fokus-Modus & Klick-durch-Wahl (v1.67)");
+  await fresh(); await setLevel(3);
+  await openMod("Subjekte", "Üben");
+  check("Übung aktiviert den Fokus-Modus (kompakte Ansicht)", await page.evaluate(() =>
+    document.getElementById("screen-content").classList.contains("uebung-fokus")));
+  await page.locator("#backBtn").click(); await page.waitForTimeout(100);
+  check("Zurück zur Gruppe beendet den Fokus-Modus", await page.evaluate(() =>
+    !document.getElementById("screen-content").classList.contains("uebung-fokus")));
+  check("Toast schwebt über dem Inhalt (nimmt keinen Platz weg)", await page.evaluate(() => {
+    toast("Test");
+    const st = getComputedStyle(document.getElementById("appToast"));
+    return st.position === "fixed" && parseInt(st.zIndex, 10) >= 60;
+  }));
+  // GWS: Gruppe wechseln führt zurück zur Wahl
+  await openMod("Grundwortschatz", "Üben");
+  await page.locator(".gws-gruppe").nth(2).click(); await page.waitForTimeout(100);
+  await page.locator("#gwsWechsel").click(); await page.waitForTimeout(100);
+  check("„Gruppe wechseln“ führt zurück zur Wahl", (await page.locator(".gws-gruppe").count()) === 12);
+  // Kompass: gleiche Klick-durch-Wahl (Kompass 4 gibt es nur in Klasse 4)
+  await page.evaluate(() => goHome()); await page.waitForTimeout(100);
+  await setLevel(4);
+  await openMod("Kompass", "Sprache");
+  check("Kompass-Üben: erst Bereich wählen", (await page.locator(".komp-bereich").count()) >= 3
+    && (await page.locator("#quizHost").count()) === 0);
+  await page.locator(".komp-bereich").first().click(); await page.waitForTimeout(120);
+  check("Kompass: nach Wahl nur die Übung + „Bereich wechseln“", (await page.locator("#quizHost").count()) === 1
+    && (await page.locator("#kompWechsel").count()) === 1);
+  // Lernen-Seite: Regel-Gruppen als Aufklapp-Liste
+  await page.locator("#backBtn").click(); await page.waitForTimeout(80);
+  await openMod("Grundwortschatz", "Lernen");
+  check("Regel-Gruppen als Aufklapp-Liste (zu, bis man tippt)", await page.evaluate(() =>
+    document.querySelectorAll("details.regel-klapp").length === 12
+    && [...document.querySelectorAll("details.regel-klapp")].every(d => !d.open)));
+  check("Lücken-Frage fragt nie nach zugeklapptem Text", await page.evaluate(() => {
+    const mc = document.getElementById("moduleContent");
+    const d = mc.querySelector("details.regel-klapp");
+    const probe = d.querySelector(".klapp-body .muted").textContent.trim().slice(0, 25);
+    const zu = !pageText(mc).includes(probe);
+    d.open = true;
+    const offen = pageText(mc).includes(probe);
+    d.open = false;
+    return zu && offen;
+  }));
+  // Kein Scrollen auf kleinem Handy (360x640): Kern-Übungen passen komplett
+  await page.setViewportSize({ width: 360, height: 640 });
+  const passt = async (id, sec2) => {
+    await page.evaluate(([i, s]) => { openModule(i); goSection(s); }, [id, sec2]);
+    await page.waitForTimeout(220);
+    return await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight);
+  };
+  check("Subjekte-Übung passt ohne Scrollen (360×640)", await passt("subjekt", "ueben"));
+  check("Umstellen-Übung passt ohne Scrollen (360×640)", await passt("satzglieder", "umstellen"));
+  check("GWS-Wahl passt ohne Scrollen (360×640)", await passt("gws", "ueben"));
+  await page.evaluate(() => { document.querySelector(".gws-gruppe").click(); });
+  await page.waitForTimeout(150);
+  check("GWS-Übung passt ohne Scrollen (360×640)", await page.evaluate(() =>
+    document.documentElement.scrollHeight <= window.innerHeight));
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.evaluate(() => goHome()); await page.waitForTimeout(100);
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
