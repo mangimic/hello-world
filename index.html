@@ -511,8 +511,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.68.0";
+const APP_VERSION = "1.69.0";
 const RELEASE_NOTES = [
+  {v:"1.69.0", datum:"27.07.2026", punkte:[
+    "🎮🔢 Mathe in den Spielen: Beim See-Abenteuer, Tennis-Match, Fußball-Match und in der Blockwelt ist jetzt etwa jede zweite Frage eine Mathe-Aufgabe (Kopfrechnen, Nachbarzehner, Zahlenfolgen …) – gemischt mit den Wörter-Fragen.",
+    "🌱🔥 Die Steigerung bleibt: Leichte Fragen nutzen leichte Aufgaben, schwere Fragen echtes Kompass-Niveau – mit 3 gemischten Antworten und Erklär-Tipp wie gewohnt.",
+    "⏱️ Fürs Spieltempo kommen in den Spielen nur kurze, knackige Mathe-Aufgaben (Rechnen und Zahlen-Profi) – die langen Sachaufgaben bleiben im Übungsbereich."
+  ]},
   {v:"1.68.0", datum:"27.07.2026", punkte:[
     "🔢 NEU: Mathe ist da! Auf der Startseite kannst du jetzt zwischen 📗 Deutsch und 🔢 Mathe umschalten. Grundlage ist der Kompass 4 Mathematik (Klasse 4) – mit denselben Aufgabentypen wie im echten Test.",
     "🧮 5 Mathe-Bereiche: Rechnen (Plus, Minus, Mal, Geteilt mit Rechentricks), Zahlen-Profi (Nachbarzehner, Stellenwerte, Zahlenfolgen, Zahlenmauern), Formen & Flächen (Spiegelachsen, Würfelnetze, Flächen vergleichen), Größen & Sachaufgaben (Geld, Uhrzeit, Längen schätzen) und Daten & Zufall (sicher/möglich/unmöglich, Tabellen).",
@@ -4754,12 +4759,28 @@ function gwsNiveauPool(stufen){
   });
   return alle;
 }
+/* Spiele mischen Deutsch- und Mathe-Fragen (etwa jede zweite ist Mathe).
+   Für das Spieltempo nur KOMPAKTE Mathe-Aufgaben (Rechnen + Zahlen-Profi
+   mit kurzen Antworten) – lange Sachaufgaben bleiben im Übungsbereich. */
+function spielMatheFrage(schwer){
+  const kandidaten=["mrechnen","mzahlen"].flatMap(k=>
+    (schwer?MATHE_DATEN[k].hard:MATHE_DATEN[k].easy))
+    .filter(a=>a.f.length<=80 && [a.r].concat(a.x).every(o=>o.length<=16));
+  if(!kandidaten.length) return null;
+  const a=kandidaten[Math.floor(Math.random()*kandidaten.length)];
+  return {w:{richtig:a.r, falsch:a.x[0], dritte:a.x[1]}, tipp:a.tipp, schwer:!!schwer, mathe:true, frage:a.f};
+}
 function spielFrage(schwer){
-  // leicht = nur L-Wörter · schwer = M- und S-Wörter (echte Steigerung)
+  // ~50 % Mathe, sonst: leicht = nur L-Wörter · schwer = M- und S-Wörter
+  if(Math.random()<0.5){ const m=spielMatheFrage(schwer); if(m) return m; }
   let pool=gwsNiveauPool(schwer?["M","S"]:["L"]);
   if(!pool.length) pool=gwsNiveauPool(["L","M","S"]);
   const t=pool[Math.floor(Math.random()*pool.length)];
   return {w:t.w, tipp:t.tipp, schwer:!!schwer};
+}
+// Fragetext je Frageart (Wort-Rechtschreibung oder Mathe-Aufgabe)
+function spielFrageText(q){
+  return q.mathe ? ("🔢 <b>"+q.frage+"</b>") : "Welches Wort ist <b>richtig</b> geschrieben?";
 }
 /* Gegen das Raten: Für „Welches Wort ist richtig?"-Fragen wird – wenn
    sicher möglich – eine DRITTE falsche Schreibweise erzeugt (typische
@@ -4787,7 +4808,9 @@ function drittesFalsch(w){
 // Antwort-Knöpfe: richtig + falsch (+ evtl. dritte Variante), zufällig gemischt
 function spielOptionen(w){
   const opts=[w.richtig, w.falsch];
-  const d=drittesFalsch(w); if(d) opts.push(d);
+  // Mathe-Fragen bringen ihre dritte Antwort mit; bei Wörtern wird eine
+  // dritte falsche Schreibweise erzeugt (typische Fehlermuster)
+  const d=w.dritte || drittesFalsch(w); if(d) opts.push(d);
   for(let i=opts.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=opts[i]; opts[i]=opts[j]; opts[j]=t; }
   return opts;
 }
@@ -5080,7 +5103,7 @@ function spielFragBox(){
     : spielFischBild(f.zeichnung, 120);
   box.innerHTML=`
     <div style="text-align:center;">${bild}</div>
-    <div class="hint">${kopf}<br><span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
+    <div class="hint">${kopf}<br><span class="muted" style="font-size:13px;">${stufe}</span> · ${spielFrageText(q)}</div>
     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "spiel-opt")}</div>
     <div id="spielfb"></div>`;
   box.querySelectorAll(".spiel-opt").forEach(btn=>btn.onclick=()=>{
@@ -5349,7 +5372,7 @@ function tennisFragBox(){
   const q=tennis.frage; if(!q){ box.innerHTML=""; return; }
   const aufschlag = tennis.balls%2===0;
   const kopf = aufschlag ? "🎯 Dein <b>Aufschlag</b>" : "🧲 Dein <b>Return</b>";
-  const stufe = q.schwer ? "🔥 schweres Wort" : "🌱 leichtes Wort";
+  const stufe = q.schwer ? "🔥 schwere Frage" : "🌱 leichte Frage";
   const entscheidung = (tennis.mir===3 && tennis.ihm===3);
   const mentalOben = entscheidung ? mutMini(tennisMental("tiebreak"), tennis.balls)
     : tennis.balls===0 ? tennisMentalKompakt("aufschlag")
@@ -5358,7 +5381,7 @@ function tennisFragBox(){
     ${entscheidung?`<div class="feedback tip">⚡ <b>40:40 – Entscheidungsball!</b> Der nächste Punkt holt das Spiel.</div>`:""}
     ${mentalOben}
     <div class="hint">${kopf} gegen ${tennis.gegner.emoji} <b>${tennis.gegner.name}</b><br>
-      <span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
+      <span class="muted" style="font-size:13px;">${stufe}</span> · ${spielFrageText(q)}</div>
     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "tennis-opt")}</div>
     <div id="tennisfb"></div>`;
   box.querySelectorAll(".tennis-opt").forEach(btn=>btn.onclick=()=>{
@@ -5425,7 +5448,7 @@ function tennisRender(c){
       <div class="card" id="tennisHost">
         <h2 style="margin:0 0 6px;">🎾 Tennis-Match</h2>
         <p>Heute spielst du gegen <b>${g.emoji} ${g.name}</b>! <span class="muted">${g.spruch}</span></p>
-        <p class="muted" style="margin:6px 0 8px;">Richtiges Wort = Punkt für dich, falsches Wort = Punkt für ${g.name}.
+        <p class="muted" style="margin:6px 0 8px;">Richtige Antwort (Wörter &amp; Mathe) = Punkt für dich, falsche = Punkt für ${g.name}.
           Ein <b>Spiel</b> geht bis 4 Punkte (15 – 30 – 40 – Spiel). Wer zuerst <b>2 Spiele</b> hat, gewinnt das Match.</p>
         ${mutDialog(tennisMental(mId))}
         <button class="btn-primary locked" id="tennisStart" style="width:100%;" disabled>🎾 Los geht's!</button>
@@ -5573,7 +5596,7 @@ function fbFragBox(){
   const elf = fussball.phase==="elfmeter";
   const kopf = elf ? "⚡ <b>Elfmeterschießen!</b> Dieser Ball entscheidet das Match"
     : `🎯 <b>Torchance ${fussball.chance+1} von ${FB_CHANCEN}</b>`;
-  const stufe = q.schwer ? "🔥 schweres Wort" : "🌱 leichtes Wort";
+  const stufe = q.schwer ? "🔥 schwere Frage" : "🌱 leichte Frage";
   const mentalOben = elf ? mutMini(fbMental("elfmeter"), fussball.balls)
     : fussball.balls===0 ? fbMentalKompakt("torschuss")
     : fussball.balls===1 ? fbMentalKompakt("abwehr")
@@ -5581,7 +5604,7 @@ function fbFragBox(){
   box.innerHTML=`
     ${mentalOben}
     <div class="hint">${kopf} gegen ${fussball.gegner.emoji} <b>${fussball.gegner.name}</b><br>
-      <span class="muted" style="font-size:13px;">${stufe}</span> · Welches Wort ist <b>richtig</b> geschrieben?</div>
+      <span class="muted" style="font-size:13px;">${stufe}</span> · ${spielFrageText(q)}</div>
     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "fb-opt")}</div>
     <div id="fbfb"></div>`;
   box.querySelectorAll(".fb-opt").forEach(btn=>btn.onclick=()=>{
@@ -5649,7 +5672,7 @@ function fbRender(c){
       <div class="card" id="fbHost">
         <h2 style="margin:0 0 6px;">⚽ Fußball-Match</h2>
         <p>Heute spielst du gegen <b>${g.emoji} ${g.name}</b>! <span class="muted">${g.spruch}</span></p>
-        <p class="muted" style="margin:6px 0 8px;">Richtiges Wort = <b>Tor für dich</b>, falsches Wort = Konter-Tor für ${g.name}.
+        <p class="muted" style="margin:6px 0 8px;">Richtige Antwort (Wörter &amp; Mathe) = <b>Tor für dich</b>, falsche = Konter-Tor für ${g.name}.
           Es gibt <b>2 Halbzeiten mit je ${FB_CHANCEN} Torchancen</b> – bei Gleichstand entscheidet ein Elfmeter!</p>
         ${mutDialog(fbMental(mId))}
         <button class="btn-primary locked" id="fbStart" style="width:100%;" disabled>⚽ Anstoß!</button>
@@ -6230,7 +6253,7 @@ function bwFrage(){
   bw.frage=q;
   box.innerHTML=`
     <div class="hint">${schwer?"🔥 <b>Schwere Frage</b> – es winkt ein seltener Block!":"🌱 Leichte Frage"}<br>
-      Welches Wort ist <b>richtig</b> geschrieben?</div>
+      ${spielFrageText(q)}</div>
     <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">${spielOptionenHTML(q.w, "bw-opt")}</div>
     <div id="bwfb"></div>`;
   box.querySelectorAll(".bw-opt").forEach(btn=>btn.onclick=()=>{
@@ -6284,7 +6307,7 @@ function bwRender(c){
         <h2 style="margin:0;">⛏️ Blockwelt</h2>
         <span style="font-weight:800; white-space:nowrap;" id="bwVerdient">🎁 ${st.verdient||0} Blöcke verdient</span>
       </div>
-      <p class="muted" style="margin:6px 0 8px;">Baue deine eigene Welt! Blöcke verdienst du mit Wörter-Fragen –
+      <p class="muted" style="margin:6px 0 8px;">Baue deine eigene Welt! Blöcke verdienst du mit Wörter- und Mathe-Fragen –
         deine Welt bleibt gespeichert. 🧱 setzen · ⛏️ abbauen (kommt zurück ins Inventar).</p>
       <div class="sch-wrap">
         <div class="bw-grid" id="bwGrid" style="grid-template-columns:repeat(${D.start.breite},1fr);">${zellen}</div>

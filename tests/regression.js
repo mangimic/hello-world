@@ -1271,12 +1271,14 @@ function section(t) { console.log("\n== " + t + " =="); }
       && gwsNiveau("das Bett") === "L" && gwsNiveau("gehen") === "M"
       && gwsNiveau("vielleicht") === "S" && gwsNiveau("die Stadt") === "M"
       && gwsNiveau("Fantasiewort") === "M"; }));
-  check("Spiel-Fragen: leicht zieht nur L, schwer nur M/S", await page.evaluate(() => {
-    for (let i = 0; i < 30; i++) {
-      if (gwsNiveau(spielFrage(false).w.richtig) !== "L") return false;
-      if (!["M", "S"].includes(gwsNiveau(spielFrage(true).w.richtig))) return false;
+  check("Spiel-Fragen: Wort leicht nur L, schwer nur M/S – dazu Mathe im Mix", await page.evaluate(() => {
+    let mathe = 0, wort = 0;
+    for (let i = 0; i < 60; i++) {
+      const l = spielFrage(false), s = spielFrage(true);
+      if (l.mathe) mathe++; else { wort++; if (gwsNiveau(l.w.richtig) !== "L") return false; }
+      if (s.mathe) mathe++; else { wort++; if (!["M", "S"].includes(gwsNiveau(s.w.richtig))) return false; }
     }
-    return true; }));
+    return mathe > 10 && wort > 10; })); // beide Fragearten kommen wirklich vor
   check("Startseite lädt zur Schatzsuche ein", (await page.locator("#ewLos").count()) === 1);
   await setLevel(0);
   check("Bei „Alle“: Einladung ausgeblendet", !(await page.locator("#ewLos").count()));
@@ -1680,6 +1682,16 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Mathe-Daten: immer 2 Falsch-Antworten, Lösung nie darunter", await page.evaluate(() =>
     MATHE_KEYS.every(k => MATHE_DATEN[k].easy.concat(MATHE_DATEN[k].hard).every(a =>
       a.x.length === 2 && !a.x.includes(a.r) && a.tipp && a.f))));
+  check("Spiele: Mathe-Fragen kompakt, 3 gemischte Antworten, eigener Fragetext", await page.evaluate(() => {
+    for (let i = 0; i < 20; i++) {
+      const q = spielMatheFrage(i % 2 === 0);
+      if (!q || !q.mathe || q.f === "") return false;
+      const o = spielOptionen(q.w);
+      if (o.length !== 3 || !o.includes(q.w.richtig) || new Set(o).size !== 3) return false;
+      if (!spielFrageText(q).includes(q.frage) || o.some(x => x.length > 16)) return false;
+    }
+    return spielFrageText({ w: { richtig: "kommen" } }).includes("richtig");
+  }));
   // Fach-Umschaltung auf der Startseite
   await page.locator('#fachRow .level-btn[data-fach="mathe"]').click(); await page.waitForTimeout(150);
   check("Fach Mathe: 2 Mathe-Gruppen + Spielhalle, Deutsch-Kacheln weg", await page.evaluate(() => {
