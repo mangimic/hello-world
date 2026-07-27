@@ -40,7 +40,10 @@ function section(t) { console.log("\n== " + t + " =="); }
   page.on("dialog", d => d.accept());
 
   const fresh = async () => { await page.goto(APP); await page.waitForTimeout(200);
-    await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(220); };
+    await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(220);
+    // Tagesform für den Testlauf vorbeantworten, damit das Overlay
+    // die bestehenden Abläufe nicht blockiert (eigene Tests unten).
+    await page.evaluate(() => { store.tagesform = { tag: heuteKey(), modus: "" }; save(); }); };
   const setLevel = async l => { await page.locator(`#levelRow .level-btn[data-level="${l}"]`).click(); await page.waitForTimeout(60); };
   const openMod = async (label, section2) => {
     // Neue Start-UX: Lernfelder liegen in Gruppen, Spiele in der Spielhalle
@@ -1446,6 +1449,157 @@ function section(t) { console.log("\n== " + t + " =="); }
   }
   await openMod("Vorgang", "Üben");
   check("Vorgangsbeschreibung: Illustration sichtbar", (await page.locator(".illu svg").count()) > 0);
+
+  // ---------- 8c) Lernsteuerung: Tagesform, Missionen, Pausen, Reizarm ----------
+  section("Lernsteuerung (Tagesform & Mini-Missionen)");
+  // Frischer Start OHNE vorbeantwortete Tagesform
+  await page.goto(APP); await page.waitForTimeout(200);
+  await page.evaluate(() => localStorage.clear()); await page.reload(); await page.waitForTimeout(220);
+  await setLevel(3);
+  await openMod("Subjekte", null);
+  check("Tagesform-Frage beim ersten Üben des Tages", (await page.locator("#tagesform").count()) === 1
+    && (await page.locator("#tagesform .tf-wahl").count()) === 3);
+  await page.locator('#tagesform .tf-wahl[data-m="rot"]').click(); await page.waitForTimeout(120);
+  check("Antwort „schwer“: kürzere Missionen + kleineres Tagesziel", await page.evaluate(() =>
+    tagesModus() === "rot" && missionLaenge() === 3 && tagesMissionsZiel() === (store.missionsZiel || 4) - 1));
+  check("Tagesform gilt nur für heute (Datum gespeichert)", await page.evaluate(() =>
+    store.tagesform.tag === heuteKey() && !("tagesformHistorie" in store)));
+  await page.locator("#backBtn").click(); await page.waitForTimeout(80);
+  await openMod("Prädikat", null);
+  check("Tagesform wird am selben Tag nicht erneut gefragt", (await page.locator("#tagesform").count()) === 0);
+  check("ROT-Tag: kein automatisches Hochstufen nach perfekter Runde", await page.evaluate(() => {
+    const vor = fieldProg("subj").unlocked || 1;
+    const r = runGet("subj", 2); r.solved = 2; r.first = 2; r.scored.add(0); r.scored.add(1);
+    const d = document.createElement("div"); document.body.appendChild(d);
+    renderRunResult(d, "subj", () => {}); d.remove(); runReset("subj");
+    return tagesModus() === "rot" && (fieldProg("subj").unlocked || 1) === vor;
+  }));
+  // „Einfach loslegen" überspringt ohne Modus
+  await page.evaluate(() => { delete store.tagesform; save(); });
+  await page.reload(); await page.waitForTimeout(260);
+  await openMod("Subjekte", null);
+  await page.locator("#tfSkip").click(); await page.waitForTimeout(100);
+  check("„Einfach loslegen“: kein Modus, normale Länge", await page.evaluate(() =>
+    tagesModus() === "" && missionLaenge() === 4));
+  // Eltern können die Frage abschalten
+  await page.evaluate(() => { store.tagesformAktiv = false; delete store.tagesform; save(); });
+  await page.locator("#backBtn").click(); await page.waitForTimeout(80);
+  await openMod("Prädikat", null);
+  check("Tagesform-Frage abschaltbar (Elternbereich)", (await page.locator("#tagesform").count()) === 0);
+  // Mini-Missionen: Zähl-Schicht über fokusZaehle
+  const mi = await page.evaluate(() => {
+    store.tagesformAktiv = true; store.tagesform = { tag: heuteKey(), modus: "" }; save();
+    missionAufg = 0; store.lerntage = []; save();
+    for (let i = 0; i < missionLaenge(); i++) fokusZaehle();
+    const t = store.lerntage[store.lerntage.length - 1];
+    const tst = document.getElementById("appToast");
+    return { mi: t ? t.mi : 0, toast: !!(tst && tst.classList.contains("an") && tst.textContent.includes("Mini-Mission")) };
+  });
+  check("Mini-Mission nach " + 4 + " Aufgaben abgeschlossen + Hinweis", mi.mi === 1 && mi.toast, JSON.stringify(mi));
+  check("Tagesziel erreicht nach genug Missionen", await page.evaluate(() => {
+    const t = lernTagHeute(); t.mi = tagesMissionsZiel() - 1; t.z = false; save();
+    missionAufg = 0; for (let i = 0; i < missionLaenge(); i++) fokusZaehle();
+    return lernTagHeute().z === true;
+  }));
+  // Tagesziel-Dialog in der Auswertung: Feierabend oder Bonus
+  const ziel = await page.evaluate(() => {
+    const t = lernTagHeute(); t.z = true; t.q = false; t.bo = 0; save();
+    const d = document.createElement("div"); document.body.appendChild(d);
+    renderRunResult(d, "subj", () => {});
+    const mitBonus = !!d.querySelector("#zielBonus"), wahl = !!d.querySelector("#zielWahl");
+    d.remove();
+    store.bonusErlaubt = false; save();
+    const d2 = document.createElement("div"); document.body.appendChild(d2);
+    renderRunResult(d2, "subj", () => {});
+    const ohneBonus = !!d2.querySelector("#zielBonus"), wahl2 = !!d2.querySelector("#zielWahl");
+    d2.remove(); store.bonusErlaubt = true; save();
+    return { wahl, mitBonus, wahl2, ohneBonus };
+  });
+  check("Tagesziel-Dialog: „fertig“ + freiwilliger Bonus", ziel.wahl && ziel.mitBonus, JSON.stringify(ziel));
+  check("Bonus im Elternbereich abschaltbar", ziel.wahl2 && !ziel.ohneBonus, JSON.stringify(ziel));
+  // Lernspur: Lücken bis 3 Tage schützen die Spur
+  check("Lernspur zählt Ziel-Tage, Wochenend-Lücke schadet nicht", await page.evaluate(() => {
+    const d = n => { const x = new Date(Date.now() - n * 86400000);
+      return x.getFullYear() + "-" + String(x.getMonth() + 1).padStart(2, "0") + "-" + String(x.getDate()).padStart(2, "0"); };
+    store.lerntage = [{ t: d(9), m: "", mi: 4, bo: 0, z: true, q: true },
+                      { t: d(3), m: "", mi: 4, bo: 0, z: true, q: true },
+                      { t: d(1), m: "", mi: 4, bo: 0, z: true, q: true }]; save();
+    const mitLuecke = lernspur();
+    store.lerntage = [{ t: d(9), m: "", mi: 4, bo: 0, z: true, q: true }]; save();
+    const alt = lernspur();
+    store.lerntage = []; save();
+    return mitLuecke === 2 && alt === 1;
+  }));
+  // Migration: kaputte lerntage-Daten werden bereinigt
+  check("Speicher-Migration bereinigt lerntage", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.lerntage = [{ t: "2026-07-01", m: "quatsch", mi: "x", bo: 9, z: 1, q: 0 }, "müll", null];
+    raw.missionsZiel = 99; raw.pausenIntervall = 7; raw.kontrollBlick = "falsch";
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    return Array.isArray(store.lerntage) && store.lerntage.every(e => e && typeof e.t === "string")
+      && [2,3,4,5,6].includes(store.missionsZiel) && [5,10,15].includes(store.pausenIntervall)
+      && ["reduziert","normal","haeufig"].includes(store.kontrollBlick);
+  }));
+
+  section("Kontroll-Blick, Pausen & reizarme Anzeige");
+  await fresh(); await setLevel(3);
+  // Kontroll-Blick „häufig": auch im Wörter-Training erst wählen, dann abgeben
+  await page.evaluate(() => { store.kontrollBlick = "haeufig"; save(); });
+  await openMod("Grundwortschatz", "Üben");
+  await page.locator(".gws-opt").first().click(); await page.waitForTimeout(80);
+  check("GWS häufig: Wahl markiert, noch nicht gewertet", (await page.locator("#gwsAbgeben").isVisible())
+    && (await page.locator("#gwsfb .feedback").count()) === 0);
+  await page.locator("#gwsAbgeben").click(); await page.waitForTimeout(80);
+  check("GWS häufig: Abgeben wertet die Antwort", (await page.locator("#gwsfb .feedback").count()) === 1);
+  // Standard: einfache Wörter-Aufgaben OHNE erzwungenen Extra-Schritt
+  await page.evaluate(() => { store.kontrollBlick = "normal"; save(); });
+  await openMod("Grundwortschatz", "Üben");
+  await page.locator(".gws-opt").first().click(); await page.waitForTimeout(80);
+  check("GWS normal: direkte Wertung (kein Zwang bei einfachen Aufgaben)",
+    (await page.locator("#gwsfb .feedback").count()) === 1 && !(await page.locator("#gwsAbgeben").isVisible()));
+  // Bewegungspausen: Eltern-Intervall + Abschalten
+  check("Pausen-Intervall aus Elternbereich wirkt", await page.evaluate(() => {
+    store.pausenIntervall = 5; save();
+    const a = fokusPauseNach() === 300;
+    store.pausenAktiv = false; fokusSek = 9999; fokusPruefen();
+    const b = !document.getElementById("fokusPause");
+    store.pausenAktiv = true; store.pausenIntervall = 10; fokusSek = 0; save();
+    return a && b;
+  }));
+  // Reizarme Anzeige
+  check("Animationen „reduziert“ setzt die CSS-Klasse", await page.evaluate(() => {
+    store.animationen = "reduziert"; save(); animAnwenden();
+    const an = document.documentElement.classList.contains("anim-reduziert");
+    store.animationen = "normal"; save(); animAnwenden();
+    return an && !document.documentElement.classList.contains("anim-reduziert");
+  }));
+  // Elternbereich-Tab „Lernen"
+  await page.evaluate(() => goHome()); await page.waitForTimeout(100);
+  await page.locator("#adminLink").click(); await page.waitForTimeout(120);
+  await page.locator('.chip[data-tab="lernen"]').click(); await page.waitForTimeout(120);
+  const lernTab = (await page.locator("#moduleContent").textContent()).replace(/\s+/g, " ");
+  check("Eltern-Tab „Lernen“: alle Einstellungen sichtbar",
+    lernTab.includes("Tagesform-Frage") && lernTab.includes("Mini-Missionen") && lernTab.includes("Bewegungspausen")
+    && lernTab.includes("Kontroll-Blick") && lernTab.includes("Anzeige ruhiger") && lernTab.includes("Lern-Übersicht"));
+  check("Keine Diagnose-Begriffe im Eltern-Tab", !/ADHS|Konzentrationsstörung|Defizit|unmotiviert/i.test(lernTab));
+  await page.locator('.seg[data-mziel="3"]').click(); await page.waitForTimeout(100);
+  check("Missionsziel umstellbar (3)", await page.evaluate(() => store.missionsZiel === 3));
+  await page.locator('.seg[data-anim="reduziert"]').click(); await page.waitForTimeout(100);
+  check("Animationen im Elternbereich umstellbar", await page.evaluate(() =>
+    store.animationen === "reduziert" && document.documentElement.classList.contains("anim-reduziert")));
+  // Start-Hilfe mit kleiner Wahl auf der Startseite
+  await page.evaluate(() => { store.animationen = "normal"; animAnwenden();
+    store.profil = store.profil || { quelle: "test" }; store.lerntage = []; save(); goHome(); });
+  await page.waitForTimeout(140);
+  check("Start-Hilfe: max 3 Vorschläge + Missions-Hinweis", await page.evaluate(() => {
+    const n = document.querySelectorAll(".start-wahl").length;
+    return n >= 2 && n <= 3 && document.querySelector("#moduleChooser").textContent.includes("Mini-Mission");
+  }));
+  check("Start-Hilfe verschwindet nach der ersten Mission", await page.evaluate(() => {
+    store.lerntage = [{ t: heuteKey(), m: "", mi: 1, bo: 0, z: false, q: false }]; save(); goHome();
+    return document.querySelectorAll(".start-wahl").length === 0;
+  }));
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
