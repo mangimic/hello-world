@@ -1,0 +1,20 @@
+{
+  "name": "Leons Spielewelt",
+  "short_name": "Leon",
+  "description": "Spiel-App für Kinder ab 3: Puzzle, Zahlen, Formen, Linien nachfahren und Wege finden – mit Dinos und Fahrzeugen.",
+  "lang": "de",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffe9c7",
+  "theme_color": "#ff9f43",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+
+<!-- PWA -->
+<meta name="theme-color" content="#ff9f43">
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Leon">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+
+<title>Leons Spielewelt</title>
+<style>
+/* =========================================================
+   LEONS SPIELEWELT – für kleine Hände (ca. 4 Jahre)
+   Grundsätze: riesige Tippflächen, keine Texte nötig,
+   Sprachausgabe, keine Bestrafung, viel Lob.
+   ========================================================= */
+:root{
+  --bg1:#ffe9c7; --bg2:#d8f3ff;
+  --card:#ffffff;
+  --orange:#ff9f43; --orange-dark:#f0870f;
+  --green:#5bc98c; --green-dark:#3fae72;
+  --blue:#54a9ff; --red:#ff7675; --purple:#b39ddb; --yellow:#ffd66b;
+  --text:#4a3b2a; --muted:#9a8a76;
+  --radius:26px;
+  --shadow:0 8px 22px rgba(150,100,40,0.18);
+  --safe-top:env(safe-area-inset-top, 0px);
+  --safe-bottom:env(safe-area-inset-bottom, 0px);
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent; user-select:none; -webkit-user-select:none;}
+html,body{margin:0; height:100%; overflow:hidden;}
+body{
+  font-family:"Comic Sans MS","Marker Felt","Segoe UI",sans-serif;
+  background:linear-gradient(160deg,var(--bg1),var(--bg2));
+  color:var(--text); font-size:20px;
+  touch-action:manipulation;
+}
+
+/* ---------- Screens ---------- */
+.screen{
+  position:fixed; inset:0; display:none; flex-direction:column;
+  padding:calc(10px + var(--safe-top)) 12px calc(10px + var(--safe-bottom));
+  max-width:860px; margin:0 auto; left:0; right:0;
+}
+.screen.active{display:flex;}
+
+/* ---------- Topbar ---------- */
+.topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:6px; flex:0 0 auto;}
+.round-btn{
+  width:64px; height:64px; border-radius:50%; border:none; cursor:pointer;
+  background:var(--card); box-shadow:var(--shadow); font-size:32px;
+  display:flex; align-items:center; justify-content:center; flex:0 0 auto;
+  transition:transform .1s ease;
+}
+.round-btn:active{transform:scale(0.9);}
+.topbar .title{font-size:26px; font-weight:bold; text-align:center; flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.star-chip{
+  background:var(--card); border-radius:999px; box-shadow:var(--shadow);
+  padding:8px 16px; font-size:22px; font-weight:bold; display:flex; align-items:center; gap:6px;
+}
+
+/* ---------- Home ---------- */
+#scr-home h1{font-size:34px; text-align:center; margin:4px 0 2px;}
+#scr-home .subtitle{text-align:center; color:var(--muted); font-size:16px; margin:0 0 10px;}
+.home-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px; flex:1;
+  align-content:start; overflow-y:auto; padding-bottom:8px;
+}
+.tile{
+  background:var(--card); border:none; border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:14px 8px 10px; cursor:pointer; text-align:center; min-height:130px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  transition:transform .1s ease;
+}
+.tile:active{transform:scale(0.94);}
+.tile .big{font-size:56px; line-height:1.1;}
+.tile .label{font-size:17px; font-weight:bold;}
+.tile.wide{grid-column:1 / -1; min-height:90px; flex-direction:row; gap:14px;}
+.tile.wide .big{font-size:44px;}
+
+/* ---------- Spielfläche ---------- */
+.stage{flex:1; position:relative; min-height:0;}
+.stage canvas{position:absolute; inset:0; width:100%; height:100%; touch-action:none; border-radius:var(--radius);}
+.stage-card{background:rgba(255,255,255,0.65); border-radius:var(--radius); box-shadow:var(--shadow);}
+
+.instruction{
+  text-align:center; font-size:19px; font-weight:bold; margin:2px 0 8px; flex:0 0 auto;
+  min-height:26px; color:#7a6347;
+}
+
+/* Fortschritts-Punkte innerhalb einer Runde */
+.dots{display:flex; gap:10px; justify-content:center; margin:6px 0; flex:0 0 auto;}
+.dots span{width:18px; height:18px; border-radius:50%; background:#e8dcc8;}
+.dots span.done{background:var(--green);}
+
+/* ---------- Puzzle ---------- */
+#pz-wrap{flex:1; display:flex; flex-direction:column; min-height:0; align-items:center;}
+#pz-grid{
+  display:grid; gap:4px; background:#fff; padding:6px; border-radius:20px; box-shadow:var(--shadow);
+  flex:0 0 auto;
+}
+.pz-cell{position:relative; border-radius:8px; overflow:hidden; background-color:#f2ecdf;
+  background-size:cover;}
+.pz-cell .ghost{position:absolute; inset:0; opacity:0.22; background-size:100% 100%;}
+.pz-cell.filled .ghost{display:none;}
+#pz-tray{
+  flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start;
+  justify-content:center; padding:12px 4px 4px; min-height:96px; overflow:visible;
+}
+.pz-tile{
+  border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.25); cursor:grab; touch-action:none;
+  border:3px solid #fff;
+}
+.pz-tile.dragging{position:fixed; z-index:50; cursor:grabbing; box-shadow:0 12px 26px rgba(0,0,0,0.35);}
+.pz-tile.placed{position:absolute; inset:0; width:100% !important; height:100% !important;
+  border:none; border-radius:0; box-shadow:none; cursor:default;}
+
+/* ---------- Zahlen finden ---------- */
+#zl-prompt{
+  background:var(--card); border-radius:var(--radius); box-shadow:var(--shadow);
+  padding:14px; text-align:center; margin-bottom:12px; flex:0 0 auto;
+  min-height:110px; display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px;
+}
+#zl-prompt .digit{font-size:88px; font-weight:bold; color:var(--blue); line-height:1;}
+#zl-prompt .obj{font-size:44px;}
+#zl-options{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; flex:1; align-content:start; min-height:0;}
+.zl-card{
+  background:var(--card); border:none; border-radius:var(--radius); box-shadow:var(--shadow);
+  font-family:inherit; cursor:pointer; padding:10px; min-height:110px;
+  display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:2px;
+  transition:transform .1s ease; font-size:26px;
+}
+.zl-card:active{transform:scale(0.94);}
+.zl-card .digit{font-size:64px; font-weight:bold; color:var(--text);}
+.zl-card .obj{font-size:30px;}
+.zl-card.correct{background:#dcf7e8; outline:5px solid var(--green);}
+.zl-card.wrong{animation:wobble .5s ease;}
+@keyframes wobble{
+  0%,100%{transform:translateX(0);}
+  25%{transform:translateX(-10px) rotate(-3deg);}
+  75%{transform:translateX(10px) rotate(3deg);}
+}
+
+/* ---------- Formen ---------- */
+#fm-targets{display:flex; justify-content:center; gap:14px; flex-wrap:wrap; padding:10px 0; flex:0 0 auto;}
+.fm-hole{
+  width:120px; height:120px; background:var(--card); border-radius:22px; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center; position:relative;
+}
+.fm-hole svg{width:86%; height:86%;}
+#fm-tray{flex:1; display:flex; justify-content:center; align-items:center; gap:18px; flex-wrap:wrap; min-height:0;}
+.fm-shape{width:110px; height:110px; cursor:grab; touch-action:none; transition:transform .1s ease;}
+.fm-shape svg{width:100%; height:100%; filter:drop-shadow(0 5px 8px rgba(0,0,0,0.25));}
+.fm-shape.dragging{position:fixed; z-index:50; cursor:grabbing;}
+.fm-shape.placed{position:absolute; inset:7%; width:86%; height:86%; cursor:default;}
+
+/* ---------- Wege: Ziel-Frage ---------- */
+#wg-question{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  font-size:22px; font-weight:bold; margin-bottom:8px; flex:0 0 auto;
+}
+#wg-question .em{font-size:44px;}
+
+/* ---------- Sticker-Album ---------- */
+#album-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(86px,1fr)); gap:12px;
+  overflow-y:auto; flex:1; align-content:start; padding-bottom:10px;
+}
+.sticker{
+  background:var(--card); border-radius:20px; box-shadow:var(--shadow); aspect-ratio:1;
+  display:flex; align-items:center; justify-content:center; font-size:48px;
+}
+.sticker.locked{background:#efe7d8; font-size:30px; color:#c9bda7; box-shadow:none;}
+#album-info{text-align:center; font-size:18px; color:var(--muted); margin:4px 0 10px;}
+
+/* ---------- Erfolgs-Overlay ---------- */
+#overlay{
+  position:fixed; inset:0; background:rgba(70,50,20,0.45); z-index:100;
+  display:none; align-items:center; justify-content:center; padding:20px;
+}
+#overlay.active{display:flex;}
+#overlay .box{
+  background:var(--card); border-radius:32px; box-shadow:0 20px 50px rgba(0,0,0,0.3);
+  padding:28px 24px; text-align:center; max-width:420px; width:100%;
+  animation:popIn .35s cubic-bezier(.2,1.6,.4,1);
+}
+@keyframes popIn{from{transform:scale(0.4); opacity:0;} to{transform:scale(1); opacity:1;}}
+#overlay .big-emoji{font-size:88px; line-height:1.15;}
+#overlay .praise{font-size:34px; font-weight:bold; margin:6px 0;}
+#overlay .sub{font-size:20px; color:var(--muted); margin-bottom:16px;}
+.btn-next{
+  background:var(--green); color:#fff; border:none; border-radius:22px; cursor:pointer;
+  font-family:inherit; font-size:28px; font-weight:bold; padding:18px 20px; width:100%;
+  box-shadow:0 6px 0 var(--green-dark); transition:transform .1s ease;
+}
+.btn-next:active{transform:translateY(4px);}
+#confetti-canvas{position:fixed; inset:0; z-index:99; pointer-events:none; display:none;}
+
+/* Kleine Bildschirme */
+@media (max-height:640px){
+  .tile{min-height:104px;} .tile .big{font-size:44px;}
+  #zl-prompt{min-height:84px;} #zl-prompt .digit{font-size:64px;}
+  .fm-hole{width:92px; height:92px;} .fm-shape{width:86px; height:86px;}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ HOME ============ -->
+<div class="screen active" id="scr-home">
+  <div class="topbar">
+    <div class="star-chip">⭐ <span id="home-stars">0</span></div>
+    <div class="title"></div>
+    <button class="round-btn" id="btn-sound" aria-label="Ton an oder aus">🔊</button>
+  </div>
+  <h1>🦖 Leons Spielewelt 🚒</h1>
+  <p class="subtitle">Tippe auf ein Spiel!</p>
+  <div class="home-grid">
+    <button class="tile" data-game="puzzle"><span class="big">🧩</span><span class="label">Puzzle</span></button>
+    <button class="tile" data-game="zahlen"><span class="big">🔢</span><span class="label">Zahlen finden</span></button>
+    <button class="tile" data-game="schreiben"><span class="big">✏️</span><span class="label">Zahlen schreiben</span></button>
+    <button class="tile" data-game="formen"><span class="big">🔷</span><span class="label">Formen</span></button>
+    <button class="tile" data-game="linien"><span class="big">🐍</span><span class="label">Schlangen&#8203;linien</span></button>
+    <button class="tile" data-game="wege"><span class="big">🗺️</span><span class="label">Der richtige Weg</span></button>
+    <button class="tile wide" data-game="album"><span class="big">🏆</span><span class="label">Meine Sticker</span></button>
+  </div>
+</div>
+
+<!-- ============ PUZZLE ============ -->
+<div class="screen" id="scr-puzzle">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🧩 Puzzle</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div class="instruction" id="pz-instruction">Zieh die Teile an die richtige Stelle!</div>
+  <div id="pz-wrap">
+    <div id="pz-grid"></div>
+    <div id="pz-tray"></div>
+  </div>
+</div>
+
+<!-- ============ ZAHLEN FINDEN ============ -->
+<div class="screen" id="scr-zahlen">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🔢 Zahlen finden</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div class="dots" id="zl-dots"></div>
+  <div id="zl-prompt"></div>
+  <div id="zl-options"></div>
+</div>
+
+<!-- ============ ZAHLEN SCHREIBEN ============ -->
+<div class="screen" id="scr-schreiben">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">✏️ Zahlen schreiben</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div class="instruction" id="sb-instruction">Starte beim grünen Punkt!</div>
+  <div class="stage stage-card"><canvas id="sb-canvas"></canvas></div>
+</div>
+
+<!-- ============ FORMEN ============ -->
+<div class="screen" id="scr-formen">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🔷 Formen</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div class="instruction">Zieh jede Form in ihr Loch!</div>
+  <div id="fm-targets"></div>
+  <div id="fm-tray"></div>
+</div>
+
+<!-- ============ LINIEN ============ -->
+<div class="screen" id="scr-linien">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🐍 Schlangenlinien</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div class="instruction" id="ln-instruction">Fahre die Linie mit dem Finger nach!</div>
+  <div class="stage stage-card"><canvas id="ln-canvas"></canvas></div>
+</div>
+
+<!-- ============ WEGE ============ -->
+<div class="screen" id="scr-wege">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🗺️ Der richtige Weg</div>
+    <button class="round-btn btn-say">🔊</button>
+  </div>
+  <div id="wg-question"></div>
+  <div class="stage stage-card"><canvas id="wg-canvas"></canvas></div>
+</div>
+
+<!-- ============ ALBUM ============ -->
+<div class="screen" id="scr-album">
+  <div class="topbar">
+    <button class="round-btn btn-home">🏠</button>
+    <div class="title">🏆 Meine Sticker</div>
+    <div class="star-chip">⭐ <span id="album-stars">0</span></div>
+  </div>
+  <div id="album-info"></div>
+  <div id="album-grid"></div>
+</div>
+
+<!-- ============ ERFOLG ============ -->
+<canvas id="confetti-canvas"></canvas>
+<div id="overlay">
+  <div class="box">
+    <div class="big-emoji" id="ov-emoji">🌟</div>
+    <div class="praise" id="ov-praise">Super!</div>
+    <div class="sub" id="ov-sub"></div>
+    <button class="btn-next" id="ov-next">Weiter ▶</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+/* =========================================================
+   Basis: Speicher, Ton, Sprache, Navigation, Belohnung
+   ========================================================= */
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => Array.from(document.querySelectorAll(sel));
+
+const store = {
+  get(key, fallback){ try{ const v = localStorage.getItem("leon."+key); return v===null ? fallback : JSON.parse(v); }catch(e){ return fallback; } },
+  set(key, val){ try{ localStorage.setItem("leon."+key, JSON.stringify(val)); }catch(e){} }
+};
+
+let soundOn = store.get("sound", true);
+let stars = store.get("stars", 0);
+const counts = store.get("counts", {});   // pro Spiel: wie viele Runden geschafft
+function bumpCount(game){ counts[game] = (counts[game]||0)+1; store.set("counts", counts); return counts[game]; }
+function getCount(game){ return counts[game]||0; }
+
+/* ---------- Zufall ---------- */
+function rnd(n){ return Math.floor(Math.random()*n); }
+function pick(arr){ return arr[rnd(arr.length)]; }
+function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
+
+/* ---------- Sprache (Web Speech API, Deutsch) ---------- */
+let lastInstruction = "";
+function speak(text, isInstruction){
+  if(isInstruction) lastInstruction = text;
+  if(!soundOn || !("speechSynthesis" in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "de-DE"; u.rate = 0.92; u.pitch = 1.15;
+    const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("de"));
+    if(voice) u.voice = voice;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+if("speechSynthesis" in window){ speechSynthesis.getVoices(); }
+
+/* ---------- Klänge (WebAudio) ---------- */
+let audioCtx = null;
+function ac(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return audioCtx; }
+function tone(freq, dur, delay, type, vol){
+  const ctx = ac(); if(!ctx || !soundOn) return;
+  const t0 = ctx.currentTime + (delay||0);
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type||"sine"; o.frequency.value = freq;
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.linearRampToValueAtTime(vol||0.25, t0+0.02);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  o.connect(g).connect(ctx.destination); o.start(t0); o.stop(t0+dur+0.05);
+}
+function sfxPop(){ tone(520,0.12,0,"triangle",0.3); tone(780,0.1,0.06,"triangle",0.22); }
+function sfxDing(){ tone(880,0.18,0,"sine",0.25); }
+function sfxOops(){ tone(300,0.2,0,"sine",0.18); tone(240,0.25,0.12,"sine",0.15); }
+function sfxYay(){ [523,659,784,1047].forEach((f,i)=>tone(f,0.22,i*0.09,"triangle",0.26)); }
+
+/* ---------- Navigation ---------- */
+let currentGame = null;
+function showScreen(id){
+  $$(".screen").forEach(s => s.classList.remove("active"));
+  $("#scr-"+id).classList.add("active");
+}
+const GAMES = {}; // wird unten gefüllt: {start(), stop()?}
+function openGame(name){
+  currentGame = name;
+  showScreen(name);
+  GAMES[name].start();
+}
+function goHome(){
+  if("speechSynthesis" in window) speechSynthesis.cancel();
+  currentGame = null;
+  $("#home-stars").textContent = stars;
+  showScreen("home");
+}
+$$(".btn-home").forEach(b => b.addEventListener("click", goHome));
+$$(".btn-say").forEach(b => b.addEventListener("click", () => { if(lastInstruction) speak(lastInstruction, false); }));
+$$("#scr-home .tile").forEach(t => t.addEventListener("click", () => {
+  ac(); // AudioContext braucht eine Nutzer-Geste
+  openGame(t.dataset.game);
+}));
+$("#btn-sound").addEventListener("click", () => {
+  soundOn = !soundOn; store.set("sound", soundOn);
+  $("#btn-sound").textContent = soundOn ? "🔊" : "🔇";
+  if(soundOn){ sfxDing(); speak("Der Ton ist an!", false); }
+});
+$("#btn-sound").textContent = soundOn ? "🔊" : "🔇";
+
+/* ---------- Konfetti ---------- */
+function confetti(){
+  const cv = $("#confetti-canvas");
+  cv.style.display = "block";
+  cv.width = innerWidth; cv.height = innerHeight;
+  const ctx = cv.getContext("2d");
+  const colors = ["#ff9f43","#54a9ff","#5bc98c","#ff7675","#ffd66b","#b39ddb"];
+  const parts = [];
+  for(let i=0;i<90;i++){
+    parts.push({ x:innerWidth/2 + (Math.random()-0.5)*140, y:innerHeight*0.35,
+      vx:(Math.random()-0.5)*11, vy:-Math.random()*11-3,
+      s:6+Math.random()*8, c:pick(colors), r:Math.random()*Math.PI, vr:(Math.random()-0.5)*0.3 });
+  }
+  const t0 = performance.now();
+  (function frame(t){
+    const dt = (t-t0);
+    ctx.clearRect(0,0,cv.width,cv.height);
+    parts.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.32; p.r += p.vr;
+      ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+      ctx.fillStyle = p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s); ctx.restore();
+    });
+    if(dt < 1900){ requestAnimationFrame(frame); } else { cv.style.display = "none"; }
+  })(t0);
+}
+
+/* ---------- Belohnung: Sterne + Sticker ---------- */
+const STICKERS = ["🦖","🚒","🦕","🚀","🐶","🚜","🦴","🚁","🐉","🏎️","🚂","🛸",
+                  "🚛","⛵","🦺","🐱","✈️","🦊","🛻","🐻","🚓","🐼","🚤","🦁",
+                  "🚑","🐯","🛴","🐸","🚲","🦄"];
+const PRAISES = ["Super!","Toll gemacht!","Klasse, Leon!","Wunderbar!","Spitze!","Stark!","Prima!","Super, Leon!"];
+
+let overlayNext = null;
+function showSuccess(opts){
+  // opts: {emoji, sub, next}
+  stars += 1; store.set("stars", stars);
+  const praise = pick(PRAISES);
+  const unlockedNow = Math.min(Math.floor(stars/5), STICKERS.length);
+  const unlockedBefore = Math.min(Math.floor((stars-1)/5), STICKERS.length);
+  const newSticker = unlockedNow > unlockedBefore ? STICKERS[unlockedNow-1] : null;
+
+  $("#ov-emoji").textContent = newSticker ? newSticker : (opts.emoji || "🌟");
+  $("#ov-praise").textContent = newSticker ? "Neuer Sticker!" : praise;
+  $("#ov-sub").textContent = newSticker ? (praise + " Du hast einen Sticker verdient!")
+                                        : ("⭐ Du hast jetzt " + stars + (stars===1?" Stern!":" Sterne!"));
+  overlayNext = opts.next || null;
+  $("#overlay").classList.add("active");
+  confetti(); sfxYay();
+  speak(newSticker ? (praise + " Du bekommst einen neuen Sticker!") : praise, false);
+}
+$("#ov-next").addEventListener("click", () => {
+  $("#overlay").classList.remove("active");
+  const fn = overlayNext; overlayNext = null;
+  if(fn) fn();
+});
+
+/* =========================================================
+   Gemeinsame Hilfen für Nachfahr-Spiele (Canvas)
+   ========================================================= */
+function arcPts(cx,cy,rx,ry,a0,a1,n){
+  n = n||28; const p=[];
+  for(let i=0;i<=n;i++){
+    const a = (a0+(a1-a0)*i/n)*Math.PI/180;
+    p.push({x:cx+rx*Math.cos(a), y:cy+ry*Math.sin(a)});
+  }
+  return p;
+}
+function catmull(pts, seg){
+  const out=[];
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[Math.max(0,i-1)], p1=pts[i], p2=pts[i+1], p3=pts[Math.min(pts.length-1,i+2)];
+    for(let j=0;j<seg;j++){
+      const t=j/seg, t2=t*t, t3=t2*t;
+      out.push({
+        x:0.5*((2*p1.x)+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+        y:0.5*((2*p1.y)+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3)
+      });
+    }
+  }
+  out.push(pts[pts.length-1]);
+  return out;
+}
+// Punkte (normalisiert 0..1) in Pixel umrechnen und gleichmäßig neu abtasten
+function toPixelPath(norm, w, h, step){
+  const px = norm.map(p => ({x:p.x*w, y:p.y*h}));
+  const out=[px[0]];
+  let prev = px[0];
+  for(let i=1;i<px.length;i++){
+    const dx=px[i].x-prev.x, dy=px[i].y-prev.y;
+    const d=Math.hypot(dx,dy);
+    if(d<0.001) continue;
+    const n=Math.max(1,Math.round(d/step));
+    for(let j=1;j<=n;j++){ out.push({x:prev.x+dx*j/n, y:prev.y+dy*j/n}); }
+    prev = px[i];
+  }
+  return out;
+}
+function sizeCanvas(cv){
+  const rect = cv.parentElement.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  cv.width = Math.max(50, Math.round(rect.width*dpr));
+  cv.height = Math.max(50, Math.round(rect.height*dpr));
+  const ctx = cv.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {w:rect.width, h:rect.height, ctx};
+}
+function drawPathLine(ctx, pts, from, to, color, width){
+  if(to-from < 1) return;
+  ctx.beginPath();
+  ctx.moveTo(pts[from].x, pts[from].y);
+  for(let i=from+1;i<=to;i++) ctx.lineTo(pts[i].x, pts[i].y);
+  ctx.strokeStyle = color; ctx.lineWidth = width;
+  ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.stroke();
+}
+function drawArrowAt(ctx, pts, idx, color){
+  if(idx<2 || idx>=pts.length-2) return;
+  const a = pts[idx-2], b = pts[idx+2];
+  const ang = Math.atan2(b.y-a.y, b.x-a.x);
+  const m = pts[idx];
+  ctx.save(); ctx.translate(m.x,m.y); ctx.rotate(ang);
+  ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-5,-7); ctx.lineTo(-5,7); ctx.closePath();
+  ctx.fillStyle = color; ctx.fill(); ctx.restore();
+}
+function emojiAt(ctx, em, x, y, size){
+  ctx.font = size+"px 'Segoe UI Emoji','Apple Color Emoji',serif";
+  ctx.textAlign = "center"; ctx.textBaseline = "middle";
+  ctx.fillText(em, x, y);
+}
+
+/* Nachfahr-Engine: ein oder mehrere Striche nacheinander */
+function makeTracer(canvas, opts){
+  // opts: strokes [[{x,y}...]], marker (Emoji), guideColor, doneColor, activeColor,
+  //       decorate(ctx,w,h), onDone()
+  let w=0,h=0,ctx=null, pixStrokes=[], strokeIdx=0, progress=0, tol=30, lw=34, drawing=false, finished=false;
+  let pulse = 0, pulseTimer = null;
+
+  function setup(){
+    const s = sizeCanvas(canvas); w=s.w; h=s.h; ctx=s.ctx;
+    const step = Math.max(3, w*0.008);
+    pixStrokes = opts.strokes.map(st => toPixelPath(st, w, h, step));
+    tol = Math.max(30, Math.min(w,h)*0.09);
+    lw  = Math.max(26, Math.min(w,h)*0.1);
+    strokeIdx = 0; progress = 0; finished = false;
+    draw();
+    if(pulseTimer) clearInterval(pulseTimer);
+    pulseTimer = setInterval(()=>{ pulse+=0.25; if(!finished) draw(); }, 90);
+  }
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    if(opts.decorate) opts.decorate(ctx,w,h);
+    // alle Striche als helle Führung
+    pixStrokes.forEach((pts,i) => {
+      drawPathLine(ctx, pts, 0, pts.length-1, opts.guideColor||"#f0e4cc", lw);
+      // Richtungs-Pfeile
+      [0.3,0.6,0.85].forEach(f => drawArrowAt(ctx, pts, Math.floor(pts.length*f), "#d8c8a8"));
+    });
+    // fertige Striche
+    for(let i=0;i<strokeIdx;i++){
+      drawPathLine(ctx, pixStrokes[i], 0, pixStrokes[i].length-1, opts.doneColor||"#5bc98c", lw*0.66);
+    }
+    if(strokeIdx < pixStrokes.length){
+      const pts = pixStrokes[strokeIdx];
+      // bereits nachgefahrener Teil
+      drawPathLine(ctx, pts, 0, progress, opts.activeColor||"#ff9f43", lw*0.66);
+      // Startpunkt pulsiert
+      const start = pts[0];
+      if(progress < 3){
+        const r = 16 + Math.sin(pulse)*4;
+        ctx.beginPath(); ctx.arc(start.x,start.y, r+8, 0, Math.PI*2);
+        ctx.fillStyle = "rgba(91,201,140,0.35)"; ctx.fill();
+        ctx.beginPath(); ctx.arc(start.x,start.y, r, 0, Math.PI*2);
+        ctx.fillStyle = "#5bc98c"; ctx.fill();
+        ctx.lineWidth = 4; ctx.strokeStyle = "#fff"; ctx.stroke();
+      }
+      // Marker am aktuellen Punkt
+      const cur = pts[Math.min(progress, pts.length-1)];
+      emojiAt(ctx, opts.marker||"✏️", cur.x, cur.y - 6, Math.max(34, lw*1.15));
+    }
+  }
+  function ptFromEvent(e){
+    const r = canvas.getBoundingClientRect();
+    return {x:e.clientX-r.left, y:e.clientY-r.top};
+  }
+  function advance(p){
+    const pts = pixStrokes[strokeIdx];
+    if(!pts) return;
+    const windowAhead = Math.ceil(tol/Math.max(3,w*0.008)) + 8;
+    let best = -1;
+    for(let j=progress; j<=Math.min(pts.length-1, progress+windowAhead); j++){
+      if(Math.hypot(p.x-pts[j].x, p.y-pts[j].y) < tol) best = j;
+    }
+    if(best > progress){
+      progress = best;
+      if(progress >= pts.length-2){
+        strokeIdx++; progress = 0;
+        if(strokeIdx >= pixStrokes.length){
+          finished = true;
+          draw();
+          sfxDing();
+          setTimeout(()=>opts.onDone(), 350);
+          return;
+        }
+        sfxPop();
+      }
+      draw();
+    }
+  }
+  function down(e){ if(finished) return; drawing=true; canvas.setPointerCapture(e.pointerId); advance(ptFromEvent(e)); }
+  function move(e){ if(!drawing || finished) return; advance(ptFromEvent(e)); }
+  function up(){ drawing=false; }
+  canvas.onpointerdown = down; canvas.onpointermove = move;
+  canvas.onpointerup = up; canvas.onpointercancel = up;
+
+  setup();
+  return { redraw:setup, destroy(){ if(pulseTimer) clearInterval(pulseTimer);
+    canvas.onpointerdown = canvas.onpointermove = canvas.onpointerup = canvas.onpointercancel = null; } };
+}
+
+/* =========================================================
+   SPIEL 1: PUZZLE
+   ========================================================= */
+const PUZZLE_SCENES = [
+  {sky:["#c5ecff","#eafaff"], ground:"#b8e186", main:"🦖", deco:[["🌋",0.78,0.42,110],["🌴",0.14,0.58,110],["☁️",0.28,0.13,70],["☀️",0.88,0.12,80],["🌿",0.85,0.85,60]]},
+  {sky:["#d5ecff","#f4faff"], ground:"#c8c8c8", main:"🚒", deco:[["🔥",0.82,0.5,90],["🏠",0.15,0.5,110],["☁️",0.6,0.12,70],["🚦",0.87,0.78,60],["🐶",0.2,0.85,60]]},
+  {sky:["#20255c","#4a3b8c"], ground:"#8d86c9", main:"🚀", deco:[["🌕",0.82,0.18,90],["⭐",0.2,0.2,50],["⭐",0.55,0.1,36],["⭐",0.35,0.4,30],["🛸",0.16,0.55,70]]},
+  {sky:["#cfeaff","#f6fbff"], ground:"#e8c96b", main:"🚜", deco:[["🌻",0.15,0.62,80],["🐄",0.83,0.7,80],["☀️",0.85,0.13,80],["☁️",0.35,0.15,66],["🌾",0.14,0.87,60]]},
+  {sky:["#d5ecff","#f4faff"], ground:"#b0b8c2", main:"🚓", deco:[["🏢",0.14,0.42,110],["🚦",0.85,0.6,80],["☁️",0.55,0.12,66],["🐦",0.3,0.25,44],["🌳",0.86,0.86,60]]},
+  {sky:["#c5ecff","#eafaff"], ground:"#9fd9a3", main:"🚁", deco:[["🐶",0.2,0.82,80],["🦴",0.8,0.86,60],["⛰️",0.85,0.45,110],["☁️",0.3,0.12,70],["🌳",0.12,0.55,80]]}
+];
+const PUZZLE_LEVELS = [[2,2],[3,2],[3,3]]; // [Spalten, Zeilen]
+
+GAMES.puzzle = { start(){ startPuzzleRound(); } };
+
+function renderScene(scene, size){
+  const cv = document.createElement("canvas");
+  cv.width = size; cv.height = size;
+  const ctx = cv.getContext("2d");
+  const g = ctx.createLinearGradient(0,0,0,size);
+  g.addColorStop(0, scene.sky[0]); g.addColorStop(1, scene.sky[1]);
+  ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  ctx.fillStyle = scene.ground;
+  ctx.beginPath();
+  ctx.ellipse(size/2, size*1.06, size*0.75, size*0.38, 0, 0, Math.PI*2);
+  ctx.fill();
+  scene.deco.forEach(d => emojiAt(ctx, d[0], d[1]*size, d[2]*size, d[3]*(size/500)));
+  emojiAt(ctx, scene.main, size*0.5, size*0.6, size*0.5);
+  return cv;
+}
+
+let pzState = null;
+function startPuzzleRound(){
+  const count = getCount("puzzle");
+  const [cols, rows] = PUZZLE_LEVELS[Math.min(Math.floor(count/2), PUZZLE_LEVELS.length-1)];
+  const scene = PUZZLE_SCENES[count % PUZZLE_SCENES.length];
+  const grid = $("#pz-grid"), tray = $("#pz-tray");
+  grid.innerHTML = ""; tray.innerHTML = "";
+
+  const wrap = $("#pz-wrap");
+  const avail = Math.min(wrap.clientWidth-20, Math.max(200, wrap.clientHeight*0.62));
+  const cellW = Math.floor(avail/cols), cellH = Math.floor(avail/cols); // quadratische Zellen
+  const imgSize = 900;
+  const sceneCv = renderScene(scene, imgSize);
+  const tileW = imgSize/cols, tileH = imgSize/rows;
+
+  grid.style.gridTemplateColumns = `repeat(${cols}, ${cellW}px)`;
+  grid.style.gridTemplateRows = `repeat(${rows}, ${cellH}px)`;
+
+  const cells = [];
+  for(let i=0;i<cols*rows;i++){
+    const cell = document.createElement("div");
+    cell.className = "pz-cell"; cell.dataset.index = i;
+    const ghost = document.createElement("div");
+    ghost.className = "ghost";
+    cell.appendChild(ghost);
+    grid.appendChild(cell); cells.push(cell);
+  }
+  // Geister-Vorschau (blasses Gesamtbild) in die Zellen legen
+  const full = sceneCv.toDataURL("image/png");
+  cells.forEach((cell,i) => {
+    const cx = i%cols, cy = Math.floor(i/cols);
+    const ghost = cell.firstChild;
+    ghost.style.backgroundImage = `url(${full})`;
+    ghost.style.backgroundSize = `${cols*100}% ${rows*100}%`;
+    ghost.style.backgroundPosition = `${cols>1 ? cx*100/(cols-1) : 0}% ${rows>1 ? cy*100/(rows-1) : 0}%`;
+  });
+
+  const traySize = Math.max(64, Math.min(110, Math.floor((wrap.clientWidth-40)/(cols*rows>6?5:4))));
+  const order = shuffle(Array.from({length:cols*rows}, (_,i)=>i));
+  order.forEach(i => {
+    const t = document.createElement("canvas");
+    t.className = "pz-tile"; t.dataset.index = i;
+    t.width = tileW; t.height = tileH;
+    t.getContext("2d").drawImage(sceneCv, (i%cols)*tileW, Math.floor(i/cols)*tileH, tileW, tileH, 0, 0, tileW, tileH);
+    t.style.width = traySize+"px"; t.style.height = traySize+"px";
+    tray.appendChild(t);
+    makePuzzleTileDraggable(t, cells, cellW, cellH, traySize);
+  });
+
+  pzState = { placed:0, total:cols*rows };
+  speak("Setze das Puzzle zusammen! Zieh die Teile an die richtige Stelle.", true);
+}
+
+function makePuzzleTileDraggable(tile, cells, cellW, cellH, traySize){
+  let startX=0, startY=0, homeParent = tile.parentElement;
+  tile.addEventListener("pointerdown", (e) => {
+    if(tile.classList.contains("placed")) return;
+    e.preventDefault();
+    tile.setPointerCapture(e.pointerId);
+    const r = tile.getBoundingClientRect();
+    startX = e.clientX - r.left; startY = e.clientY - r.top;
+    tile.classList.add("dragging");
+    tile.style.width = cellW+"px"; tile.style.height = cellH+"px";
+    startX = startX * (cellW/traySize); startY = startY * (cellH/traySize);
+    moveTo(e);
+  });
+  function moveTo(e){
+    tile.style.left = (e.clientX - startX)+"px";
+    tile.style.top  = (e.clientY - startY)+"px";
+  }
+  tile.addEventListener("pointermove", (e) => {
+    if(!tile.classList.contains("dragging")) return;
+    e.preventDefault(); moveTo(e);
+  });
+  tile.addEventListener("pointerup", (e) => {
+    if(!tile.classList.contains("dragging")) return;
+    tile.classList.remove("dragging");
+    // Treffer prüfen: Zeigerposition in einer Zelle?
+    let hit = null;
+    cells.forEach(c => {
+      const r = c.getBoundingClientRect();
+      if(e.clientX>=r.left-8 && e.clientX<=r.right+8 && e.clientY>=r.top-8 && e.clientY<=r.bottom+8) hit = c;
+    });
+    if(hit && !hit.classList.contains("filled") && hit.dataset.index === tile.dataset.index){
+      hit.classList.add("filled");
+      tile.classList.add("placed");
+      tile.style.left = tile.style.top = "";
+      hit.appendChild(tile);
+      sfxPop();
+      pzState.placed++;
+      if(pzState.placed >= pzState.total){
+        bumpCount("puzzle");
+        setTimeout(() => showSuccess({emoji:"🧩", next:startPuzzleRound}), 500);
+      }
+    } else {
+      if(hit) sfxOops();
+      tile.style.left = tile.style.top = "";
+      tile.style.width = traySize+"px"; tile.style.height = traySize+"px";
+      homeParent.appendChild(tile);
+    }
+  });
+}
+
+/* =========================================================
+   SPIEL 2: ZAHLEN FINDEN (Mengen zählen, Ziffern erkennen)
+   ========================================================= */
+const NUM_WORDS = ["null","eins","zwei","drei","vier","fünf","sechs","sieben","acht","neun"];
+const COUNT_OBJECTS = [["🦖","Dinos"],["🚒","Feuerwehrautos"],["🚜","Traktoren"],["🐶","Hunde"],
+                       ["🚀","Raketen"],["🚛","Laster"],["🦕","Langhälse"],["🚁","Hubschrauber"]];
+const ZL_TASKS_PER_ROUND = 3;
+let zlState = null;
+
+GAMES.zahlen = { start(){ zlState = {task:0}; renderZlDots(); nextZlTask(); } };
+
+function renderZlDots(){
+  const d = $("#zl-dots"); d.innerHTML = "";
+  for(let i=0;i<ZL_TASKS_PER_ROUND;i++){
+    const s = document.createElement("span");
+    if(i < zlState.task) s.classList.add("done");
+    d.appendChild(s);
+  }
+}
+function zlMaxNumber(){
+  const c = getCount("zahlen");
+  if(c < 4) return 4;
+  if(c < 10) return 6;
+  return 9;
+}
+function objGroup(em, n, cls){
+  const box = document.createElement("div");
+  box.style.display="flex"; box.style.flexWrap="wrap"; box.style.justifyContent="center";
+  box.style.gap="2px"; box.style.maxWidth="100%";
+  for(let i=0;i<n;i++){
+    const s = document.createElement("span");
+    s.className = cls; s.textContent = em;
+    box.appendChild(s);
+  }
+  return box;
+}
+function nextZlTask(){
+  const prompt = $("#zl-prompt"), optBox = $("#zl-options");
+  prompt.innerHTML = ""; optBox.innerHTML = "";
+  const maxN = zlMaxNumber();
+  const n = 1 + rnd(maxN);
+  const [em, plural] = pick(COUNT_OBJECTS);
+  const typeA = rnd(2) === 0; // A: Menge sehen -> Ziffer tippen, B: Ziffer sehen -> Menge tippen
+
+  // drei Antwortmöglichkeiten (eine richtig)
+  const opts = new Set([n]);
+  while(opts.size < 3){ const v = 1 + rnd(maxN); opts.add(v); }
+  const options = shuffle(Array.from(opts));
+
+  if(typeA){
+    prompt.appendChild(objGroup(em, n, "obj"));
+    options.forEach(v => {
+      const b = document.createElement("button");
+      b.className = "zl-card";
+      b.innerHTML = `<span class="digit">${v}</span>`;
+      b.addEventListener("click", () => zlAnswer(b, v===n, n, em));
+      optBox.appendChild(b);
+    });
+    speak(`Wie viele ${plural} siehst du? Tippe auf die Zahl!`, true);
+  } else {
+    const d = document.createElement("span");
+    d.className = "digit"; d.textContent = n;
+    prompt.appendChild(d);
+    options.forEach(v => {
+      const b = document.createElement("button");
+      b.className = "zl-card";
+      b.appendChild(objGroup(em, v, "obj"));
+      b.addEventListener("click", () => zlAnswer(b, v===n, n, em));
+      optBox.appendChild(b);
+    });
+    speak(`Das ist die ${NUM_WORDS[n]}. Wo siehst du ${NUM_WORDS[n]} ${plural}? Tippe darauf!`, true);
+  }
+}
+function zlAnswer(btn, correct, n, em){
+  if(correct){
+    btn.classList.add("correct");
+    sfxPop();
+    zlState.task++;
+    renderZlDots();
+    $$("#zl-options .zl-card").forEach(b => b.disabled = true);
+    if(zlState.task >= ZL_TASKS_PER_ROUND){
+      bumpCount("zahlen");
+      setTimeout(() => showSuccess({emoji:em.repeat(Math.min(n,3)), next(){ zlState={task:0}; renderZlDots(); nextZlTask(); }}), 600);
+    } else {
+      speak("Richtig! Die " + NUM_WORDS[n] + "!", false);
+      setTimeout(nextZlTask, 900);
+    }
+  } else {
+    btn.classList.add("wrong");
+    sfxOops();
+    speak("Probier es noch mal!", false);
+    setTimeout(() => btn.classList.remove("wrong"), 600);
+  }
+}
+
+/* =========================================================
+   SPIEL 3: ZAHLEN SCHREIBEN (nachfahren)
+   ========================================================= */
+const DIGIT_STROKES = {
+  0:[ arcPts(0.5,0.5,0.24,0.36,-90,-450) ],
+  1:[ [{x:0.32,y:0.32},{x:0.52,y:0.12},{x:0.52,y:0.88}] ],
+  2:[ arcPts(0.49,0.32,0.2,0.19,185,400).concat([{x:0.3,y:0.84},{x:0.74,y:0.84}]) ],
+  3:[ arcPts(0.47,0.3,0.19,0.17,190,430).concat(arcPts(0.47,0.65,0.22,0.21,-70,175)) ],
+  4:[ [{x:0.6,y:0.12},{x:0.26,y:0.6},{x:0.78,y:0.6}], [{x:0.62,y:0.34},{x:0.62,y:0.9}] ],
+  5:[ [{x:0.7,y:0.14},{x:0.34,y:0.14},{x:0.32,y:0.46}].concat(arcPts(0.5,0.64,0.22,0.22,-140,130)) ],
+  6:[ arcPts(0.68,0.6,0.4,0.5,-85,-175).concat(arcPts(0.48,0.66,0.2,0.19,180,-180)) ],
+  7:[ [{x:0.28,y:0.15},{x:0.74,y:0.15},{x:0.44,y:0.88}] ],
+  8:[ arcPts(0.5,0.31,0.18,0.17,90,-270), arcPts(0.5,0.66,0.22,0.2,-90,270) ],
+  9:[ arcPts(0.46,0.33,0.2,0.19,0,-360), [{x:0.66,y:0.33},{x:0.67,y:0.6},{x:0.6,y:0.88}] ]
+};
+const DIGIT_ORDER = [1,2,3,4,5,6,7,8,9,0];
+let sbTracer = null;
+
+GAMES.schreiben = { start(){ startSchreibenRound(); } };
+
+function startSchreibenRound(){
+  if(sbTracer){ sbTracer.destroy(); sbTracer = null; }
+  const count = getCount("schreiben");
+  const digit = DIGIT_ORDER[count % DIGIT_ORDER.length];
+  $("#sb-instruction").textContent = "Fahre die " + digit + " nach – starte beim grünen Punkt!";
+  speak("Fahre die " + NUM_WORDS[digit] + " mit dem Finger nach. Starte beim grünen Punkt!", true);
+
+  // Ziffer mittig, hochkant – normalisierte Koordinaten in schmaleres Feld legen
+  sbTracer = makeTracer($("#sb-canvas"), {
+    strokes: DIGIT_STROKES[digit].map(st => st.map(p => ({x:0.3+p.x*0.4, y:0.06+p.y*0.88}))),
+    marker: "✏️",
+    guideColor: "#ead9f5",
+    activeColor: "#b361e6",
+    doneColor: "#5bc98c",
+    decorate(ctx,w,h){
+      ctx.font = "bold " + Math.min(w,h)*0.16 + "px inherit";
+      ctx.fillStyle = "#d9c9a8"; ctx.textAlign="left"; ctx.textBaseline="top";
+      ctx.fillText(String(digit), 16, 10);
+    },
+    onDone(){
+      bumpCount("schreiben");
+      showSuccess({emoji:"✏️", next:startSchreibenRound});
+    }
+  });
+}
+
+/* =========================================================
+   SPIEL 4: FORMEN
+   ========================================================= */
+const SHAPES = {
+  kreis:   {name:"der Kreis",    color:"#ff7675", path:`<circle cx="50" cy="50" r="40"/>`},
+  quadrat: {name:"das Quadrat",  color:"#54a9ff", path:`<rect x="12" y="12" width="76" height="76" rx="6"/>`},
+  dreieck: {name:"das Dreieck",  color:"#5bc98c", path:`<polygon points="50,10 92,86 8,86"/>`},
+  stern:   {name:"der Stern",    color:"#ffd66b", path:`<polygon points="50,6 61,36 94,38 68,59 77,92 50,73 23,92 32,59 6,38 39,36"/>`},
+  herz:    {name:"das Herz",     color:"#f78fb3", path:`<path d="M50 88 C20 64 8 46 12 30 C16 16 34 12 44 24 L50 32 L56 24 C66 12 84 16 88 30 C92 46 80 64 50 88 Z"/>`},
+  rechteck:{name:"das Rechteck", color:"#b39ddb", path:`<rect x="6" y="26" width="88" height="48" rx="6"/>`},
+  oval:    {name:"das Oval",     color:"#f0870f", path:`<ellipse cx="50" cy="50" rx="44" ry="30"/>`},
+  raute:   {name:"die Raute",    color:"#26c6da", path:`<polygon points="50,6 90,50 50,94 10,50"/>`}
+};
+function shapeSVG(key, mode){
+  const s = SHAPES[key];
+  const style = mode === "hole"
+    ? `fill="#f4eee0" stroke="#c9bda7" stroke-width="4" stroke-dasharray="9 7"`
+    : `fill="${s.color}" stroke="rgba(0,0,0,0.12)" stroke-width="3"`;
+  return `<svg viewBox="0 0 100 100">${s.path.replace("/>", ` ${style}/>`).replace("></", ` ${style}></`)}</svg>`;
+}
+let fmState = null;
+
+GAMES.formen = { start(){ startFormenRound(); } };
+
+function startFormenRound(){
+  const count = getCount("formen");
+  const pool = Object.keys(SHAPES).slice(0, Math.min(3 + Math.floor(count/2), 8));
+  const chosen = shuffle(pool).slice(0,3);
+  const targets = $("#fm-targets"), tray = $("#fm-tray");
+  targets.innerHTML = ""; tray.innerHTML = "";
+  fmState = {placed:0, total:chosen.length};
+
+  shuffle(chosen).forEach(key => {
+    const hole = document.createElement("div");
+    hole.className = "fm-hole"; hole.dataset.shape = key;
+    hole.innerHTML = shapeSVG(key, "hole");
+    targets.appendChild(hole);
+  });
+  shuffle(chosen).forEach(key => {
+    const el = document.createElement("div");
+    el.className = "fm-shape"; el.dataset.shape = key;
+    el.innerHTML = shapeSVG(key, "full");
+    tray.appendChild(el);
+    makeShapeDraggable(el);
+  });
+  speak("Zieh jede Form in ihr Loch!", true);
+}
+function makeShapeDraggable(el){
+  let offX=0, offY=0, home = el.parentElement, homeW=0;
+  el.addEventListener("pointerdown", (e) => {
+    if(el.classList.contains("placed")) return;
+    e.preventDefault();
+    el.setPointerCapture(e.pointerId);
+    const r = el.getBoundingClientRect();
+    offX = e.clientX - r.left; offY = e.clientY - r.top; homeW = r.width;
+    el.classList.add("dragging");
+    el.style.width = r.width+"px"; el.style.height = r.height+"px";
+    move(e);
+  });
+  function move(e){
+    el.style.left = (e.clientX-offX)+"px";
+    el.style.top  = (e.clientY-offY)+"px";
+  }
+  el.addEventListener("pointermove", (e) => {
+    if(el.classList.contains("dragging")){ e.preventDefault(); move(e); }
+  });
+  el.addEventListener("pointerup", (e) => {
+    if(!el.classList.contains("dragging")) return;
+    el.classList.remove("dragging");
+    let hit = null;
+    $$("#fm-targets .fm-hole").forEach(hole => {
+      const r = hole.getBoundingClientRect();
+      if(e.clientX>=r.left-10 && e.clientX<=r.right+10 && e.clientY>=r.top-10 && e.clientY<=r.bottom+10) hit = hole;
+    });
+    if(hit && !hit.dataset.filled && hit.dataset.shape === el.dataset.shape){
+      hit.dataset.filled = "1";
+      el.classList.add("placed");
+      el.style.left = el.style.top = el.style.width = el.style.height = "";
+      hit.appendChild(el);
+      sfxPop();
+      speak("Genau, " + SHAPES[el.dataset.shape].name + "!", false);
+      fmState.placed++;
+      if(fmState.placed >= fmState.total){
+        bumpCount("formen");
+        setTimeout(() => showSuccess({emoji:"🔷", next:startFormenRound}), 600);
+      }
+    } else {
+      if(hit) sfxOops();
+      el.style.left = el.style.top = "";
+      el.style.width = el.style.height = "";
+      home.appendChild(el);
+    }
+  });
+}
+
+/* =========================================================
+   SPIEL 5: SCHLANGENLINIEN
+   ========================================================= */
+function lineWave(humps, amp){
+  const p=[]; for(let i=0;i<=72;i++){ const t=i/72;
+    p.push({x:0.08+t*0.84, y:0.5 - amp*Math.sin(t*Math.PI*humps)}); }
+  return p;
+}
+function lineZigzag(n){
+  const p=[]; for(let i=0;i<=n;i++){ p.push({x:0.08+0.84*i/n, y:(i%2===0)?0.68:0.3}); }
+  return p;
+}
+function lineSteps(n){
+  const p=[{x:0.08,y:0.75}];
+  for(let i=0;i<n;i++){
+    const x1=0.08+0.84*(i+1)/n;
+    p.push({x:x1, y:p[p.length-1].y});
+    if(i<n-1) p.push({x:x1, y:0.75-0.5*(i+1)/(n-1)});
+  }
+  return p;
+}
+function lineLoops(n){
+  const p=[]; const r=0.1, yc=0.5;
+  for(let i=0;i<=140;i++){
+    const t=i/140, th=Math.PI*2*n*t;
+    p.push({x:0.1+0.76*t - r*0.45*Math.sin(th), y:yc - r*Math.cos(th)});
+  }
+  return p;
+}
+const LINE_LEVELS = [
+  () => [{x:0.08,y:0.5},{x:0.92,y:0.5}],
+  () => catmull([{x:0.08,y:0.6},{x:0.35,y:0.35},{x:0.65,y:0.62},{x:0.92,y:0.4}],24),
+  () => lineWave(2,0.2),
+  () => arcPts(0.5,0.82,0.42,0.58,180,360),
+  () => lineZigzag(3),
+  () => lineWave(3,0.22),
+  () => lineSteps(4),
+  () => lineZigzag(5),
+  () => lineLoops(2),
+  () => lineWave(4,0.24),
+  () => lineLoops(3)
+];
+const LINE_THEMES = [["🚗","🏁"],["🦖","🍖"],["🚒","🔥"],["🚀","🌕"],["🐶","🦴"],["🚜","🥕"],["🚂","🚉"],["🚤","🏝️"]];
+let lnTracer = null;
+
+GAMES.linien = { start(){ startLinienRound(); } };
+
+function startLinienRound(){
+  if(lnTracer){ lnTracer.destroy(); lnTracer = null; }
+  const count = getCount("linien");
+  const stroke = LINE_LEVELS[count % LINE_LEVELS.length]();
+  const [actor, goal] = LINE_THEMES[count % LINE_THEMES.length];
+  $("#ln-instruction").textContent = "Bring " + actor + " zu " + goal + " – fahre die Linie nach!";
+  speak("Fahre die Linie mit dem Finger nach! Starte beim grünen Punkt.", true);
+
+  const end = stroke[stroke.length-1];
+  lnTracer = makeTracer($("#ln-canvas"), {
+    strokes: [stroke],
+    marker: actor,
+    guideColor: "#cfe6f7",
+    activeColor: "#ff9f43",
+    doneColor: "#5bc98c",
+    decorate(ctx,w,h){
+      emojiAt(ctx, goal, end.x*w, end.y*h, Math.min(w,h)*0.14);
+    },
+    onDone(){
+      bumpCount("linien");
+      showSuccess({emoji:actor+goal, next:startLinienRound});
+    }
+  });
+}
+
+/* =========================================================
+   SPIEL 6: DER RICHTIGE WEG
+   ========================================================= */
+const WEGE_THEMES = [
+  {actor:"🐶", goal:"🦴", goalName:"zum Knochen", decoys:["🧦","⚽"]},
+  {actor:"🚒", goal:"🔥", goalName:"zum Feuer",   decoys:["🌳","🏠"]},
+  {actor:"🦖", goal:"🍗", goalName:"zum Futter",  decoys:["🌵","🪨"]},
+  {actor:"🚜", goal:"🥕", goalName:"zu den Möhren", decoys:["🌻","🍄"]},
+  {actor:"🐝", goal:"🌸", goalName:"zur Blume",   decoys:["🪨","🍂"]},
+  {actor:"🚁", goal:"🏥", goalName:"zum Krankenhaus", decoys:["🌲","⛰️"]}
+];
+let wgState = null;
+
+GAMES.wege = { start(){ startWegeRound(); } };
+
+function startWegeRound(){
+  const cv = $("#wg-canvas");
+  const count = getCount("wege");
+  const theme = WEGE_THEMES[count % WEGE_THEMES.length];
+  const colored = count < 3 || count % 5 === 0; // Anfangs bunte Wege (leichter)
+
+  $("#wg-question").innerHTML =
+    `<span class="em">${theme.actor}</span> ➜ <span>Welcher Weg führt ${theme.goalName}?</span> <span class="em">${theme.goal}</span>`;
+  speak(`Welcher Weg führt ${theme.goalName}? Fahre den Weg mit dem Finger nach!`, true);
+
+  const s = sizeCanvas(cv);
+  const w = s.w, h = s.h, ctx = s.ctx;
+  const step = Math.max(3, w*0.008);
+
+  const start = {x:0.09, y:0.5};
+  const endYs = [0.18, 0.5, 0.82];
+  const targets = shuffle([theme.goal, theme.decoys[0], theme.decoys[1]]);
+  const pathColors = colored ? ["#54a9ff","#ff7675","#5bc98c"] : ["#c9b99a","#c9b99a","#c9b99a"];
+
+  const paths = endYs.map((ey, i) => {
+    const way = [start,
+      {x:0.28, y:0.14+Math.random()*0.72},
+      {x:0.5,  y:0.14+Math.random()*0.72},
+      {x:0.7,  y:0.14+Math.random()*0.72},
+      {x:0.86, y:ey}];
+    const norm = catmull(way, 26);
+    return {
+      pts: toPixelPath(norm, w, h, step),
+      target: targets[i],
+      correct: targets[i] === theme.goal,
+      color: pathColors[i],
+      progress: 0
+    };
+  });
+
+  const tol = Math.max(30, Math.min(w,h)*0.085);
+  const lw = Math.max(20, Math.min(w,h)*0.06);
+  let solved = false, drawing = false;
+
+  function draw(){
+    ctx.clearRect(0,0,w,h);
+    paths.forEach(p => drawPathLine(ctx, p.pts, 0, p.pts.length-1, p.color, lw));
+    paths.forEach(p => { if(p.progress>1) drawPathLine(ctx, p.pts, 0, p.progress, "#ff9f43", lw*0.72); });
+    // Start und Ziele
+    const sp = paths[0].pts[0];
+    ctx.beginPath(); ctx.arc(sp.x, sp.y, Math.max(18, w*0.028), 0, Math.PI*2);
+    ctx.fillStyle = "#5bc98c"; ctx.fill(); ctx.lineWidth=4; ctx.strokeStyle="#fff"; ctx.stroke();
+    emojiAt(ctx, theme.actor, sp.x, sp.y - Math.max(30, w*0.05), Math.max(38, w*0.07));
+    paths.forEach(p => {
+      const e = p.pts[p.pts.length-1];
+      ctx.beginPath(); ctx.arc(e.x+Math.max(24,w*0.04), e.y, Math.max(24, w*0.04), 0, Math.PI*2);
+      ctx.fillStyle = "#fff"; ctx.fill(); ctx.lineWidth=3; ctx.strokeStyle="#e0d5bd"; ctx.stroke();
+      emojiAt(ctx, p.target, e.x+Math.max(24,w*0.04), e.y, Math.max(30, w*0.055));
+    });
+    // Marker auf dem am weitesten verfolgten Weg
+    const best = paths.reduce((a,b) => (b.progress>a.progress? b : a), paths[0]);
+    if(best.progress > 1){
+      const c = best.pts[Math.min(best.progress, best.pts.length-1)];
+      emojiAt(ctx, theme.actor, c.x, c.y-4, Math.max(34, w*0.06));
+    }
+  }
+  function pt(e){ const r = cv.getBoundingClientRect(); return {x:e.clientX-r.left, y:e.clientY-r.top}; }
+  function advance(p){
+    if(solved) return;
+    const windowAhead = Math.ceil(tol/step)+8;
+    let changed = false;
+    paths.forEach(path => {
+      let bestJ = -1;
+      for(let j=path.progress; j<=Math.min(path.pts.length-1, path.progress+windowAhead); j++){
+        if(Math.hypot(p.x-path.pts[j].x, p.y-path.pts[j].y) < tol) bestJ = j;
+      }
+      if(bestJ > path.progress){ path.progress = bestJ; changed = true; }
+    });
+    if(changed) draw();
+    const done = paths.find(path => path.progress >= path.pts.length-3);
+    if(done){
+      if(done.correct){
+        solved = true;
+        sfxDing();
+        bumpCount("wege");
+        setTimeout(() => showSuccess({emoji:theme.actor+theme.goal, next:startWegeRound}), 350);
+      } else {
+        sfxOops();
+        speak("Oh! Da ist " + done.target + " – das ist nicht das Ziel. Probier einen anderen Weg!", false);
+        paths.forEach(path => path.progress = 0);
+        draw();
+      }
+    }
+  }
+  cv.onpointerdown = (e) => { drawing=true; cv.setPointerCapture(e.pointerId); advance(pt(e)); };
+  cv.onpointermove = (e) => { if(drawing) advance(pt(e)); };
+  cv.onpointerup = cv.onpointercancel = () => { drawing=false; };
+
+  wgState = { redraw(){ startWegeRound(); } };
+  draw();
+}
+
+/* =========================================================
+   STICKER-ALBUM
+   ========================================================= */
+GAMES.album = { start(){
+  $("#album-stars").textContent = stars;
+  const unlocked = Math.min(Math.floor(stars/5), STICKERS.length);
+  const info = $("#album-info");
+  const toNext = 5 - (stars % 5);
+  info.textContent = unlocked >= STICKERS.length
+    ? "Alle Sticker gesammelt! 🎉"
+    : `Noch ${toNext} ${toNext===1?"Stern":"Sterne"} bis zum nächsten Sticker!`;
+  const grid = $("#album-grid");
+  grid.innerHTML = "";
+  STICKERS.forEach((em,i) => {
+    const d = document.createElement("div");
+    d.className = "sticker" + (i < unlocked ? "" : " locked");
+    d.textContent = i < unlocked ? em : "❓";
+    grid.appendChild(d);
+  });
+  speak(unlocked > 0 ? `Du hast schon ${unlocked} Sticker!` : "Sammle Sterne, dann bekommst du Sticker!", true);
+}};
+
+/* =========================================================
+   Größenänderung / Start
+   ========================================================= */
+let resizeTimer = null;
+window.addEventListener("resize", () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(() => {
+    if(!currentGame) return;
+    if(currentGame === "schreiben" && sbTracer) sbTracer.redraw();
+    else if(currentGame === "linien" && lnTracer) lnTracer.redraw();
+    else if(currentGame === "wege") startWegeRound();
+    else if(currentGame === "puzzle") startPuzzleRound();
+  }, 250);
+});
+
+$("#home-stars").textContent = stars;
+
+// Service Worker (offline)
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  addEventListener("load", () => navigator.serviceWorker.register("service-worker.js").catch(()=>{}));
+}
+window.__leonReady = true;
+</script>
+</body>
+</html>
