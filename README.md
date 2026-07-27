@@ -80,6 +80,23 @@ Versionsnummer folgt der Regel `1.<Service-Worker-Cache-Nummer>.0`
 neu?". Details zu Backlog und Roadmap: [`BACKLOG.md`](BACKLOG.md),
 [`ROADMAP.md`](ROADMAP.md).
 
+## 🦖 Leons Spielewelt (ab ca. 3–4 Jahre)
+
+Im Ordner [`leon/`](leon/) steckt eine zweite, eigenständige App für
+den kleinen Bruder: **Leons Spielewelt** – gleiche Technik
+(Einzeldatei-PWA, offline, werbefrei), aber komplett ohne Lesen
+bedienbar: Sprachausgabe, riesige Tippflächen, keine Bestrafung.
+
+**🚀 [Leons Spielewelt öffnen](https://mangimic.github.io/lernprofi/leon/)**
+
+Sechs Spiele rund um Dinos, Fahrzeuge und Helfer-Hunde:
+🧩 Puzzle (4→6→9 Teile) · 🔢 Zahlen finden (Mengen zählen, Ziffern
+erkennen 1–9) · ✏️ Zahlen nachfahren mit dem Finger · 🔷 Formen
+zuordnen · 🐍 Schlangenlinien nachfahren (Wellen, Zickzack,
+Schleifen) · 🗺️ Der richtige Weg (nur ein Weg führt zum Ziel).
+Belohnung: Sterne sammeln, alle 5 Sterne gibt es einen Sticker fürs
+Album. Smoke-Test: `node tests/leon-smoke.js`.
+
 ## Status
 
 Persönliches Projekt, gebaut für ein Kind in der 3. Klasse – wird

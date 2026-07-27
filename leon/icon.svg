@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Leons Spielewelt: Dino auf orangem Grund -->
+  <rect width="512" height="512" rx="96" fill="#ff9f43"/>
+  <circle cx="256" cy="276" r="170" fill="#ffe9c7"/>
+  <!-- Dino -->
+  <g fill="#5bc98c">
+    <ellipse cx="250" cy="310" rx="95" ry="70"/>
+    <rect x="300" y="180" width="55" height="130" rx="26"/>
+    <circle cx="330" cy="180" r="42"/>
+    <path d="M155 310 Q100 300 80 260 Q120 262 158 280 Z"/>
+    <rect x="205" y="350" width="30" height="48" rx="14"/>
+    <rect x="270" y="350" width="30" height="48" rx="14"/>
+  </g>
+  <circle cx="342" cy="172" r="8" fill="#2c3a2b"/>
+  <!-- Rückenzacken -->
+  <g fill="#3fae72">
+    <polygon points="200,250 218,218 236,250"/>
+    <polygon points="238,244 256,212 274,244"/>
+    <polygon points="276,250 294,218 312,250"/>
+  </g>
+  <!-- Puzzle-Teil und Stern -->
+  <g transform="translate(96,352)">
+    <path fill="#54a9ff" d="M0 20 h24 a12 12 0 1 1 24 0 h24 v24 a12 12 0 1 0 0 24 v24 h-72 z"/>
+  </g>
+  <path fill="#ffd66b" d="M392 84 l16 34 37 6 -27 26 7 37 -33 -18 -33 18 7 -37 -27 -26 37 -6 z"/>
+</svg>
