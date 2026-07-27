@@ -99,7 +99,8 @@ body{
 .dots span.done{background:var(--green);}
 
 /* ---------- Puzzle ---------- */
-#pz-wrap{flex:1; display:flex; flex-direction:column; min-height:0; align-items:center;}
+#pz-wrap{flex:1; display:flex; flex-direction:column; min-height:0; min-width:0;
+  align-items:center; justify-content:center; gap:10px;}
 #pz-grid{
   display:grid; gap:4px; background:#fff; padding:6px; border-radius:20px; box-shadow:var(--shadow);
   flex:0 0 auto;
@@ -109,8 +110,8 @@ body{
 .pz-cell .ghost{position:absolute; inset:0; opacity:0.22; background-size:100% 100%;}
 .pz-cell.filled .ghost{display:none;}
 #pz-tray{
-  flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:flex-start;
-  justify-content:center; padding:12px 4px 4px; min-height:96px; overflow:visible;
+  flex:1; display:flex; flex-wrap:wrap; gap:10px; align-content:center;
+  justify-content:center; padding:4px; min-height:0; min-width:0; overflow:visible;
 }
 .pz-tile{
   border-radius:10px; box-shadow:0 4px 10px rgba(0,0,0,0.25); cursor:grab; touch-action:none;
@@ -672,8 +673,39 @@ function startPuzzleRound(){
   grid.innerHTML = ""; tray.innerHTML = "";
 
   const wrap = $("#pz-wrap");
-  const avail = Math.min(wrap.clientWidth-20, Math.max(200, wrap.clientHeight*0.62));
-  const cellW = Math.floor(avail/cols), cellH = Math.floor(avail/cols); // quadratische Zellen
+  // Raster + Ablage so bemessen, dass IMMER alle Teile auf den Bildschirm passen.
+  // Querformat: Ablage rechts neben dem Raster, Hochformat: darunter.
+  const availW = wrap.clientWidth, availH = wrap.clientHeight;
+  const landscape = availW > availH*1.15;
+  wrap.style.flexDirection = landscape ? "row" : "column";
+  const total = cols*rows;
+  const trayGap = 10, minTile = 44;
+  function fitTray(gridW, gridH){
+    const trayW = (landscape ? availW - gridW - 14 : availW) - 8;
+    const trayH = (landscape ? availH : availH - gridH - 14) - 8;
+    if(trayW < minTile || trayH < minTile) return 0;
+    for(let ts=110; ts>=minTile; ts-=2){
+      const perRow = Math.floor((trayW+trayGap)/(ts+trayGap));
+      const rowCount = Math.floor((trayH+trayGap)/(ts+trayGap));
+      if(perRow >= 1 && perRow*rowCount >= total) return ts;
+    }
+    return 0;
+  }
+  let cellW = 0, traySize = 0;
+  let target = Math.min(landscape ? availH - 8 : availW - 8, 560);
+  while(target > 150){
+    const cw = Math.floor((target - 12 - (cols-1)*4)/cols);
+    const gridW = cw*cols + 12 + (cols-1)*4;
+    const gridH = cw*rows + 12 + (rows-1)*4;
+    const ts = fitTray(gridW, gridH);
+    if(ts){ cellW = cw; traySize = ts; break; }
+    target -= 16;
+  }
+  if(!cellW){
+    cellW = Math.max(50, Math.floor((Math.min(availW,availH)*0.6 - 20)/cols));
+    traySize = minTile;
+  }
+  const cellH = cellW; // quadratische Zellen
   const imgSize = 900;
   const sceneCv = renderScene(scene, imgSize);
   const tileW = imgSize/cols, tileH = imgSize/rows;
@@ -700,7 +732,6 @@ function startPuzzleRound(){
     ghost.style.backgroundPosition = `${cols>1 ? cx*100/(cols-1) : 0}% ${rows>1 ? cy*100/(rows-1) : 0}%`;
   });
 
-  const traySize = Math.max(64, Math.min(110, Math.floor((wrap.clientWidth-40)/(cols*rows>6?5:4))));
   const order = shuffle(Array.from({length:cols*rows}, (_,i)=>i));
   order.forEach(i => {
     const t = document.createElement("canvas");

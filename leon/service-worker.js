@@ -7,7 +7,7 @@
    ============================================================ */
 
 // Version bei jeder Änderung hochzählen -> alte Caches werden entfernt.
-const CACHE_NAME = "leon-app-v1";
+const CACHE_NAME = "leon-app-v2";
 
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 
