@@ -94,8 +94,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
-  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Fit-für-4 + Spielhalle",
-    (await page.locator("#moduleChooser .choice").count()) === 6
+  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Sommer-Reise + Fit-für-4 + Spielhalle",
+    (await page.locator("#moduleChooser .choice").count()) === 7
     && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1
     && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1
     && (await page.locator("#moduleChooser .choice.fit4-kachel").count()) === 1);
@@ -1775,6 +1775,84 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Mathe-Übung passt ohne Scrollen (360×640)", await passt("mzahlen", "ueben"));
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => { store.fach = "deutsch"; save(); goHome(); }); await page.waitForTimeout(100);
+
+  // ---------- 8f) Leos Sommer-Reise (Ferienprogramm) ----------
+  section("Leos Sommer-Reise (Ferienprogramm, v1.70)");
+  await fresh();
+  check("Reise-Daten: 8 Etappen mit Story + 2-3 kleinen Aufträgen", await page.evaluate(() =>
+    FERIEN_ETAPPEN.length === 8 && FERIEN_PUNKTE.length === 8
+    && FERIEN_ETAPPEN.every(e => e.story && e.auftraege.length >= 2 && e.auftraege.length <= 3)));
+  check("Reise mischt Deutsch, Mathe und Lesen im Buch", await page.evaluate(() => {
+    const alle = FERIEN_ETAPPEN.flatMap(e => e.auftraege);
+    const mathe = alle.filter(a => a.typ === "runde" && a.key.startsWith("m")).length;
+    const deutsch = alle.filter(a => a.typ === "runde" && !a.key.startsWith("m")).length;
+    const lesen = alle.filter(a => a.typ === "lesen").length;
+    return mathe >= 4 && deutsch >= 4 && lesen >= 3;
+  }));
+  check("Reise-Kachel auf der Startseite (auch bei Fach Mathe)", await page.evaluate(() => {
+    const de = document.querySelectorAll(".ferien-kachel").length;
+    store.fach = "mathe"; buildModuleChooser();
+    const ma = document.querySelectorAll(".ferien-kachel").length;
+    store.fach = "deutsch"; buildModuleChooser();
+    return de === 1 && ma === 1;
+  }));
+  await page.locator(".ferien-kachel").click(); await page.waitForTimeout(200);
+  check("Intro mit Leo, Reisekarte und Erklärung", await page.evaluate(() =>
+    document.querySelectorAll("#moduleContent svg circle").length === 8
+    && document.getElementById("moduleContent").textContent.includes("eine pro Tag")));
+  await page.locator("#ferienLos").click(); await page.waitForTimeout(200);
+  check("Reise gestartet: Etappe 1 offen, Basis gemerkt, nur aktuelle Etappe sichtbar", await page.evaluate(() =>
+    store.ferien.etappe === 0 && "e1w" in store.ferien.base
+    && document.getElementById("moduleContent").textContent.includes("Etappe 1")
+    && !document.getElementById("moduleContent").textContent.includes("Etappe 2")));
+  check("„Los!“ führt direkt ins Lernfeld", await page.evaluate(() => {
+    document.querySelector(".ferien-geh").click();
+    return activeModuleId === "gws";
+  }));
+  await page.evaluate(() => openFerien()); await page.waitForTimeout(150);
+  await page.locator(".ferien-lesen").click(); await page.waitForTimeout(200);
+  check("Lese-Auftrag (eigenes Buch) per Bestätigung + Lob-Toast", await page.evaluate(() =>
+    !!store.ferien.lesen.e1l && document.getElementById("appToast").textContent.includes("gelesen")));
+  check("Etappe fertig: weiterreisen + 1 Münze + neue Basis", await page.evaluate(() => {
+    store.progress["gws:dopp"] = { unlocked: 1, runs: 1 };
+    store.progress["mrechnen"] = { unlocked: 1, runs: 1 };
+    const m0 = store.muenzen || 0;
+    save(); ferienPlan();
+    return store.ferien.etappe === 1 && store.muenzen === m0 + 1 && "e2s" in store.ferien.base;
+  }));
+  check("Reisekarte: geschaffte Etappe golden (⭐), Leo am Standort", await page.evaluate(() => {
+    const t = document.querySelector("#moduleContent svg").innerHTML;
+    return t.includes("⭐") && t.includes("🦁");
+  }));
+  check("Spielbesuch erfüllt den Spiel-Auftrag der aktuellen Etappe", await page.evaluate(() => {
+    store.ferien.etappe = 2; ferienBaseSetzen(2); store.muenzenAktiv = false; save();
+    openModule("spiel");
+    return !!store.ferien.spiele.e3sp;
+  }));
+  check("Finale: Tests bestanden → Urkunde + 3 Münzen (einmalig)", await page.evaluate(() => {
+    const f = store.ferien;
+    FERIEN_ETAPPEN.forEach(et => et.auftraege.forEach(a => {
+      if (a.typ === "runde") { f.base[a.id] = 0; store.progress[a.key === "gws" ? "gws:dopp" : a.key] = { unlocked: 1, runs: 5 }; }
+      if (a.typ === "spiel") f.spiele[a.id] = heuteKey();
+      if (a.typ === "lesen") f.lesen[a.id] = heuteKey();
+    }));
+    store.testHistorie = [{ datum: "x", p: 9, max: 13, typ: "sprache" }, { datum: "x", p: 10, max: 12, typ: "mathe" }];
+    f.testsBasis = 0; save(); ferienPlan();
+    const m1 = store.muenzen;
+    ferienPlan(); // erneut rendern darf NICHT nochmal belohnen
+    return !!store.ferien.fertig && store.muenzen === m1
+      && document.getElementById("moduleContent").textContent.includes("REISE-URKUNDE");
+  }));
+  check("Speicher-Migration bereinigt kaputte Reise-Daten", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.ferien = { etappe: 99, base: "müll", spiele: null, lesen: 7, start: 5, fertig: 12 };
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    const f = store.ferien;
+    return f.etappe === FERIEN_ETAPPEN.length - 1 && typeof f.base === "object" && !Array.isArray(f.base)
+      && typeof f.spiele === "object" && typeof f.lesen === "object"
+      && typeof f.start === "string" && f.fertig === null;
+  }));
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
