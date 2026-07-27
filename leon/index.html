@@ -349,21 +349,53 @@ function rnd(n){ return Math.floor(Math.random()*n); }
 function pick(arr){ return arr[rnd(arr.length)]; }
 function shuffle(arr){ const a = arr.slice(); for(let i=a.length-1;i>0;i--){ const j=rnd(i+1); [a[i],a[j]]=[a[j],a[i]]; } return a; }
 
-/* ---------- Sprache (Web Speech API, Deutsch) ---------- */
+/* ---------- Sprache (Web Speech API, Deutsch) ----------
+   Es wird automatisch die BESTE installierte deutsche Stimme gewählt:
+   Premium/Enhanced/Neural-Stimmen zuerst, Spaß-/Roboterstimmen nie.
+   Auf dem iPad lohnt es sich, unter Einstellungen > Bedienungshilfen >
+   Gesprochene Inhalte > Stimmen eine Premium-Stimme zu laden. */
 let lastInstruction = "";
+let bestVoice = null, voicesDirty = true;
+function pickBestGermanVoice(){
+  const voices = speechSynthesis.getVoices().filter(v => v.lang && v.lang.toLowerCase().startsWith("de"));
+  if(!voices.length) return null;
+  const score = (v) => {
+    const n = v.name.toLowerCase();
+    let s = 0;
+    if(/premium/.test(n)) s += 100;
+    if(/enhanced|erweitert/.test(n)) s += 80;
+    if(/neural|natural/.test(n)) s += 70;
+    if(/siri/.test(n)) s += 60;
+    if(/google/.test(n)) s += 50;
+    // weiche Standard-Stimmen leicht bevorzugen
+    if(/anna|petra|helena|katja|sandra|laura|vicki/.test(n)) s += 10;
+    // Spaß-/Effektstimmen (iOS "Neuheiten") ausschließen
+    if(/eddy|flo|reed|rocko|sandy|shelley|grandma|grandpa|superstar|jester|albert|zarvox|trinoids|organ|bells|bahh|boing|bubbles|cellos|wobble|whisper|bad news|good news/.test(n)) s -= 500;
+    if(v.localService) s += 5;
+    if(v.lang.toLowerCase().replace("_","-") === "de-de") s += 3;
+    return s;
+  };
+  voices.sort((a,b) => score(b) - score(a));
+  return score(voices[0]) > -100 ? voices[0] : null;
+}
 function speak(text, isInstruction){
   if(isInstruction) lastInstruction = text;
   if(!soundOn || !("speechSynthesis" in window)) return;
   try{
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
-    u.lang = "de-DE"; u.rate = 0.92; u.pitch = 1.15;
-    const voice = speechSynthesis.getVoices().find(v => v.lang && v.lang.startsWith("de"));
-    if(voice) u.voice = voice;
+    u.lang = "de-DE"; u.rate = 0.92; u.pitch = 1.1;
+    if(voicesDirty){ bestVoice = pickBestGermanVoice(); voicesDirty = false; }
+    if(bestVoice) u.voice = bestVoice;
     speechSynthesis.speak(u);
   }catch(e){}
 }
-if("speechSynthesis" in window){ speechSynthesis.getVoices(); }
+if("speechSynthesis" in window){
+  speechSynthesis.getVoices(); // Laden anstoßen (kommt oft asynchron)
+  if(typeof speechSynthesis.addEventListener === "function"){
+    speechSynthesis.addEventListener("voiceschanged", () => { voicesDirty = true; });
+  }
+}
 
 /* ---------- Klänge (WebAudio) ---------- */
 let audioCtx = null;
