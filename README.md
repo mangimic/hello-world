@@ -101,10 +101,11 @@ Album. Smoke-Test: `node tests/leon-smoke.js`.
 
 Im Ordner [`felix/`](felix/) steckt ein Geschicklichkeitsspiel –
 gleiche Technik (Einzeldatei-PWA, offline, werbefrei): **Apfel-Igel**.
-Als Igel fängt man herabfallende Äpfel auf den Stacheln und stapelt
-sie – **100 Level** mit steigendem Tempo und immer neuen Extras:
+Als Igel fängt man auf einer Insel – zwischen Palmen, Strand und
+Meer – herabfallende Äpfel auf den Stacheln und stapelt sie –
+**100 Level** mit steigendem Tempo und immer neuen Extras:
 faule Äpfel (nicht fangen!), Gold-Äpfel (zählen 3-fach), eine
-Apfel-klauende Wespe, Seitenwind und Nacht-Level, in denen nur die
+Apfel-klauende Möwe, Inselwind und Nacht-Level, in denen nur die
 eigene Laterne leuchtet. Pro Level gibt es bis zu 3 Sterne (je nach
 übrigen Herzen), der Fortschritt bleibt im `localStorage`.
 Steuerung: Pfeiltasten/A/D oder Finger.

@@ -46,8 +46,8 @@ function section(t) { console.log("\n== " + t + " =="); }
     const c = window.__felixTest.levelConfig;
     return { l1: c(1), l30: c(30), l50: c(50), l100: c(100) };
   });
-  check("Level 1: 10 Äpfel, keine Wespe, kein Wind",
-    cfg.l1.goal === 10 && cfg.l1.waspEvery === 0 && cfg.l1.wind === 0 && cfg.l1.faulP === 0);
+  check("Level 1: 10 Äpfel, keine Möwe, kein Wind",
+    cfg.l1.goal === 10 && cfg.l1.gullEvery === 0 && cfg.l1.wind === 0 && cfg.l1.faulP === 0);
   check("Schwierigkeit steigt (Tempo, Ziel, Spawnrate)",
     cfg.l100.fallSpeed > cfg.l50.fallSpeed && cfg.l50.fallSpeed > cfg.l1.fallSpeed &&
     cfg.l100.goal >= cfg.l50.goal && cfg.l50.goal > cfg.l1.goal &&
