@@ -57,6 +57,19 @@ npm run preview      # Production-Build lokal testen
 Die App-Icons werden aus `public/icons/icon.svg` generiert:
 `node tools/generate-icons.mjs`.
 
+## Veröffentlichung (GitHub Pages)
+
+Der Build wird als statischer Ordner `bauchweg/` im Repo-Root eingecheckt und
+von GitHub Pages als Unter-URL der bestehenden Seite ausgeliefert (relative
+Pfade via `base: './'`, Routing über HashRouter). Nach Code-Änderungen neu
+veröffentlichen mit:
+
+```bash
+npm run deploy:pages   # baut und aktualisiert ../bauchweg
+```
+
+Anschließend committen und pushen.
+
 ## Funktionen
 
 - **Onboarding** – sieben Fragen, eine pro Schritt, mit Fortschrittsanzeige;

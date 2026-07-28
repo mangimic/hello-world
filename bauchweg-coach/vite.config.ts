@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Relative Pfade, damit der Build auch aus einem Unterordner
+  // (z. B. GitHub Pages unter /bauchweg/) funktioniert.
+  base: './',
   plugins: [
     react(),
     tailwindcss(),
