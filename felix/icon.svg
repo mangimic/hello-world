@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <!-- Apfel-Igel: Igel mit Apfel-Stapel auf grünem Grund -->
+  <rect width="512" height="512" rx="96" fill="#5bc98c"/>
+  <circle cx="256" cy="276" r="170" fill="#e7ffe3"/>
+  <!-- Stacheln -->
+  <g fill="#5d3f28">
+    <polygon points="160,330 120,240 200,290"/>
+    <polygon points="190,300 180,200 240,270"/>
+    <polygon points="240,290 250,190 290,270"/>
+    <polygon points="290,300 320,210 330,290"/>
+  </g>
+  <!-- Körper -->
+  <ellipse cx="250" cy="330" rx="110" ry="70" fill="#8a5a3b"/>
+  <!-- Gesicht -->
+  <ellipse cx="330" cy="315" rx="48" ry="42" fill="#e8c9a0"/>
+  <circle cx="330" cy="300" r="8" fill="#2c2c2c"/>
+  <circle cx="368" cy="325" r="11" fill="#2c2c2c"/>
+  <!-- Füße -->
+  <ellipse cx="210" cy="396" rx="22" ry="12" fill="#6d4a2f"/>
+  <ellipse cx="290" cy="396" rx="22" ry="12" fill="#6d4a2f"/>
+  <!-- Apfel-Stapel -->
+  <g>
+    <circle cx="235" cy="215" r="36" fill="#e74c3c"/>
+    <circle cx="248" cy="150" r="36" fill="#e74c3c"/>
+    <circle cx="240" cy="86" r="36" fill="#f0a10f"/>
+    <path d="M240 50 q4 -14 14 -18" stroke="#6d4a2f" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <ellipse cx="222" cy="46" rx="14" ry="8" fill="#3fae72" transform="rotate(-25 222 46)"/>
+    <circle cx="228" cy="74" r="6" fill="#ffffff" opacity="0.9"/>
+  </g>
+</svg>

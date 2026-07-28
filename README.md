@@ -97,6 +97,22 @@ Schleifen) · 🗺️ Der richtige Weg (nur ein Weg führt zum Ziel).
 Belohnung: Sterne sammeln, alle 5 Sterne gibt es einen Sticker fürs
 Album. Smoke-Test: `node tests/leon-smoke.js`.
 
+## 🦔 Apfel-Igel (ab ca. 8 Jahre)
+
+Im Ordner [`felix/`](felix/) steckt ein Geschicklichkeitsspiel –
+gleiche Technik (Einzeldatei-PWA, offline, werbefrei): **Apfel-Igel**.
+Als Igel fängt man herabfallende Äpfel auf den Stacheln und stapelt
+sie – **100 Level** mit steigendem Tempo und immer neuen Extras:
+faule Äpfel (nicht fangen!), Gold-Äpfel (zählen 3-fach), eine
+Apfel-klauende Wespe, Seitenwind und Nacht-Level, in denen nur die
+eigene Laterne leuchtet. Pro Level gibt es bis zu 3 Sterne (je nach
+übrigen Herzen), der Fortschritt bleibt im `localStorage`.
+Steuerung: Pfeiltasten/A/D oder Finger.
+
+**🚀 [Apfel-Igel öffnen](https://mangimic.github.io/lernprofi/felix/)**
+
+Smoke-Test: `node tests/felix-smoke.js`.
+
 ## Status
 
 Persönliches Projekt, gebaut für ein Kind in der 3. Klasse – wird

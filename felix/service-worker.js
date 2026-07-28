@@ -1,0 +1,64 @@
+/* ============================================================
+   Service Worker für Apfel-Igel (PWA)
+   Strategie wie bei der Lernprofi-App:
+   - HTML: NETWORK-FIRST (immer aktuell, offline aus dem Cache)
+   - Übrige Dateien: CACHE-FIRST
+   Fortschritt (Level/Sterne) liegt im localStorage.
+   ============================================================ */
+
+// Version bei jeder Änderung hochzählen -> alte Caches werden entfernt.
+const CACHE_NAME = "felix-app-v1";
+
+const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
+
+self.addEventListener("install", (event) => {
+  event.waitUntil(caches.open(CACHE_NAME).then((c) => c.addAll(ASSETS)));
+  self.skipWaiting();
+});
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((k) => k !== CACHE_NAME && k.startsWith("felix-app-"))
+          .map((k) => caches.delete(k))
+      )
+    )
+  );
+  self.clients.claim();
+});
+
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const accept = req.headers.get("accept") || "";
+  const isHTML = req.mode === "navigate" || accept.includes("text/html");
+
+  if (isHTML) {
+    event.respondWith(
+      fetch(req)
+        .then((resp) => {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then((c) => c.put("./index.html", copy));
+          return resp;
+        })
+        .catch(() => caches.match(req).then((r) => r || caches.match("./index.html")))
+    );
+  } else {
+    event.respondWith(
+      caches.match(req).then(
+        (cached) =>
+          cached ||
+          fetch(req).then((resp) => {
+            if (resp && resp.status === 200 && resp.type === "basic") {
+              const copy = resp.clone();
+              caches.open(CACHE_NAME).then((c) => c.put(req, copy));
+            }
+            return resp;
+          })
+      )
+    );
+  }
+});
