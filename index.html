@@ -511,8 +511,14 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.73.0";
+const APP_VERSION = "1.74.0";
 const RELEASE_NOTES = [
+  {v:"1.74.0", datum:"28.07.2026", punkte:[
+    "⚡ NEU im Konzentrations-Training: Blitzlesen! Wie auf deinem Übungsblatt aus der Schule: Lies in 1 Minute so viele Tier-Wörter wie möglich LAUT vor – alle 80 Tiere von der Biene bis zur Bachstelze sind dabei.",
+    "⏱️ Die App stoppt die Zeit mit Uhr und Zeitbalken, sagt „Stopp!“ und du tippst das letzte geschaffte Wort an – die Wörter werden automatisch gezählt.",
+    "📋 Wie auf dem Papier-Blatt sammelt die App deine 5 Runden und deinen 🏆 Rekord. Wirst du schneller, feiert sie mit dir („42 mehr als in der Runde davor!“) – ein voller Bogen bringt die Abschluss-Feier und ein neues Blatt.",
+    "⭐ Jede Blitzlese-Runde zählt für deine Mini-Missionen und das Tagesziel."
+  ]},
   {v:"1.73.0", datum:"28.07.2026", punkte:[
     "🧠 NEU: Konzentrations-Training auf der Startseite – zwei Spiele aus dem Buch „15 konzentrationsfördernde Lernspiele“, ganz ohne Münz-Kosten!",
     "🔢 Zahlenkette: Merke dir eine wachsende Zahlenreihe. Jeden Tag, an dem du sie fehlerfrei auf dem Ziffernblock eintippst, kommt eine neue Zahl dazu – bis du 7 Zahlen im Kopf hast. Dann gibt es die große Feier, dein Rekord wird gespeichert und eine neue Kette beginnt.",
@@ -7393,6 +7399,110 @@ function konzAbc(c){
     }
   });
 }
+/* Blitzlesen (nach dem Schul-Übungsblatt „Blitzlesen – Tiere"):
+   1 Minute lang so viele Wörter wie möglich LAUT vorlesen, dann das
+   letzte geschaffte Wort antippen. Die Runden werden wie auf dem
+   Blatt gesammelt (Runde 1–5) – so wird der Fortschritt sichtbar. */
+const BLITZ_TIERE=["Biene","Hummel","Schmetterling","Marienkäfer","Libelle","Ameise","Grille","Heuschrecke","Käfer","Raupe",
+  "Spinne","Mücke","Fliege","Wespe","Falter","Nachtfalter","Maikäfer","Glühwürmchen","Schnecke","Regenwurm",
+  "Frosch","Kröte","Nacktschnecke","Molch","Salamander","Eidechse","Ringelnatter","Schildkröte","Igel","Eichhörnchen",
+  "Hase","Kaninchen","Reh","Hirsch","Fuchs","Dachs","Wildschwein","Maus","Feldmaus","Hamster",
+  "Biber","Otter","Ente","Gans","Schwan","Storch","Schwalbe","Spatz","Amsel","Drossel",
+  "Meise","Rotkehlchen","Star","Specht","Kuckuck","Krähe","Taube","Möwe","Reiher","Bussard",
+  "Falke","Eule","Huhn","Henne","Truthahn","Pfau","Wachtel","Schaf","Ziege","Kuh",
+  "Pferd","Fohlen","Lamm","Hund","Katze","Marder","Waschbär","Fledermaus","Bachstelze","Esel"];
+const BLITZ_SEK=60, BLITZ_RUNDEN=5;
+let blitzTimer=null, blitzRest=0;
+function blitzStopp(){ if(blitzTimer){ clearInterval(blitzTimer); blitzTimer=null; } }
+function konzBlitz(c){
+  blitzStopp();
+  const B=store.blitz;
+  const voll = B.runden.length>=BLITZ_RUNDEN;
+  const rundenHTML = B.runden.length
+    ? `<div class="example-box" style="font-size:14.5px;">${B.runden.map((r,i)=>`Runde ${i+1}: <b>${r}</b>`).join(" · ")}
+       ${B.best?`<br>🏆 Dein Rekord: <b>${B.best} Wörter</b> in 1 Minute`:``}</div>`
+    : "";
+  c.innerHTML=`
+    <div class="card">
+      <h2>⚡ Blitzlesen: Tiere</h2>
+      <p class="muted">Lies in <b>1 Minute</b> so viele Tier-Wörter wie möglich <b>laut</b> vor!</p>
+      ${rundenHTML}
+      ${voll
+        ? `<div class="feedback ok">🎉 <b>Dein Blatt ist voll – ${BLITZ_RUNDEN} Runden geschafft!</b>
+            Von ${B.runden[0]} auf ${B.best} Wörter – dein Lese-Blitz wird immer schneller!</div>
+           <button class="btn-primary mt" id="blitzReset" style="width:100%;">🆕 Neues Blatt beginnen</button>`
+        : `<div class="hint">📖 So geht's: Drücke auf Start, lies die Wörter der Reihe nach <b>laut</b> vor –
+            so schnell und genau du kannst. Nach 1 Minute ertönt Stopp: Tippe dann das <b>letzte Wort</b> an, das du geschafft hast.</div>
+           <button class="btn-primary mt" id="blitzStart" style="width:100%;">⏱️ Runde ${B.runden.length+1} starten!</button>`}
+      <div id="blitzHost"></div>
+    </div>`;
+  const st=c.querySelector("#blitzStart");
+  if(st) st.onclick=()=>blitzRunde(c);
+  const rs=c.querySelector("#blitzReset");
+  if(rs) rs.onclick=()=>{ store.blitz.runden=[]; save(); konzBlitz(c); };
+}
+function blitzWand(nurLesen){
+  return `<div style="display:grid; grid-template-columns:1fr 1fr; gap:4px; margin-top:8px;">
+    ${BLITZ_TIERE.map((w,i)=>`<${nurLesen?"div":"button"} class="${nurLesen?"":"btn-secondary "}blitz-wort" data-i="${i}"
+      style="font-size:16px; padding:5px 8px; text-align:left; ${nurLesen?"background:var(--soft,#e7eefb); border-radius:8px;":""}">
+      <span class="muted" style="font-size:11px;">${i+1}</span> ${w}</${nurLesen?"div":"button"}>`).join("")}
+  </div>`;
+}
+function blitzRunde(c){
+  blitzRest=BLITZ_SEK;
+  const host=c.querySelector("#blitzHost");
+  c.querySelector("#blitzStart").style.display="none";
+  host.innerHTML=`
+    <div style="position:sticky; top:0; z-index:5; background:var(--card,#fff); padding:6px 0;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <b style="font-size:22px; min-width:52px;" id="blitzUhr">${BLITZ_SEK}s</b>
+        <div style="flex:1; height:10px; background:var(--soft,#e7eefb); border-radius:5px; overflow:hidden;">
+          <div id="blitzBalken" style="height:100%; width:100%; background:var(--yellow,#f5c451); transition:width 1s linear;"></div>
+        </div>
+      </div>
+      <p class="muted" style="margin:2px 0 0; font-size:13px;">Lies laut – die Uhr läuft! 🗣️</p>
+    </div>
+    ${blitzWand(true)}`;
+  window.scrollTo(0,0);
+  blitzTimer=setInterval(()=>{
+    blitzRest--;
+    const u=$("blitzUhr"), b=$("blitzBalken");
+    if(!u){ blitzStopp(); return; } // Seite verlassen
+    u.textContent=blitzRest+"s";
+    if(b) b.style.width=(blitzRest/BLITZ_SEK*100)+"%";
+    if(blitzRest<=0){
+      blitzStopp();
+      if(speechOK()) speak("Stopp!");
+      blitzAuswahl(c);
+    }
+  }, spielT(1000));
+}
+function blitzAuswahl(c){
+  const host=c.querySelector("#blitzHost");
+  host.innerHTML=`
+    <div class="feedback tip" style="text-align:left;">⏰ <b>Stopp!</b> Tippe das <b>letzte Wort</b> an, das du geschafft hast.</div>
+    ${blitzWand(false)}`;
+  window.scrollTo(0,0);
+  host.querySelectorAll("button.blitz-wort").forEach(b=>b.onclick=()=>{
+    const anzahl=+b.dataset.i+1;
+    const B=store.blitz;
+    const vorher=B.runden.length?B.runden[B.runden.length-1]:null;
+    B.runden=B.runden.concat([anzahl]).slice(0,BLITZ_RUNDEN);
+    const neuerRekord = anzahl>(B.best||0);
+    if(neuerRekord) B.best=anzahl;
+    save();
+    fokusZaehle(); // zählt für Mini-Missionen
+    host.innerHTML=`<div class="feedback ok" style="text-align:left;">
+      🗣️ <b>${anzahl} ${anzahl===1?"Wort":"Wörter"} in 1 Minute!</b>
+      ${neuerRekord && B.runden.length>1 ? " 🏆 Neuer Rekord!" : ""}
+      ${vorher!==null && anzahl>vorher ? `<br>🚀 Das sind <b>${anzahl-vorher} mehr</b> als in der Runde davor – Blitzlesen wirkt!`
+        : vorher!==null && anzahl<vorher ? "<br>💙 Jede Runde zählt – beim nächsten Mal flutscht es wieder besser!" : ""}
+    </div>
+    <button class="btn-primary mt" id="blitzWeiter" style="width:100%;">Weiter</button>`;
+    host.querySelector("#blitzWeiter").onclick=()=>konzBlitz(c);
+    window.scrollTo(0,0);
+  });
+}
 function konzLernen(c){
   c.innerHTML=`
     <div class="card"><h2>🧠 Konzentrations-Training</h2>
@@ -7402,13 +7512,17 @@ function konzLernen(c){
         Jeden Tag, an dem du sie fehlerfrei aufsagst, kommt eine Zahl dazu –
         bis du ${KETTE_ZIEL} Zahlen im Kopf hast!<br><br>
         🔤 <b>Alphabet-Sprünge:</b> Tippe nur jeden 2. oder 3. Buchstaben –
-        vorwärts ist es leicht, rückwärts wird es richtig knifflig!</div>
+        vorwärts ist es leicht, rückwärts wird es richtig knifflig!<br><br>
+        ⚡ <b>Blitzlesen:</b> Lies in 1 Minute so viele Tier-Wörter wie möglich
+        laut vor – wie auf deinem Übungsblatt. Runde für Runde wirst du schneller!</div>
       <div class="hint">💡 Diese Spiele stärken genau das, was dir beim Lernen hilft:
         <b>dranbleiben, merken, genau hinschauen</b>.</div>
       <button class="btn-primary mt" id="toZahlen" style="width:100%;">🔢 Zahlenkette starten</button>
-      <button class="btn-secondary mt" id="toAbc" style="width:100%;">🔤 Alphabet-Sprünge starten</button></div>`;
+      <button class="btn-secondary mt" id="toAbc" style="width:100%;">🔤 Alphabet-Sprünge starten</button>
+      <button class="btn-secondary mt" id="toBlitz" style="width:100%;">⚡ Blitzlesen starten</button></div>`;
   c.querySelector("#toZahlen").onclick=()=>goSection("zahlen");
   c.querySelector("#toAbc").onclick=()=>goSection("abc");
+  c.querySelector("#toBlitz").onclick=()=>goSection("blitz");
 }
 
 /* ============================================================
@@ -8915,7 +9029,8 @@ const MODULES = {
     sections:[
       {id:"lernen", icon:"📖", label:"Info",   render:konzLernen},
       {id:"zahlen", icon:"🔢", label:"Zahlen", render:konzZahlen},
-      {id:"abc",    icon:"🔤", label:"ABC",    render:konzAbc}
+      {id:"abc",    icon:"🔤", label:"ABC",    render:konzAbc},
+      {id:"blitz",  icon:"⚡", label:"Blitz",  render:konzBlitz}
     ]
   }
 };
@@ -8970,6 +9085,7 @@ let store = {
   ferien:null,                  // Leos Sommer-Reise: {start, etappe, base, spiele, lesen, testsBasis, fertig}
   kette:{ zahlen:[], erweitertAm:"", rekord:0 }, // Zahlenkette (Merktraining)
   abcBest:{},                   // Alphabet-Sprünge: beste Fehlerzahl je Stufe
+  blitz:{ runden:[], best:0 },  // Blitzlesen: Wörter je Runde (max 5) + Rekord
   mrechnen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mzahlen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -9013,6 +9129,12 @@ function load(){
           .filter(z=>z>=0 && z<=99).slice(0,KETTE_ZIEL),
         erweitertAm: typeof d.kette.erweitertAm==="string" ? d.kette.erweitertAm : "",
         rekord: Math.max(0, Math.min(KETTE_ZIEL, parseInt(d.kette.rekord,10)||0)) };
+    }
+    if(d.blitz && typeof d.blitz==="object"){
+      store.blitz={
+        runden: (Array.isArray(d.blitz.runden)?d.blitz.runden:[]).map(r=>parseInt(r,10))
+          .filter(r=>r>=1 && r<=BLITZ_TIERE.length).slice(0,BLITZ_RUNDEN),
+        best: Math.max(0, Math.min(BLITZ_TIERE.length, parseInt(d.blitz.best,10)||0)) };
     }
     if(d.abcBest && typeof d.abcBest==="object"){
       store.abcBest={};
@@ -9673,7 +9795,7 @@ function goHome(){
 }
 // Übungs-Sections: hier wird der Fokus-Modus aktiv (kompakter Kopf,
 // nichts Ablenkendes – die Aufgabe passt ohne Scrollen auf den Schirm)
-const FOKUS_SECTIONS=["ueben","umstellen","aufgaben","zahlen","abc"];
+const FOKUS_SECTIONS=["ueben","umstellen","aufgaben","zahlen","abc","blitz"];
 function fokusUebung(an){ $("screen-content").classList.toggle("uebung-fokus", !!an); }
 function goSection(secId){
   stopSpeak();
