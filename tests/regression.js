@@ -2029,6 +2029,58 @@ function section(t) { console.log("\n== " + t + " =="); }
       && store.kette.rekord === 7 && store.abcBest.v2 === 3 && !("quatsch" in store.abcBest) && !("r2" in store.abcBest);
   }));
 
+  // ---------- 8i) Blitzlesen (Lese-Tempo-Training) ----------
+  section("Blitzlesen (v1.74)");
+  await fresh();
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  check("80 Tier-Wörter, keine Duplikate", await page.evaluate(() =>
+    BLITZ_TIERE.length === 80 && new Set(BLITZ_TIERE).size === 80
+    && BLITZ_TIERE[0] === "Biene" && BLITZ_TIERE[20] === "Frosch" && BLITZ_TIERE[78] === "Bachstelze"));
+  await page.locator(".konz-kachel").click(); await page.waitForTimeout(150);
+  check("Info-Seite nennt das Blitzlesen", (await page.locator("#moduleContent").textContent()).includes("Blitzlesen"));
+  await page.evaluate(() => goSection("blitz")); await page.waitForTimeout(150);
+  check("Blitz-Tab: Anleitung + Start-Knopf für Runde 1", await page.evaluate(() =>
+    document.getElementById("moduleContent").textContent.includes("laut")
+    && document.getElementById("blitzStart").textContent.includes("Runde 1")));
+  await page.locator("#blitzStart").click(); await page.waitForTimeout(150);
+  check("Runde läuft: Uhr + Balken + 80 Lese-Wörter (nicht antippbar)", await page.evaluate(() =>
+    !!document.getElementById("blitzUhr") && !!document.getElementById("blitzBalken")
+    && document.querySelectorAll(".blitz-wort").length === 80
+    && document.querySelectorAll("button.blitz-wort").length === 0));
+  // Timer ablaufen lassen (__SPIEL_SCHNELL__: 60 Ticks à ~83 ms ≈ 5 s)
+  await page.waitForFunction(() => document.querySelectorAll("button.blitz-wort").length === 80, null, { timeout: 15000 });
+  check("Nach Stopp: Wörter antippbar zum Eintragen", true);
+  await page.locator('button.blitz-wort[data-i="21"]').click(); await page.waitForTimeout(120);
+  check("Runde gespeichert: 22 Wörter, Rekord, zählt als Mini-Missions-Aufgabe", await page.evaluate(() =>
+    store.blitz.runden.join(",") === "22" && store.blitz.best === 22 && missionAufg >= 1));
+  check("Runden-Verlauf + Verbesserungs-Lob (wie auf dem Blatt)", await page.evaluate(async () => {
+    // zweite Runde simulieren: direkt zur Auswahl springen
+    document.getElementById("blitzWeiter").click();
+    await new Promise(r => setTimeout(r, 80));
+    blitzAuswahl(document.getElementById("moduleContent"));
+    document.querySelector('button.blitz-wort[data-i="63"]').click();
+    await new Promise(r => setTimeout(r, 80));
+    const t = document.getElementById("moduleContent").textContent;
+    return store.blitz.runden.join(",") === "22,64" && store.blitz.best === 64
+      && t.includes("42 mehr") && t.includes("Rekord");
+  }));
+  check("Volles Blatt (5 Runden): Abschluss-Feier + neues Blatt", await page.evaluate(() => {
+    store.blitz.runden = [22, 64, 65, 70, 72]; store.blitz.best = 72; save();
+    konzBlitz(document.getElementById("moduleContent"));
+    const voll = document.getElementById("moduleContent").textContent.includes("Blatt ist voll")
+      && !!document.getElementById("blitzReset");
+    document.getElementById("blitzReset").click();
+    return voll && store.blitz.runden.length === 0 && store.blitz.best === 72;
+  }));
+  check("Migration bereinigt Blitz-Daten", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.blitz = { runden: [5, "x", 300, 44, 1, 2, 3, 4], best: "999" };
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    return store.blitz.runden.length === 5 && store.blitz.runden[0] === 5
+      && store.blitz.best === 80;
+  }));
+
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
   await fresh();
