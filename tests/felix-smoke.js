@@ -7,10 +7,11 @@
    CHROMIUM_PATH auf eine Chromium-Binärdatei setzen)
    Exit-Code 0 = alles grün, 1 = mindestens ein Test rot.
 
-   Prüft: App lädt fehlerfrei, 100 Level in der Auswahl (1 offen),
+   Prüft: App lädt fehlerfrei, Avatar-Editor speichert Tier/Farbe/
+   Name, Schatzkarte zeigt 100 Stationen + Truhe (1 offen),
    Level-Konfiguration steigt sinnvoll an, Level 1 ist mit einem
    Autopiloten gewinnbar, Sterne + Freischaltung werden gespeichert,
-   verpasste Äpfel kosten Herzen bis zum Game-Over.
+   Verhungern führt zum Game-Over.
    ============================================================ */
 const path = require("path");
 const { chromium } = require("playwright");
@@ -55,18 +56,44 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Level 30 ist ein Nacht-Level, Level 100 auch",
     cfg.l30.night === true && cfg.l100.night === true && cfg.l50.wind > 0);
 
-  // ---------- Levelauswahl ----------
-  section("Levelauswahl");
-  await page.click("#btn-levels");
+  // ---------- Avatar-Editor ----------
+  section("Avatar-Editor");
+  await page.click("#btn-avatar");
   await page.waitForTimeout(200);
+  const avUI = await page.evaluate(() => ({
+    animals: document.querySelectorAll(".av-animal").length,
+    colors: document.querySelectorAll(".av-color").length
+  }));
+  check("4 Tiere und 6 Farben zur Auswahl", avUI.animals === 4 && avUI.colors === 6,
+    JSON.stringify(avUI));
+  await page.click('.av-animal[data-animal="krabbe"]');
+  await page.evaluate(() => document.querySelectorAll(".av-color")[2].click());
+  await page.fill("#av-name", "Felix");
+  await page.click("#btn-av-save");
+  await page.waitForTimeout(200);
+  const av = await page.evaluate(() => JSON.parse(localStorage.getItem("felix.apfeligel")).avatar);
+  check("Avatar gespeichert (Krabbe, blau, Name Felix)",
+    av.animal === "krabbe" && av.color === "#54a9ff" && av.name === "Felix", JSON.stringify(av));
+  check("Startbildschirm begrüßt mit Namen", await page.evaluate(() =>
+    document.querySelector("#start-stars").textContent.includes("Felix")));
+
+  // ---------- Schatzkarte ----------
+  section("Schatzkarte");
+  await page.click("#btn-levels");
+  await page.waitForTimeout(300);
   const grid = await page.evaluate(() => ({
     total: document.querySelectorAll(".lvl-btn").length,
     locked: document.querySelectorAll(".lvl-btn.locked").length,
-    night: document.querySelectorAll(".lvl-btn.night").length
+    night: document.querySelectorAll(".lvl-btn.night").length,
+    treasure: document.querySelectorAll(".lvl-btn.treasure").length,
+    deco: document.querySelectorAll(".map-deco").length,
+    path: !!document.querySelector("#map-inner svg polyline")
   }));
-  check("100 Level-Knöpfe, 99 gesperrt", grid.total === 100 && grid.locked === 99,
+  check("100 Stationen auf der Karte, 99 gesperrt", grid.total === 100 && grid.locked === 99,
     `total=${grid.total} locked=${grid.locked}`);
   check("8 Nacht-Level markiert (30,40,…,100)", grid.night === 8, "night=" + grid.night);
+  check("Schatztruhe bei Level 100, Pfad + Deko vorhanden",
+    grid.treasure === 1 && grid.path && grid.deco >= 8, JSON.stringify(grid));
 
   // ---------- Level 1 mit Autopilot gewinnen ----------
   section("Level 1 spielen (Autopilot)");
@@ -81,7 +108,7 @@ function section(t) { console.log("\n== " + t + " =="); }
       if (g.state !== "playing") return;
       let best = null;
       for (const a of g.apples) if (a.type !== "kokos" && (!best || a.y > best.y)) best = a;
-      if (best) g.hedge.tx = best.x;
+      if (best) g.player.tx = best.x;
     }, 40);
   });
   await page.waitForFunction(() => window.__felixTest.game.state === "won", null, { timeout: 45000 })
@@ -115,7 +142,9 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.evaluate(() => {
     const g = window.__felixTest.game;
     g.timeScale = 4;
-    g.hedge.tx = -500; // Igel in die Ecke -> isst nichts mehr -> Hunger
+    g.energy = 10;        // fast verhungert ...
+    g.cfg.spawn = 9999;   // ... und es fallen keine Äpfel mehr
+    g.player.tx = -500;
   });
   await page.waitForFunction(() => window.__felixTest.game.state === "lost", null, { timeout: 30000 })
     .catch(() => {});

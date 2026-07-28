@@ -97,21 +97,24 @@ Schleifen) · 🗺️ Der richtige Weg (nur ein Weg führt zum Ziel).
 Belohnung: Sterne sammeln, alle 5 Sterne gibt es einen Sticker fürs
 Album. Smoke-Test: `node tests/leon-smoke.js`.
 
-## 🦔 Apfel-Igel (ab ca. 8 Jahre)
+## 🏝 Apfel-Insel (ab ca. 8 Jahre)
 
 Im Ordner [`felix/`](felix/) steckt ein Überlebens-Spiel –
-gleiche Technik (Einzeldatei-PWA, offline, werbefrei): **Apfel-Igel**.
-Als Igel muss man auf einer Insel – zwischen Palmen, Strand und
-Meer – die Levelzeit **überleben**: Der Hunger steigt ständig, nur
-herabfallende Äpfel (auf den Stacheln gefangen und gestapelt) füllen
-den Magen. **100 Level** mit steigendem Tempo und immer neuen
-Gefahren: harte Kokosnüsse (nicht fangen – 1 Herz weg!), Gold-Äpfel
-(machen extra satt), eine Essen-klauende Möwe, Inselwind und
-Nacht-Level, in denen nur die eigene Laterne leuchtet. Pro Level gibt
-es bis zu 3 Sterne (je nach übrigen Herzen), der Fortschritt bleibt
-im `localStorage`. Steuerung: Pfeiltasten/A/D oder Finger.
+gleiche Technik (Einzeldatei-PWA, offline, werbefrei):
+**Apfel-Insel**. Zuerst baut man sich einen **Avatar** (Affe,
+Schildkröte, Krabbe oder Papagei, 6 Farben, eigener Name), dann
+heißt es auf der Insel – zwischen Palmen, Strand und Meer – die
+Levelzeit **überleben**: Der Hunger steigt ständig, nur
+herabfallende Äpfel (gefangen und gestapelt) füllen den Magen.
+Die **Schatzkarte** führt als Schlängelpfad durch **100 Level** bis
+zur Schatztruhe – mit steigendem Tempo und immer neuen Gefahren:
+harte Kokosnüsse (nicht fangen – 1 Herz weg!), Gold-Äpfel (machen
+extra satt), eine Essen-klauende Möwe, Inselwind und Nacht-Level,
+in denen nur die eigene Laterne leuchtet. Pro Level gibt es bis zu
+3 Sterne (je nach übrigen Herzen), der Fortschritt bleibt im
+`localStorage`. Steuerung: Pfeiltasten/A/D oder Finger.
 
-**🚀 [Apfel-Igel öffnen](https://mangimic.github.io/lernprofi/felix/)**
+**🚀 [Apfel-Insel öffnen](https://mangimic.github.io/lernprofi/felix/)**
 
 Smoke-Test: `node tests/felix-smoke.js`.
 

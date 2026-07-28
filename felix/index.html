@@ -9,11 +9,11 @@
 <link rel="manifest" href="manifest.json">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Apfel-Igel">
+<meta name="apple-mobile-web-app-title" content="Apfel-Insel">
 <link rel="apple-touch-icon" href="icon.svg">
 <link rel="icon" href="icon.svg">
 
-<title>Apfel-Igel – 100 Level</title>
+<title>Apfel-Insel – 100 Level</title>
 <style>
 /* =========================================================
    APFEL-IGEL – Geschicklichkeitsspiel ab 8 Jahren
@@ -59,6 +59,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 }
 .btn:active{transform:scale(0.96);}
 .btn.blue{background:linear-gradient(180deg,#6ab5ff,#3d8fe0);}
+.btn.purple{background:linear-gradient(180deg,#c5aef0,#8d6cd0);}
 .btn.gray{background:linear-gradient(180deg,#b8c4bb,#93a096);}
 .btn.small{font-size:17px; padding:10px 16px; border-radius:16px;}
 
@@ -69,28 +70,69 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 
 /* ---------- Startbildschirm ---------- */
 #scr-start{justify-content:center; align-items:center; text-align:center;}
-#start-igel{font-size:84px; line-height:1; margin-bottom:4px; animation:wobble 3s ease-in-out infinite;}
+#start-avatar{font-size:84px; line-height:1; margin-bottom:4px; animation:wobble 3s ease-in-out infinite;}
 @keyframes wobble{0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)}}
 #start-stars{margin-top:16px; color:var(--muted); font-size:18px;}
 
-/* ---------- Levelauswahl ---------- */
-#level-grid{
-  flex:1; overflow-y:auto; display:grid; gap:10px;
-  grid-template-columns:repeat(auto-fill, minmax(64px,1fr));
-  padding:4px 2px 18px; align-content:start;
+/* ---------- Avatar-Editor ---------- */
+#scr-avatar{align-items:center;}
+#av-box{
+  flex:1; overflow-y:auto; width:min(380px,96%);
+  display:flex; flex-direction:column; align-items:center; gap:10px; padding-bottom:20px;
 }
+#av-preview{
+  background:linear-gradient(180deg,#aee3ff 55%,#3d8fe0 55%,#8fd8ff 68%,#f2d99a 68%);
+  border-radius:22px; box-shadow:var(--shadow); width:240px; height:190px;
+}
+.av-label{font-weight:bold; margin-top:4px;}
+.av-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center;}
+.av-animal{
+  width:58px; height:58px; border-radius:18px; border:3px solid transparent;
+  font-size:32px; cursor:pointer; background:#fff; box-shadow:var(--shadow);
+  display:flex; align-items:center; justify-content:center;
+}
+.av-animal.sel{border-color:var(--green-dark); background:#e7ffe3;}
+.av-color{
+  width:42px; height:42px; border-radius:50%; border:3px solid #fff;
+  cursor:pointer; box-shadow:var(--shadow);
+}
+.av-color.sel{border-color:#3a4a3b; transform:scale(1.15);}
+#av-name{
+  font-family:inherit; font-size:20px; text-align:center; color:var(--text);
+  border:none; border-radius:16px; padding:12px 16px; width:220px;
+  background:#fff; box-shadow:var(--shadow); outline:none;
+}
+
+/* ---------- Schatzkarte ---------- */
+#map-scroll{
+  flex:1; overflow-y:auto; border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+#map-inner{
+  position:relative; min-height:100%;
+  background:linear-gradient(160deg,#f7e7c3,#eed7a1 60%,#f2e0b4);
+  border:6px dashed rgba(139,105,50,0.35); border-radius:var(--radius);
+}
+.map-deco{position:absolute; font-size:30px; pointer-events:none; opacity:0.85;
+  transform:translate(-50%,-50%);}
 .lvl-btn{
-  border:none; border-radius:16px; cursor:pointer; font-family:inherit;
-  aspect-ratio:1; font-size:20px; font-weight:bold; color:#fff;
+  position:absolute; width:48px; height:48px; margin-left:-24px; margin-top:-24px;
+  border:none; border-radius:50%; cursor:pointer; font-family:inherit;
+  font-size:17px; font-weight:bold; color:#fff;
   background:linear-gradient(180deg,var(--green),var(--green-dark));
-  box-shadow:0 4px 10px rgba(40,120,70,0.2);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+  box-shadow:0 4px 10px rgba(90,60,20,0.3);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1;
 }
-.lvl-btn .st{font-size:11px; letter-spacing:-1px; line-height:1;}
-.lvl-btn.locked{background:linear-gradient(180deg,#c9d2cb,#a8b2aa); cursor:default;}
+.lvl-btn .st{font-size:9px; letter-spacing:-1px; line-height:1;}
+.lvl-btn.locked{background:linear-gradient(180deg,#c9b98f,#a8996f); cursor:default; opacity:0.8;}
 .lvl-btn.night{background:linear-gradient(180deg,#7d6ce0,#5747b8);}
-.lvl-btn.night.locked{background:linear-gradient(180deg,#c9d2cb,#a8b2aa);}
-.lvl-btn:not(.locked):active{transform:scale(0.94);}
+.lvl-btn.night.locked{background:linear-gradient(180deg,#c9b98f,#a8996f);}
+.lvl-btn.current{animation:pulse 1.4s ease-in-out infinite;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(91,201,140,0.7)} 50%{box-shadow:0 0 0 12px rgba(91,201,140,0)}}
+.lvl-btn.treasure{width:64px; height:64px; margin-left:-32px; margin-top:-32px;
+  font-size:30px; background:linear-gradient(180deg,#ffd66b,#f0a10f);}
+.lvl-btn.treasure.locked{filter:grayscale(0.55); opacity:0.85;}
+.lvl-btn:not(.locked):active{transform:scale(0.92);}
 
 /* ---------- Spiel ---------- */
 #scr-game{padding:0; max-width:none;}
@@ -134,25 +176,44 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 
 <!-- ================= Startbildschirm ================= -->
 <div class="screen active" id="scr-start">
-  <div id="start-igel">🦔🏝</div>
-  <h1>Apfel-Igel</h1>
+  <div id="start-avatar">🐒🏝</div>
+  <h1>Apfel-Insel</h1>
   <div class="sub">Überlebe auf der Apfel-Insel – 100 Level!</div>
   <div class="stack-btns">
     <button class="btn" id="btn-play">▶ Spielen</button>
-    <button class="btn blue" id="btn-levels">🗺 Levelauswahl</button>
+    <button class="btn blue" id="btn-levels">🗺 Schatzkarte</button>
+    <button class="btn purple" id="btn-avatar">🎨 Mein Avatar</button>
     <button class="btn gray" id="btn-help">❓ Anleitung</button>
   </div>
   <div id="start-stars"></div>
 </div>
 
-<!-- ================= Levelauswahl ================= -->
+<!-- ================= Avatar-Editor ================= -->
+<div class="screen" id="scr-avatar">
+  <div class="topbar">
+    <button class="btn gray small" id="btn-av-back">◀ Zurück</button>
+    <div class="title">Dein Avatar</div>
+    <div style="width:86px"></div>
+  </div>
+  <div id="av-box">
+    <canvas id="av-preview" width="240" height="190"></canvas>
+    <div class="av-label">Wer bist du?</div>
+    <div class="av-row" id="av-animals"></div>
+    <div class="av-label">Deine Farbe</div>
+    <div class="av-row" id="av-colors"></div>
+    <input id="av-name" maxlength="12" placeholder="Dein Name" autocomplete="off">
+    <button class="btn" id="btn-av-save">✔ Fertig</button>
+  </div>
+</div>
+
+<!-- ================= Schatzkarte ================= -->
 <div class="screen" id="scr-levels">
   <div class="topbar">
     <button class="btn gray small" id="btn-lvl-back">◀ Zurück</button>
-    <div class="title">Levelauswahl</div>
+    <div class="title">🗺 Schatzkarte</div>
     <div class="pill" id="lvl-total">⭐ 0/300</div>
   </div>
-  <div id="level-grid"></div>
+  <div id="map-scroll"><div id="map-inner"></div></div>
 </div>
 
 <!-- ================= Spiel ================= -->
@@ -181,7 +242,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 <script>
 "use strict";
 /* =========================================================
-   Apfel-Igel – Spiel-Logik
+   Apfel-Insel – Spiel-Logik
    ========================================================= */
 const $ = s => document.querySelector(s);
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
@@ -190,7 +251,8 @@ const rand  = (a,b) => a + Math.random()*(b-a);
 /* ---------- Speicher ---------- */
 const STORE_KEY = "felix.apfeligel";
 const store = {
-  data: { unlocked:1, stars:{}, sound:true },
+  data: { unlocked:1, stars:{}, sound:true, avatarSeen:false,
+          avatar: { animal:"affe", color:"#8a5a3b", name:"" } },
   load(){
     try{
       const raw = localStorage.getItem(STORE_KEY);
@@ -221,6 +283,21 @@ function levelConfig(n){
   };
 }
 const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8;
+
+/* ---------- Avatare ---------- */
+const ANIMALS = [
+  { id:"affe",         emoji:"🐒", name:"Affe" },
+  { id:"schildkroete", emoji:"🐢", name:"Schildkröte" },
+  { id:"krabbe",       emoji:"🦀", name:"Krabbe" },
+  { id:"papagei",      emoji:"🦜", name:"Papagei" }
+];
+const AV_COLORS = ["#8a5a3b","#e74c3c","#54a9ff","#5bc98c","#b39ddb","#f0a10f"];
+const animalEmoji = id => (ANIMALS.find(a=>a.id===id) || ANIMALS[0]).emoji;
+function shade(hex, f){    /* Farbe abdunkeln (f<1) oder aufhellen (f>1) */
+  const n = parseInt(hex.slice(1), 16);
+  const c = v => clamp(Math.round(v*f), 0, 255);
+  return "rgb(" + c(n>>16) + "," + c((n>>8)&255) + "," + c(n&255) + ")";
+}
 function levelHint(n){
   if(n === 1)  return "Überlebe! Iss Äpfel, sonst knurrt der Magen!";
   if(n === 5)  return "NEU: Kokosnüsse – NICHT fangen, autsch!";
@@ -289,13 +366,13 @@ const W = 480;                 // logische Breite, Höhe folgt aus dem Bildschir
 let H = 800, scale = 1;
 
 const APPLE_R = 14, APPLE_H = 24, MAX_STACK = 12;
-const HEDGE_W = 86, HEDGE_H = 46;
+const AV_W = 86, AV_H = 54;
 
 const game = {
   active:false, state:"idle", timeScale:1,
   level:1, cfg:null, t:0, startT:0,
   spawnT:1, gullT:6,
-  hedge:{ x:W/2, tx:W/2, lean:0, px:W/2 },
+  player:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
   caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0
 };
@@ -312,13 +389,13 @@ window.addEventListener("resize", resize);
 
 const groundY = () => H - 64;
 const stackH  = () => Math.min(game.stack.length, MAX_STACK);
-const stackTopY = () => groundY() - HEDGE_H - stackH()*APPLE_H;
+const stackTopY = () => groundY() - AV_H - stackH()*APPLE_H;
 
 function startLevel(n){
   audio.ensure();
   game.level = n; game.cfg = levelConfig(n);
   game.t = 0; game.startT = 0; game.spawnT = 1.2; game.gullT = game.cfg.gullEvery || 999;
-  game.hedge.x = game.hedge.tx = game.hedge.px = W/2; game.hedge.lean = 0;
+  game.player.x = game.player.tx = game.player.px = W/2; game.player.lean = 0;
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
   game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
   game.energy = 100; game.timeLeft = game.cfg.time;
@@ -365,8 +442,10 @@ function winLevel(){
     if(!done) btns.push({id:"ov-next", label:"▶ Level " + (game.level+1), cb:()=>startLevel(game.level+1)});
     btns.push({id:"ov-retry", label:"↻ Nochmal", cls:"blue", cb:()=>startLevel(game.level)});
     btns.push({id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels});
-    showOverlay(done ? "🏆 ALLE 100 LEVEL!" : "Überlebt! 🎉",
-      done ? "Du hast auf der Insel überlebt – alle 100 Level!\nGesamt: " + store.totalStars() + " Sterne"
+    const name = store.data.avatar.name;
+    showOverlay(done ? "🏆 DER SCHATZ GEHÖRT DIR" + (name ? ", " + name.toUpperCase() : "") + "!"
+                     : "Überlebt" + (name ? ", " + name : "") + "! 🎉",
+      done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
            : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!",
       stars, btns);
   }, 900);
@@ -423,18 +502,18 @@ function update(dt){
   game.timeLeft -= dt;
   game.energy -= c.drain * dt;
   if(game.energy <= 20 && game.energy + c.drain*dt > 20){
-    addFloat(game.hedge.x, stackTopY() - 30, "Hunger! 🍎", "#e74c3c", 1.4, 20);
+    addFloat(game.player.x, stackTopY() - 30, "Hunger! 🍎", "#e74c3c", 1.4, 20);
   }
   if(game.energy <= 0){ game.energy = 0; updateHUD(); loseLevel("hunger"); return; }
   if(game.timeLeft <= 0){ game.timeLeft = 0; updateHUD(); winLevel(); return; }
   updateHUD();
 
-  /* Igel bewegen */
-  const h = game.hedge;
+  /* Avatar bewegen */
+  const h = game.player;
   const kSpeed = 380 + game.level*1.5;
   if(keys.left)  h.tx -= kSpeed*dt;
   if(keys.right) h.tx += kSpeed*dt;
-  h.tx = clamp(h.tx, HEDGE_W/2, W - HEDGE_W/2);
+  h.tx = clamp(h.tx, AV_W/2, W - AV_W/2);
   h.px = h.x;
   h.x += (h.tx - h.x) * Math.min(1, dt*10);
   const vel = (h.x - h.px) / Math.max(dt, 0.001);
@@ -466,8 +545,8 @@ function update(dt){
     a.x = clamp(a.x + game.windX*dt, 14, W-14);
     a.rot += a.spin*dt;
 
-    /* gefangen? (Apfel kreuzt die Stapel-Oberkante über dem Igel) */
-    if(prevY < topY && a.y >= topY && Math.abs(a.x - h.x) <= HEDGE_W/2 + 10){
+    /* gefangen? (Apfel kreuzt die Stapel-Oberkante über dem Avatar) */
+    if(prevY < topY && a.y >= topY && Math.abs(a.x - h.x) <= AV_W/2 + 10){
       game.apples.splice(i,1);
       if(a.type === "kokos"){
         burst(h.x, topY, "#6b5a25", 12);
@@ -566,49 +645,92 @@ function drawApple(x, y, r, type, rot=0){
   }
   ctx.restore();
 }
-function drawHedgehog(){
-  const h = game.hedge, gY = groundY();
+function drawAvatarSprite(c2, animal, color){
+  const dark = shade(color, 0.72), tan = "#e8c9a0";
+  const dot = (x,y,r,f)=>{ c2.fillStyle=f; c2.beginPath(); c2.arc(x,y,r,0,Math.PI*2); c2.fill(); };
+  const ell = (x,y,rx,ry,f,rot=0)=>{ c2.fillStyle=f; c2.beginPath(); c2.ellipse(x,y,rx,ry,rot,0,Math.PI*2); c2.fill(); };
+  if(animal === "schildkroete"){
+    ell(-18,-4, 9,6, "#a3c46f"); ell(14,-4, 9,6, "#a3c46f");        /* Beine */
+    ell(32,-18, 11,9, "#a3c46f"); dot(36,-20, 2.6, "#2c2c2c");      /* Kopf */
+    c2.fillStyle = color;                                            /* Panzer */
+    c2.beginPath(); c2.ellipse(0,-24, 30,24, 0, Math.PI, 0); c2.lineTo(30,-14); c2.closePath(); c2.fill();
+    ell(0,-12, 32,8, dark);                                          /* Panzer-Rand */
+    c2.strokeStyle = dark; c2.lineWidth = 2.5;                       /* Muster */
+    [[-12,-30,7],[8,-34,7],[0,-22,6]].forEach(([x,y,r])=>{
+      c2.beginPath(); c2.arc(x,y,r,0,Math.PI*2); c2.stroke();
+    });
+  }else if(animal === "krabbe"){
+    c2.strokeStyle = dark; c2.lineWidth = 4; c2.lineCap = "round";   /* Beine */
+    [[-1,-0.5],[-0.75,-0.2],[1,-0.5],[0.75,-0.2]].forEach(([sx,sy])=>{
+      c2.beginPath(); c2.moveTo(sx*20,-14); c2.lineTo(sx*34, sy*10-8); c2.stroke();
+    });
+    c2.lineWidth = 5;                                                /* Scheren-Arme */
+    c2.beginPath(); c2.moveTo(-22,-26); c2.lineTo(-34,-38); c2.stroke();
+    c2.beginPath(); c2.moveTo(22,-26); c2.lineTo(34,-38); c2.stroke();
+    c2.fillStyle = color;                                            /* Scheren */
+    c2.beginPath(); c2.arc(-36,-42, 10, 0.6, 5.2); c2.lineTo(-36,-42); c2.fill();
+    c2.beginPath(); c2.arc(36,-42, 10, Math.PI-5.2+Math.PI, Math.PI-0.6+Math.PI); c2.lineTo(36,-42); c2.fill();
+    ell(0,-22, 30,18, color);                                        /* Körper */
+    c2.strokeStyle = dark; c2.lineWidth = 3;                         /* Augenstiele */
+    c2.beginPath(); c2.moveTo(-8,-36); c2.lineTo(-8,-48); c2.stroke();
+    c2.beginPath(); c2.moveTo(8,-36); c2.lineTo(8,-48); c2.stroke();
+    dot(-8,-51, 5, "#fff"); dot(8,-51, 5, "#fff");
+    dot(-8,-51, 2.4, "#2c2c2c"); dot(8,-51, 2.4, "#2c2c2c");
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
+    c2.beginPath(); c2.arc(0,-20, 7, 0.4, Math.PI-0.4); c2.stroke();
+  }else if(animal === "papagei"){
+    c2.strokeStyle = dark; c2.lineWidth = 3;                         /* Füße */
+    c2.beginPath(); c2.moveTo(-8,-6); c2.lineTo(-8,0); c2.moveTo(8,-6); c2.lineTo(8,0); c2.stroke();
+    c2.lineWidth = 5; c2.lineCap = "round";                          /* Schwanzfedern */
+    [[color,-34,-2],[dark,-36,-10],["#ffd66b",-30,4]].forEach(([f,tx2,ty2])=>{
+      c2.strokeStyle = f;
+      c2.beginPath(); c2.moveTo(-12,-18); c2.lineTo(tx2,ty2); c2.stroke();
+    });
+    ell(0,-28, 20,26, color);                                        /* Körper */
+    ell(6,-18, 11,13, "#ffe1a8");                                    /* Bauch */
+    ell(-9,-30, 11,17, dark, 0.35);                                  /* Flügel */
+    dot(8,-44, 8, "#fff"); dot(10,-45, 2.6, "#2c2c2c");              /* Auge */
+    c2.fillStyle = "#f0a10f";                                        /* Schnabel */
+    c2.beginPath(); c2.moveTo(15,-46); c2.quadraticCurveTo(30,-42,24,-32);
+    c2.quadraticCurveTo(20,-34,15,-36); c2.closePath(); c2.fill();
+  }else{ /* Affe */
+    c2.strokeStyle = dark; c2.lineWidth = 6; c2.lineCap = "round";   /* Schwanz */
+    c2.beginPath(); c2.moveTo(-24,-14); c2.quadraticCurveTo(-48,-24,-40,-48); c2.stroke();
+    ell(0,-20, 26,19, color);                                        /* Körper */
+    ell(2,-16, 14,11, tan);                                          /* Bauch */
+    ell(-12,-4, 9,5, dark); ell(14,-4, 9,5, dark);                   /* Füße */
+    dot(-9,-52, 7, color); dot(21,-52, 7, color);                    /* Ohren */
+    dot(-9,-52, 3.5, tan); dot(21,-52, 3.5, tan);
+    dot(6,-44, 17, color);                                           /* Kopf */
+    ell(9,-41, 11,9, tan);                                           /* Gesicht */
+    dot(4,-45, 2.6, "#2c2c2c"); dot(15,-45, 2.6, "#2c2c2c");         /* Augen */
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
+    c2.beginPath(); c2.arc(9,-40, 5, 0.5, Math.PI-0.5); c2.stroke();
+  }
+}
+function drawPlayer(){
+  const h = game.player, gY = groundY();
+  const av = store.data.avatar;
   ctx.save();
   ctx.translate(h.x, gY);
   ctx.rotate(h.lean*0.4);
-  /* Stacheln */
-  ctx.fillStyle = "#5d3f28";
-  for(let i = 0; i <= 8; i++){
-    const a = Math.PI*(0.1 + 0.8*i/8);
-    const bx = -Math.cos(a)*HEDGE_W*0.36, by = -Math.sin(a)*HEDGE_H*0.85;
-    const tx = -Math.cos(a)*HEDGE_W*0.56, ty = -Math.sin(a)*(HEDGE_H+16);
-    ctx.beginPath();
-    ctx.moveTo(bx-6, by); ctx.lineTo(tx, ty); ctx.lineTo(bx+6, by);
-    ctx.closePath(); ctx.fill();
-  }
-  /* Körper */
-  ctx.fillStyle = "#8a5a3b";
-  ctx.beginPath(); ctx.ellipse(0, -HEDGE_H*0.5, HEDGE_W*0.44, HEDGE_H*0.55, 0, 0, Math.PI*2); ctx.fill();
-  /* Gesicht */
-  ctx.fillStyle = "#e8c9a0";
-  ctx.beginPath(); ctx.ellipse(HEDGE_W*0.3, -HEDGE_H*0.4, HEDGE_W*0.2, HEDGE_H*0.36, -0.2, 0, Math.PI*2); ctx.fill();
-  /* Auge + Nase */
-  ctx.fillStyle = "#2c2c2c";
-  ctx.beginPath(); ctx.arc(HEDGE_W*0.3, -HEDGE_H*0.52, 3.4, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(HEDGE_W*0.48, -HEDGE_H*0.3, 4.2, 0, Math.PI*2); ctx.fill();
-  /* Füße */
-  ctx.fillStyle = "#6d4a2f";
-  ctx.beginPath(); ctx.ellipse(-HEDGE_W*0.2, -3, 9, 5, 0, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(HEDGE_W*0.16, -3, 9, 5, 0, 0, Math.PI*2); ctx.fill();
+  ctx.fillStyle = "rgba(90,60,20,0.18)";                             /* Schatten */
+  ctx.beginPath(); ctx.ellipse(0, 0, AV_W*0.42, 7, 0, 0, Math.PI*2); ctx.fill();
+  drawAvatarSprite(ctx, av.animal, av.color);
   ctx.restore();
 
   /* Apfel-Stapel */
   const n = stackH();
   for(let i = 0; i < n; i++){
-    const sway = Math.sin(game.t*2.2 + i*0.9) * (1 + i*0.5) + game.hedge.lean * i * -26;
+    const sway = Math.sin(game.t*2.2 + i*0.9) * (1 + i*0.5) + game.player.lean * i * -26;
     const x = h.x + sway;
-    const y = gY - HEDGE_H - (i+0.5)*APPLE_H;
+    const y = gY - AV_H - (i+0.5)*APPLE_H;
     drawApple(x, y, APPLE_R, game.stack[i]);
   }
   if(game.stack.length > MAX_STACK){
     ctx.fillStyle = "rgba(255,255,255,0.85)";
     ctx.font = "bold 15px sans-serif"; ctx.textAlign = "center";
-    const y = gY - HEDGE_H - n*APPLE_H - 14;
+    const y = gY - AV_H - n*APPLE_H - 14;
     ctx.beginPath(); ctx.arc(h.x, y, 16, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = "#3a4a3b";
     ctx.fillText("×" + game.stack.length, h.x, y+5);
@@ -733,7 +855,7 @@ function draw(){
   }
   /* Objekte */
   game.apples.forEach(a => drawApple(a.x, a.y, APPLE_R, a.type, a.rot));
-  drawHedgehog();
+  drawPlayer();
   game.gulls.forEach(drawGull);
   /* Nacht-Maske mit Laternen-Licht */
   if(c.night){
@@ -748,7 +870,7 @@ function draw(){
       nctx.fillStyle = g;
       nctx.beginPath(); nctx.arc(x,y,r,0,Math.PI*2); nctx.fill();
     };
-    hole(game.hedge.x, stackTopY(), 200);
+    hole(game.player.x, stackTopY(), 200);
     game.apples.forEach(a => hole(a.x, a.y, 52));
     game.gulls.forEach(w => hole(w.x, w.y, 46));
     nctx.globalCompositeOperation = "source-over";
@@ -790,11 +912,13 @@ requestAnimationFrame(loop);
 /* ---------- Eingabe ---------- */
 const keys = {left:false, right:false};
 window.addEventListener("keydown", e=>{
+  if(e.target && e.target.tagName === "INPUT") return;   /* Namen tippen nicht abfangen */
   if(e.key === "ArrowLeft" || e.key === "a" || e.key === "A"){ keys.left = true; e.preventDefault(); }
   if(e.key === "ArrowRight"|| e.key === "d" || e.key === "D"){ keys.right = true; e.preventDefault(); }
   if(e.key === "p" || e.key === "P"){ togglePause(); }
 });
 window.addEventListener("keyup", e=>{
+  if(e.target && e.target.tagName === "INPUT") return;
   if(e.key === "ArrowLeft" || e.key === "a" || e.key === "A") keys.left = false;
   if(e.key === "ArrowRight"|| e.key === "d" || e.key === "D") keys.right = false;
 });
@@ -803,8 +927,8 @@ function pointerToWorld(e){
   const r = cv.getBoundingClientRect();
   return (e.clientX - r.left) / r.width * W;
 }
-cv.addEventListener("pointerdown", e=>{ pointerDown = true; game.hedge.tx = pointerToWorld(e); audio.ensure(); });
-cv.addEventListener("pointermove", e=>{ if(pointerDown) game.hedge.tx = pointerToWorld(e); });
+cv.addEventListener("pointerdown", e=>{ pointerDown = true; game.player.tx = pointerToWorld(e); audio.ensure(); });
+cv.addEventListener("pointermove", e=>{ if(pointerDown) game.player.tx = pointerToWorld(e); });
 window.addEventListener("pointerup", ()=>{ pointerDown = false; });
 window.addEventListener("pointercancel", ()=>{ pointerDown = false; });
 
@@ -828,41 +952,137 @@ $("#btn-sound").addEventListener("click", ()=>{
   store.data.sound = !store.data.sound; store.save(); audio.ensure(); updateHUD();
 });
 
-/* ---------- Levelauswahl ---------- */
+/* ---------- Schatzkarte ---------- */
+function mapPos(n){    /* Level 1 unten, Schatz oben – Schlangenpfad, 5 pro Reihe */
+  const i = n - 1, row = Math.floor(i/5), col = i % 5;
+  const cols = [12, 31, 50, 69, 88];
+  const x = cols[row % 2 === 0 ? col : 4 - col];
+  const y = 1810 - row*88 + (col % 2 ? -10 : 10);
+  return { x, y };
+}
 function openLevels(){
   game.active = false; game.state = "idle";
-  const grid = $("#level-grid"); grid.innerHTML = "";
+  const inner = $("#map-inner");
+  inner.innerHTML = "";
+  inner.style.height = "1900px";
+  /* Pfad als SVG-Linie */
+  let pts = "";
+  for(let n = 1; n <= MAX_LEVEL; n++){
+    const p = mapPos(n);
+    pts += (p.x*10) + "," + p.y + " ";
+  }
+  inner.innerHTML =
+    '<svg width="100%" height="1900" viewBox="0 0 1000 1900" preserveAspectRatio="none" ' +
+    'style="position:absolute;inset:0;">' +
+    '<polyline points="' + pts.trim() + '" fill="none" stroke="rgba(139,105,50,0.55)" ' +
+    'stroke-width="5" stroke-dasharray="1 14" stroke-linecap="round"/></svg>';
+  /* Deko auf der Karte */
+  [["🌴",4,1855],["⚓",93,1770],["🌺",5,1500],["🐚",94,1330],["🌴",6,1060],
+   ["☠️",94,900],["🦜",5,640],["🌋",94,420],["🌴",93,180],["🧭",6,120]].forEach(([e,x,y])=>{
+    const d = document.createElement("div");
+    d.className = "map-deco"; d.textContent = e;
+    d.style.left = x + "%"; d.style.top = y + "px";
+    inner.appendChild(d);
+  });
+  /* Level-Stationen */
+  let currentBtn = null;
   for(let n = 1; n <= MAX_LEVEL; n++){
     const b = document.createElement("button");
     const locked = n > store.data.unlocked;
     const stars = store.data.stars[n] || 0;
-    b.className = "lvl-btn" + (locked ? " locked" : "") + (levelConfig(n).night ? " night" : "");
+    const treasure = n === MAX_LEVEL;
+    b.className = "lvl-btn" + (locked ? " locked" : "") +
+      (levelConfig(n).night ? " night" : "") + (treasure ? " treasure" : "") +
+      (!locked && n === store.data.unlocked ? " current" : "");
     b.dataset.level = n;
-    b.innerHTML = locked ? "🔒" : n + '<span class="st">' + (stars ? "⭐".repeat(stars) : "&nbsp;") + "</span>";
+    if(treasure) b.textContent = "💰";
+    else b.innerHTML = locked ? "🔒" : n + '<span class="st">' + (stars ? "⭐".repeat(stars) : "&nbsp;") + "</span>";
+    const p = mapPos(n);
+    b.style.left = p.x + "%"; b.style.top = p.y + "px";
     if(!locked) b.addEventListener("click", ()=>startLevel(n));
-    grid.appendChild(b);
+    inner.appendChild(b);
+    if(n === Math.min(store.data.unlocked, MAX_LEVEL)) currentBtn = b;
   }
   $("#lvl-total").textContent = "⭐ " + store.totalStars() + "/" + (MAX_LEVEL*3);
   showScreen("#scr-levels");
+  if(currentBtn) currentBtn.scrollIntoView({ block:"center" });
 }
+
+/* ---------- Avatar-Editor ---------- */
+let avatarThenPlay = false;
+const avCtx = $("#av-preview").getContext("2d");
+function drawAvatarPreview(){
+  const av = store.data.avatar;
+  avCtx.setTransform(1,0,0,1,0,0);
+  avCtx.clearRect(0,0,240,190);
+  avCtx.setTransform(2,0,0,2,120,170);
+  drawAvatarSprite(avCtx, av.animal, av.color);
+}
+function buildAvatarUI(){
+  const av = store.data.avatar;
+  const an = $("#av-animals"); an.innerHTML = "";
+  ANIMALS.forEach(a=>{
+    const b = document.createElement("button");
+    b.className = "av-animal" + (av.animal === a.id ? " sel" : "");
+    b.dataset.animal = a.id;
+    b.textContent = a.emoji; b.title = a.name;
+    b.addEventListener("click", ()=>{
+      av.animal = a.id; buildAvatarUI(); drawAvatarPreview(); audio.catch();
+    });
+    an.appendChild(b);
+  });
+  const co = $("#av-colors"); co.innerHTML = "";
+  AV_COLORS.forEach(c=>{
+    const b = document.createElement("button");
+    b.className = "av-color" + (av.color === c ? " sel" : "");
+    b.style.background = c;
+    b.addEventListener("click", ()=>{
+      av.color = c; buildAvatarUI(); drawAvatarPreview(); audio.catch();
+    });
+    co.appendChild(b);
+  });
+  $("#av-name").value = av.name;
+}
+function openAvatar(thenPlay){
+  avatarThenPlay = !!thenPlay;
+  game.active = false; game.state = "idle";
+  buildAvatarUI(); drawAvatarPreview();
+  showScreen("#scr-avatar");
+}
+function saveAvatar(){
+  store.data.avatar.name = $("#av-name").value.trim();
+  store.data.avatarSeen = true;
+  store.save();
+  if(avatarThenPlay){ avatarThenPlay = false; startLevel(Math.min(store.data.unlocked, MAX_LEVEL)); }
+  else openStart();
+}
+$("#btn-av-save").addEventListener("click", saveAvatar);
+$("#btn-av-back").addEventListener("click", saveAvatar);
+$("#btn-avatar").addEventListener("click", ()=>{ audio.ensure(); openAvatar(false); });
 
 /* ---------- Start-Menü ---------- */
 function openStart(){
   game.active = false; game.state = "idle";
-  const u = store.data.unlocked;
+  const u = store.data.unlocked, av = store.data.avatar;
+  $("#start-avatar").textContent = animalEmoji(av.animal) + "🏝";
   $("#btn-play").textContent = u > 1 ? "▶ Weiter: Level " + Math.min(u, MAX_LEVEL) : "▶ Spielen";
+  const hallo = av.name ? "Ahoi, " + av.name + "! " : "";
   $("#start-stars").textContent = store.totalStars() > 0
-    ? "⭐ " + store.totalStars() + " Sterne · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
-    : "Ab 8 Jahren · Pfeiltasten oder Finger";
+    ? hallo + "⭐ " + store.totalStars() + " Sterne · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
+    : hallo + "Ab 8 Jahren · Pfeiltasten oder Finger";
   showScreen("#scr-start");
 }
-$("#btn-play").addEventListener("click", ()=>startLevel(Math.min(store.data.unlocked, MAX_LEVEL)));
+$("#btn-play").addEventListener("click", ()=>{
+  audio.ensure();
+  if(!store.data.avatarSeen) openAvatar(true);     /* beim ersten Mal: Avatar bauen */
+  else startLevel(Math.min(store.data.unlocked, MAX_LEVEL));
+});
 $("#btn-levels").addEventListener("click", openLevels);
 $("#btn-lvl-back").addEventListener("click", openStart);
 $("#btn-help").addEventListener("click", ()=>{
   showOverlay("So geht's 🦔", [
     "⏱ ÜBERLEBE, bis die Zeit abgelaufen ist!",
-    "🍎 Dein Igel wird ständig hungriger – iss Äpfel,",
+    "🍎 Dein Tier wird ständig hungriger – iss Äpfel,",
     "sonst ist der Magen leer und du verlierst!",
     "✨ Gold-Äpfel machen extra satt.",
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
@@ -884,7 +1104,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart };
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, ANIMALS, AV_COLORS };
 </script>
 </body>
 </html>
