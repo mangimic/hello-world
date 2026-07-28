@@ -1049,10 +1049,11 @@ function section(t) { console.log("\n== " + t + " =="); }
   await fresh(); await setLevel(3);
   check("Startseite hat die Test-Training-Kachel (Klasse 3)", (await page.locator(".test-kachel").count()) === 1);
   await setLevel(4);
-  check("Klasse 4: Test-Kachel ausgeblendet (Tests sind Klasse-3-Stoff)", (await page.locator(".test-kachel").count()) === 0);
+  check("Klasse 4: Kachel da – nur der Fit-Test (Klasse-3-Tests gefiltert)", (await page.locator(".test-kachel").count()) === 1
+    && await page.evaluate(() => testsFuerKlasse().map(t => t.typ).join(",") === "fit"));
   await setLevel(0);
-  check("„Alle“: Kachel da, beide Tests im Katalog", (await page.locator(".test-kachel").count()) === 1
-    && await page.evaluate(() => testsFuerKlasse().length === 2));
+  check("„Alle“: Kachel da, alle 3 Deutsch-Tests im Katalog", (await page.locator(".test-kachel").count()) === 1
+    && await page.evaluate(() => testsFuerKlasse().length === 3));
   await setLevel(3);
   await page.locator(".test-kachel").click(); await page.waitForTimeout(150);
   check("Übersicht: Erst-Versuch-Regel + Start-Knopf", (await page.locator("#moduleContent").textContent()).includes("ersten Versuch")
@@ -1107,7 +1108,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     openTestTraining();
     const t = document.getElementById("moduleContent").textContent;
     return t.includes("Deine letzten Tests") && t.includes("🧩 Sprache")
-      && document.querySelectorAll(".test-start").length === 2; }));
+      && document.querySelectorAll(".test-start").length === 3; }));
   // ---------- Vorgangsbeschreibungs-Test (Waffelrezept) ----------
   await page.locator('.test-start[data-typ="vorgang"]').click(); await page.waitForTimeout(150);
   check("Vorgangs-Test startet mit der Vorlage (Zutaten, Schritte, Mustertext)", await page.evaluate(() => {
@@ -1876,6 +1877,67 @@ function section(t) { console.log("\n== " + t + " =="); }
       && typeof f.spiele === "object" && typeof f.lesen === "object"
       && typeof f.start === "string" && f.fertig === null;
   }));
+
+  // ---------- 8g) Geschichten-Werkstatt + „Bist du fit?"-Test ----------
+  section("Geschichten-Werkstatt & Fit-Test (v1.72)");
+  await fresh(); await setLevel(3);
+  check("Werkstatt-Daten: 12 leichte + 12 schwere Aufgaben, sauber", await page.evaluate(() =>
+    GESCH_DATEN.easy.length === 12 && GESCH_DATEN.hard.length === 12
+    && GESCH_DATEN.easy.concat(GESCH_DATEN.hard).every(a => a.x.length === 2 && !a.x.includes(a.r) && a.tipp)));
+  check("Werkstatt in der Gruppe „Schreiben & Lesen“", await page.evaluate(() =>
+    MODUL_GRUPPEN.find(g => g.id === "schreiben").module.includes("gesch")));
+  await page.evaluate(() => openModule("gesch")); await page.waitForTimeout(200);
+  check("Lernen-Seite erklärt E/H/S + Zeitform-Trick", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Einleitung") && t.includes("Hauptteil") && t.includes("Schluss") && t.includes("Verb");
+  }));
+  await page.evaluate(() => goSection("ueben")); await page.waitForTimeout(200);
+  check("Übung: Kontext-Text ohne doppelten Vorlesen-Knopf", await page.evaluate(() =>
+    document.querySelectorAll(".example-box").length >= 0
+    && document.querySelectorAll("#moduleContent .speak-btn").length <= 1));
+  const gR = await page.evaluate(() => gwsChunk("gesch").S[matheIdx].r);
+  const gB = page.locator(".mathe-opt");
+  for (let k = 0; k < await gB.count(); k++) {
+    if ((await gB.nth(k).textContent()) === gR) { await gB.nth(k).click(); break; }
+  }
+  await page.waitForTimeout(120);
+  check("Werkstatt: richtige Antwort + Tipp, zählt für Runde", /Richtig/.test(await page.locator("#mfb").textContent())
+    && await page.evaluate(() => scoreRuns["gesch"].solved === 1));
+  check("Stufe 2 = Zeitformen & wörtliche Rede (hard-Pool)", await page.evaluate(() => {
+    const p = fieldPool("gesch"); // Stufe 1
+    store.progress["gesch"] = { unlocked: 2, runs: 1 };
+    const p2 = fieldPool("gesch");
+    delete store.progress["gesch"];
+    return p[0].f !== p2[0].f && p2.some(a => a.f.includes("Präsens"));
+  }));
+  // „Bist du fit?"-Test
+  await page.evaluate(() => { goHome(); openTestTraining(); }); await page.waitForTimeout(200);
+  check("Fit-Test im Katalog (Klasse 3 UND 4)", await page.evaluate(() => {
+    const k3 = testsFuerKlasse().some(t => t.typ === "fit");
+    store.level = 4; const k4 = testsFuerKlasse().some(t => t.typ === "fit");
+    store.level = 3; return k3 && k4;
+  }));
+  await page.locator('.test-start[data-typ="fit"]').click(); await page.waitForTimeout(250);
+  check("Fit-Test: 12 Aufgaben, 12 Punkte, 3 Aufgaben-Arten, 4 Bereiche", await page.evaluate(() =>
+    test.aufgaben.length === 12 && test.max === 12
+    && new Set(test.aufgaben.map(a => a.art)).size === 3
+    && Object.values(test.bereiche).every(b => b.max > 0)));
+  check("Fit-Wahl-Aufgaben decken Heft-Themen ab", await page.evaluate(() =>
+    FIT_WAHL.some(q => q.frage.includes("Kutsche")) && FIT_WAHL.some(q => q.frage.includes("Fragezeichen") || q.frage.includes("Satzzeichen"))
+    && FIT_WAHL.some(q => q.frage.includes("Expresszug")) && FIT_WAHL.some(q => q.frage.includes("pflückte"))
+    && FIT_WAHL.every(q => q.o.filter(o => o[1] === 1).length === 1)));
+  // Erste Aufgabe (Subjekt antippen) via Kontroll-Blick lösen
+  const fitArt = await page.evaluate(() => test.aufgaben[0].art);
+  check("Fit-Test startet mit Subjekt/Prädikat-Antippen", fitArt === "sp");
+  await page.evaluate(() => { test.idx = 2; testFrage(); }); await page.waitForTimeout(150);
+  const fitWahlOk = await page.evaluate(() => {
+    const richtig = test.aufgaben[2].a.o.find(o => o[1] === 1)[0];
+    const btn = [...document.querySelectorAll(".test-opt")].find(b => b.textContent.trim() === richtig);
+    btn.click();
+    document.getElementById("testAbgeben").click();
+    return test.punkte === 1;
+  });
+  check("Fit-Test: Wahl-Aufgabe mit Kontroll-Blick + Punkt", fitWahlOk);
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");

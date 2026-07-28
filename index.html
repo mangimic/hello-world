@@ -511,8 +511,14 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.71.0";
+const APP_VERSION = "1.72.0";
 const RELEASE_NOTES = [
+  {v:"1.72.0", datum:"27.07.2026", punkte:[
+    "📚 Neues Lernfeld „Geschichten-Werkstatt“ (bei Schreiben & Lesen, nach den Aufgaben aus deinem Übungsheft): Ordne Einleitung, Hauptteil und Schluss der Minka-Geschichte zu, wähle spannende Überschriften und übe die wörtliche Rede mit Begleitsätzen („…, fragt Mutti“).",
+    "⏰ Stufe 2 der Werkstatt: Zeitformen im Aufsatz! Passt die Überschrift „Heute“ oder „Gestern“ zum Text? Die Verben verraten es – und du formst Sätze vom Präteritum ins Präsens um.",
+    "✅ Neuer Test „Bist du fit?“ im Test-Training (Klasse 3 UND 4): Subjekt & Prädikat antippen, danach fragen, Zeitformen bestimmen, Satzzeichen setzen, Adjektive finden und steigern (schnell – schneller – am schnellsten), Grundformen bilden – 12 Punkte wie im Heft.",
+    "🔊 Textabschnitte in den Übungen haben jetzt genau einen Vorlesen-Knopf (liest Text, Frage und Antworten am Stück)."
+  ]},
   {v:"1.71.0", datum:"27.07.2026", punkte:[
     "🛡️ Schummel-Schutz in der Blockwelt (danke für den Hinweis aus der Beta!): Nach einer falschen Antwort sind ab sofort ALLE Antworten gesperrt – Umklicken auf die richtige Antwort bringt keine Blöcke mehr.",
     "🧘 Denk-Pause statt Durchklicken: Der „Nächster Versuch“-Knopf zählt erst 3 Sekunden herunter (Blockwelt und See-Abenteuer). Wer 3-mal hintereinander daneben liegt, bekommt eine längere Atempause mit freundlichem Hinweis – Blöcke gibt es nur fürs Können.",
@@ -1302,7 +1308,8 @@ const FIELD_POOLS = {
   mzahlen:()=>MATHE_DATEN.mzahlen,
   mgeo:()=>MATHE_DATEN.mgeo,
   mgroessen:()=>MATHE_DATEN.mgroessen,
-  mdaten:()=>MATHE_DATEN.mdaten
+  mdaten:()=>MATHE_DATEN.mdaten,
+  gesch:()=>GESCH_DATEN
 };
 function fieldProg(key){ if(!store.progress[key]) store.progress[key]={unlocked:1,runs:0,crown:false}; return store.progress[key]; }
 function fieldHard(key){ const h=FIELD_POOLS[key]().hard; return (h&&h.length)?h:null; }
@@ -6457,7 +6464,10 @@ const TEST_BEREICHE={ recht:{name:"🔤 Rechtschreibung", modul:"gws", sektion:n
   mzahl:{name:"🔢 Zahlen-Profi", modul:"mzahlen", sektion:null},
   mgeo:{name:"📐 Formen & Flächen", modul:"mgeo", sektion:null},
   mgroe:{name:"⏰ Größen & Sachaufgaben", modul:"mgroessen", sektion:null},
-  mdat:{name:"🎲 Daten & Zufall", modul:"mdaten", sektion:null} };
+  mdat:{name:"🎲 Daten & Zufall", modul:"mdaten", sektion:null},
+  fzeit:{name:"⏰ Zeitformen & Grundformen", modul:"zeit", sektion:null},
+  fsatz:{name:"❓ Satzzeichen & Satzarten", modul:"rede", sektion:null},
+  fadj:{name:"🏷️ Adjektive & Steigerung", modul:"wortarten", sektion:null} };
 /* Vorgangsbeschreibungs-Test (nach dem Bewertungsbogen „Waffelrezept"):
    prüft genau die Schul-Kriterien – Überschrift, vollständige Zutaten,
    Schritte GENAU und in RICHTIGER Reihenfolge, Präsens, gleiche Form,
@@ -6523,7 +6533,33 @@ const VT_WAHL=[
 const TEST_KATALOG=[
   {typ:"sprache", titel:"🧩 Sprache untersuchen", untertitel:"Wörter · Satzglieder · Zeit &amp; Ort · Subjekt &amp; Prädikat", klassen:[3]},
   {typ:"vorgang", titel:"📝 Vorgangsbeschreibung", untertitel:"Waffelrezept: Reihenfolge · genaue Schritte · Sätze &amp; Form", klassen:[3]},
-  {typ:"mathe", titel:"🔢 Mathe: Kompass-Training", untertitel:"Rechnen · Zahlen · Formen · Größen · Daten – wie der Kompass 4", klassen:[4], fach:"mathe"}
+  {typ:"mathe", titel:"🔢 Mathe: Kompass-Training", untertitel:"Rechnen · Zahlen · Formen · Größen · Daten – wie der Kompass 4", klassen:[4], fach:"mathe"},
+  {typ:"fit", titel:"✅ Bist du fit?", untertitel:"Subjekt &amp; Prädikat · Zeitformen · Satzzeichen · Adjektive &amp; Steigerung", klassen:[3,4]}
+];
+/* "Bist du fit?"-Wahl-Aufgaben (aus dem Übungsheft, Seiten 44/45):
+   Zeitformen bestimmen, Satzzeichen/Satzart, Adjektiv finden,
+   Steigerungsstufen, Präteritum <-> Grundform. */
+const FIT_WAHL=[
+  {frage:"„Früher reisten die Menschen mit der Kutsche.“ – In welcher Zeitform steht der Satz?", bereich:"fzeit",
+   o:[["Präteritum (Vergangenheit)",1],["Präsens (Gegenwart)",0],["Futur (Zukunft)",0]]},
+  {frage:"„Heute fahren wir mit schnellen Autos.“ – In welcher Zeitform steht der Satz?", bereich:"fzeit",
+   o:[["Präsens (Gegenwart)",1],["Präteritum (Vergangenheit)",0],["Perfekt",0]]},
+  {frage:"Opa fragt: „Fährst du mit dem Bus zur Schule“ – Welches Satzzeichen fehlt am Ende?", bereich:"fsatz",
+   o:[["Ein Fragezeichen (?)",1],["Ein Punkt (.)",0],["Ein Komma (,)",0]]},
+  {frage:"„Fährst du mit dem Bus zur Schule?“ – Wie nennt man diesen Satz?", bereich:"fsatz",
+   o:[["Fragesatz",1],["Aussagesatz",0],["Ausrufesatz",0]]},
+  {frage:"„Heute fahren wir mit schnellen Autos.“ – Welches Wort ist das Adjektiv (Wie-Wort)?", bereich:"fadj",
+   o:[["schnellen",1],["fahren",0],["Autos",0]]},
+  {frage:"Das Auto fährt schnell. Ein Expresszug fährt …", bereich:"fadj",
+   o:[["schneller",1],["schnell",0],["am schnellsten",0]]},
+  {frage:"Aber das Flugzeug fliegt …", bereich:"fadj",
+   o:[["am schnellsten",1],["schneller",0],["schnellsten",0]]},
+  {frage:"„er pflückte“ – Wie heißt die Grundform?", bereich:"fzeit",
+   o:[["pflücken",1],["pflückte",0],["gepflückt",0]]},
+  {frage:"„sie startete“ – Wie heißt die Grundform?", bereich:"fzeit",
+   o:[["starten",1],["startete",0],["gestartet",0]]},
+  {frage:"„klopfen“ – Wie heißt die Präteritumsform mit „ich“?", bereich:"fzeit",
+   o:[["ich klopfte",1],["ich klopfe",0],["ich habe geklopft",0]]}
 ];
 function testsFuerKlasse(){
   return TEST_KATALOG.filter(t=>(t.fach||"deutsch")===(store.fach||"deutsch"))
@@ -6546,6 +6582,27 @@ function testStart(typ){
       idx:0, punkte:0, max:13, start:Date.now(),
       bereiche:{vinhalt:{p:0,max:3}, vaufbau:{p:0,max:5}, vsprache:{p:0,max:4}, vform:{p:0,max:1}} };
     return testVorgangVorlage(); // erst die Vorlage lesen – wie in der Schule
+  }
+  if(typ==="fit"){
+    // "Bist du fit?": Subjekt/Prädikat antippen + Fragen danach (vorhandene
+    // Mechanik) plus 8 Wahl-Aufgaben aus dem Heft (Zeitformen, Satzzeichen,
+    // Adjektive/Steigerung, Grundformen).
+    const sp=testZieh(TEST_SP,2,null);
+    const fr=[testZieh(TEST_FRAGEN,1,q=>q.ziel==="Subjekt")[0], testZieh(TEST_FRAGEN,1,q=>q.ziel==="Prädikat")[0]];
+    const wahl=testZieh(FIT_WAHL,8,null).map(q=>({art:"wahl", a:q, punkte:1, bereich:q.bereich}));
+    test={ typ:typ, aufgaben:[
+        {art:"sp", a:sp[0], ziel:"Subjekt", punkte:1, bereich:"subjpraed"},
+        {art:"sp", a:sp[1], ziel:"Prädikat", punkte:1, bereich:"subjpraed"},
+        wahl[0], wahl[1], wahl[2],
+        {art:"frage", a:fr[0], punkte:1, bereich:"subjpraed"},
+        wahl[3], wahl[4], wahl[5],
+        {art:"frage", a:fr[1], punkte:1, bereich:"subjpraed"},
+        wahl[6], wahl[7]],
+      idx:0, punkte:0, max:12, start:Date.now(),
+      bereiche:{subjpraed:{p:0,max:4}, fzeit:{p:0,max:0}, fsatz:{p:0,max:0}, fadj:{p:0,max:0}} };
+    // Bereichs-Maxima je nach gezogenen Wahl-Aufgaben
+    wahl.forEach(w=>{ test.bereiche[w.bereich].max+=1; });
+    return testFrage();
   }
   if(typ==="mathe"){
     // Kompass-4-Mathe-Training: 12 Aufgaben quer durch alle 5 Bereiche,
@@ -6589,7 +6646,7 @@ function openTestTraining(){
   $("screen-content").classList.add("active");
   const hist=(store.testHistorie||[]);
   const histHTML=hist.length?`<div class="card"><h3>📈 Deine letzten Tests</h3>${hist.slice().reverse().map(h=>
-    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":h.typ==="mathe"?"🔢 Mathe":"🧩 Sprache"}</p>`).join("")}</div>`:"";
+    `<p class="muted" style="margin:3px 0; font-size:14px;">${h.datum}: <b>${String(h.p).replace(".",",")} von ${h.max} Punkten</b> · ${h.typ==="vorgang"?"📝 Vorgang":h.typ==="mathe"?"🔢 Mathe":h.typ==="fit"?"✅ Fit-Test":"🧩 Sprache"}</p>`).join("")}</div>`:"";
   const verfuegbar=testsFuerKlasse();
   const knoepfe=verfuegbar.length
     ? verfuegbar.map(t=>`<button class="btn-primary mt test-start" data-typ="${t.typ}" style="width:100%;">${t.titel}<br>
@@ -6783,7 +6840,7 @@ function testErgebnis(){
   let muenzText="";
   if(store.muenzenAktiv && anteil>=0.6){ store.muenzen=(store.muenzen||0)+1; muenzText=`<p style="font-weight:700;">🪙 Starke Runde – 1 Spiel-Münze verdient!</p>`; }
   save();
-  const zeilen=Object.entries(test.bereiche).map(([id,b])=>{
+  const zeilen=Object.entries(test.bereiche).filter(([,b])=>b.max>0).map(([id,b])=>{
     const ok=b.p/b.max>=0.6, B=TEST_BEREICHE[id];
     return `<div style="display:flex; align-items:center; gap:8px; margin:6px 0;">
       <span style="flex:1;">${B.name}</span><b>${String(b.p).replace(".",",")}/${b.max} P.</b>
@@ -8236,18 +8293,23 @@ function matheUeben(c){
       <p class="muted">Aufgabe ${i+1} von ${S.length}${ch.n>1?` · Paket ${ch.ci+1} von ${ch.n}`:``}</p>
       <div class="lvl-row">${fieldBadge(key)}</div>
       <button type="button" class="speak-btn" id="mSpeak">🔊 Vorlesen</button>
+      ${a.kontext?`<div class="example-box" data-speak-ready="1" style="font-size:15px; line-height:1.5;">${a.kontext}</div>`:``}
       <p style="font-size:17.5px; line-height:1.45;"><b>${a.f}</b></p>
       <div style="display:flex; gap:8px; flex-wrap:wrap;" id="mOpts"></div>
       <div id="mfb"></div>
       <button class="btn-primary btn-small mt" id="mNext" style="width:100%;">Weiter</button>
     </div>`;
   const sp=c.querySelector("#mSpeak");
-  if(sp){ if(speechOK()) sp.onclick=()=>speak(a.f.replace(/<[^>]+>/g,"")+". "+opts.join(". Oder: ")); else sp.style.display="none"; }
+  if(sp){ if(speechOK()) sp.onclick=()=>speak((a.kontext?a.kontext.replace(/<[^>]+>/g,"")+". ":"")
+    +a.f.replace(/<[^>]+>/g,"")+". "+opts.join(". Oder: ")); else sp.style.display="none"; }
   const fb=c.querySelector("#mfb"), box=c.querySelector("#mOpts");
   opts.forEach(o=>{
     const b=document.createElement("button");
     b.className="btn-secondary mathe-opt"; b.textContent=o;
-    b.style.cssText="flex:1; min-width:96px; font-size:17px;";
+    // lange Text-Antworten (z. B. ganze Sätze) untereinander statt nebeneinander
+    b.style.cssText = o.length>24
+      ? "flex:1 1 100%; font-size:15.5px; text-align:left;"
+      : "flex:1; min-width:96px; font-size:17px;";
     b.onclick=()=>{
       if(answered) return;
       answered=true;
@@ -8310,6 +8372,116 @@ function matheSheet(c){
   c.querySelector("#printBtn").onclick=()=>printHTML(inner);
 }
 function matheFlower(c){ renderFlower(c, MODULES[activeModuleId].self, store[activeModuleId].self); }
+
+/* ============================================================
+   GESCHICHTEN-WERKSTATT (aus den Buch-Aufgaben: Teile der
+   Geschichte E/H/S, spannende Überschriften, Zeitform-Konsistenz
+   „Heute/Gestern hatte Mutti Geburtstag", wörtliche Rede mit
+   Begleitsätzen). Nutzt den generischen MC-Renderer (matheUeben)
+   mit Kontext-Texten – Stufe 1: Aufbau + Begleitsätze,
+   Stufe 2/3: Zeitformen umformen + Zeichensetzung.
+   ============================================================ */
+const GESCH_DATEN={
+  easy:[
+    {kontext:"„Es geschah in einer stürmischen Herbstnacht. Anna und ihre Eltern schliefen schon fest.“",
+     f:"Zu welchem Teil der Geschichte gehört dieser Abschnitt?", r:"Einleitung (E)", x:["Hauptteil (H)","Schluss (S)"],
+     tipp:"Die Einleitung verrät: Wer? Wo? Wann? – hier beginnt alles."},
+    {kontext:"„Plötzlich klirrte es laut. ‚Ein Einbrecher!‘, flüsterte Anna und verkroch sich ängstlich unter der Bettdecke.“",
+     f:"Zu welchem Teil gehört dieser Abschnitt?", r:"Hauptteil (H)", x:["Einleitung (E)","Schluss (S)"],
+     tipp:"Im Hauptteil passiert das Spannendste – oft beginnt er mit „Plötzlich“!"},
+    {kontext:"„‚Zum Glück war es nur Kätzchen Minka‘, lachte Mutti. Beruhigt schlief Anna wieder ein.“",
+     f:"Zu welchem Teil gehört dieser Abschnitt?", r:"Schluss (S)", x:["Hauptteil (H)","Einleitung (E)"],
+     tipp:"Der Schluss löst alles auf – die Aufregung ist vorbei."},
+    {f:"In welcher Reihenfolge ist eine Geschichte aufgebaut?",
+     r:"Einleitung → Hauptteil → Schluss", x:["Hauptteil → Einleitung → Schluss","Schluss → Hauptteil → Einleitung"],
+     tipp:"Erst vorstellen, dann Spannung, dann Auflösung."},
+    {f:"Was gehört in die Einleitung einer Geschichte?",
+     r:"Wer? Wo? Wann?", x:["Das spannendste Ereignis","Die Auflösung am Ende"],
+     tipp:"Die Einleitung stellt alles vor, was man zum Mitfiebern braucht."},
+    {f:"Welche Überschrift passt zur Minka-Geschichte und macht neugierig?",
+     r:"Der geheimnisvolle Krach in der Nacht", x:["Anna schläft in ihrem Bett","Es war nur die Katze"],
+     tipp:"Eine gute Überschrift macht neugierig – und verrät das Ende NICHT!"},
+    {f:"Eine spannende Überschrift …",
+     r:"macht neugierig und verrät das Ende nicht", x:["erzählt schon die ganze Geschichte","ist so lang wie möglich"],
+     tipp:"Wer die Auflösung schon kennt, liest nicht mehr weiter."},
+    {f:"Mit welchem Wort beginnt im Hauptteil oft der spannendste Moment?",
+     r:"Plötzlich …", x:["Zum Glück …","Am Ende …"],
+     tipp:"„Plötzlich“ ist das Spannungs-Signal vieler Geschichten."},
+    {kontext:"„Alles Gute zum Geburtstag!“",
+     f:"Welcher Begleitsatz passt zu diesem Gesprächssatz?", r:"Emma gratuliert:", x:["Mutti fragt:","Emma antwortet:"],
+     tipp:"Gratulieren heißt: Glück wünschen."},
+    {kontext:"„Wer hat den Tisch gedeckt?“",
+     f:"Welcher Begleitsatz passt?", r:"Mutti fragt:", x:["Emma gratuliert:","Mutti freut sich:"],
+     tipp:"Das Fragezeichen verrät es: Hier wird gefragt!"},
+    {kontext:"„Ich bin extra früh aufgestanden.“",
+     f:"Welcher Begleitsatz passt?", r:"Emma antwortet:", x:["Mutti fragt:","Emma gratuliert:"],
+     tipp:"Auf eine Frage folgt eine Antwort."},
+    {kontext:"„Das ist eine tolle Überraschung!“",
+     f:"Welcher Begleitsatz passt?", r:"Mutti freut sich:", x:["Emma antwortet:","Mutti fragt:"],
+     tipp:"Das Ausrufezeichen zeigt die Freude!"}
+  ],
+  hard:[
+    {kontext:"„Ich ging leise in die Küche. Dann deckte ich den Frühstückstisch. Vati schenkte Mutti schöne Blumen.“",
+     f:"Welche Überschrift passt zur Zeitform dieses Textes?",
+     r:"Gestern hatte Mutti Geburtstag", x:["Heute hat Mutti Geburtstag","Morgen hat Mutti Geburtstag"],
+     tipp:"ging, deckte, schenkte – die Verben stehen im Präteritum (Vergangenheit)."},
+    {f:"An welchen Wörtern erkennst du die Zeitform eines Textes?",
+     r:"An den Verben", x:["An den Nomen","An den Adjektiven"],
+     tipp:"ging/gehe, deckte/decke – das Verb zeigt die Zeit an."},
+    {f:"„Ich ging leise in die Küche.“ – Wie heißt der Satz bei der Überschrift „Heute hat Mutti Geburtstag“?",
+     r:"Ich gehe leise in die Küche.", x:["Ich ging leise in die Küche.","Ich bin leise in die Küche gegangen."],
+     tipp:"Heute = Präsens (Gegenwart): gehe, decke, schenkt …"},
+    {f:"„Dann deckte ich den Frühstückstisch.“ – im Präsens?",
+     r:"Dann decke ich den Frühstückstisch.", x:["Dann deckte ich den Frühstückstisch.","Dann habe ich den Tisch gedeckt."],
+     tipp:"deckte (gestern) → decke (heute)."},
+    {f:"„Vati schenkte Mutti schöne Blumen.“ – im Präsens?",
+     r:"Vati schenkt Mutti schöne Blumen.", x:["Vati schenkte Mutti schöne Blumen.","Vati wird Mutti Blumen schenken."],
+     tipp:"schenkte → schenkt: nur ein Buchstabe weniger!"},
+    {f:"„Mutti freute sich sehr.“ – im Präsens?",
+     r:"Mutti freut sich sehr.", x:["Mutti freute sich sehr.","Mutti hat sich sehr gefreut."],
+     tipp:"freute → freut."},
+    {kontext:"„Es geschah in einer stürmischen Herbstnacht.“",
+     f:"In welcher Zeitform steht dieser Satz?", r:"Präteritum (Vergangenheit)", x:["Präsens (Gegenwart)","Futur (Zukunft)"],
+     tipp:"geschah = Vergangenheitsform von „geschehen“."},
+    {f:"Wie bleibt eine Geschichte gut lesbar?",
+     r:"Sie bleibt in EINER Zeitform", x:["Sie wechselt oft die Zeitform","Sie hat gar keine Verben"],
+     tipp:"Wer mitten im Text die Zeit wechselt, bringt die Leser durcheinander."},
+    {f:"Wie wird die wörtliche Rede richtig aufgeschrieben?",
+     r:"Mutti fragt: „Wer hat den Tisch gedeckt?“", x:["Mutti fragt „Wer hat den Tisch gedeckt“","Mutti fragt: Wer hat den Tisch gedeckt."],
+     tipp:"Nach dem Begleitsatz: Doppelpunkt – dann Anführungszeichen unten … oben."},
+    {kontext:"„‚Zum Glück war es nur Kätzchen Minka‘, lachte Mutti.“",
+     f:"Welcher Teil ist der Begleitsatz?", r:"lachte Mutti", x:["Zum Glück war es","nur Kätzchen Minka"],
+     tipp:"Der Begleitsatz sagt, WER spricht und WIE."},
+    {f:"Der Begleitsatz steht NACH der wörtlichen Rede. Was steht zwischen beiden?",
+     r:"Ein Komma", x:["Ein Doppelpunkt","Gar nichts"],
+     tipp:"„…“, sagte Mutti. – erst Anführungszeichen zu, dann Komma."},
+    {f:"Welcher Schluss rundet die Minka-Geschichte am besten ab?",
+     r:"Beruhigt schlief Anna wieder ein.", x:["Und dann war die Geschichte aus.","Plötzlich klirrte es schon wieder!"],
+     tipp:"Ein guter Schluss bringt Ruhe hinein – kein neues Abenteuer."}
+  ]
+};
+const KRIT_GESCH=[
+  "Kenne ich die drei Teile einer Geschichte?",
+  "Habe ich auf die Verben (Zeitform) geachtet?",
+  "Habe ich die Begleitsätze richtig zugeordnet?",
+  "Habe ich die Tipps gelesen?"
+];
+const KRIT_GESCH_FORM=["Ich habe die Texte genau gelesen.","Ich habe in Ruhe überlegt.","Ich habe nicht geraten."];
+function geschLernen(c){
+  c.innerHTML=`
+    <div class="card"><h2>📚 Geschichten-Werkstatt</h2>
+      <p>Jede gute Geschichte hat <b>drei Teile</b>:</p>
+      <div class="example-box"><b>E</b>inleitung – Wer? Wo? Wann?<br>
+        <b>H</b>auptteil – das Spannendste („Plötzlich …!“)<br>
+        <b>S</b>chluss – die Auflösung, alles ist gut.</div>
+      <p class="muted">Dazu übst du hier: <b>spannende Überschriften</b> wählen,
+        die <b>Zeitform</b> festhalten (die Verben verraten sie!) und die
+        <b>wörtliche Rede</b> mit Begleitsätzen wie „…, fragt Mutti“.</p></div>
+    <div class="card"><div class="hint">💡 Merk-Trick: <b>Plötzlich</b> = Hauptteil-Signal ·
+      <b>Zum Glück</b> = Schluss-Signal · Das <b>Verb</b> zeigt die Zeit.</div>
+      <button class="btn-primary" id="toUeben">Los: Üben</button></div>`;
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+}
 
 const MODULES = {
   vorgang:{
@@ -8526,6 +8698,15 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
     ],
     self:{ groups:[{title:"Daten & Zufall", fragen:KRIT_MATHE}], form:KRIT_MATHE_FORM }
+  },
+  gesch:{
+    id:"gesch", name:"Geschichten-Werkstatt", emoji:"📚",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Lernen", render:geschLernen},
+      {id:"ueben",  icon:"✏️", label:"Üben",   render:matheUeben},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
+    ],
+    self:{ groups:[{title:"Geschichten-Werkstatt", fragen:KRIT_GESCH}], form:KRIT_GESCH_FORM }
   }
 };
 
@@ -8581,7 +8762,8 @@ let store = {
   mzahlen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgroessen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  mdaten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  mdaten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  gesch:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -8598,7 +8780,7 @@ function load(){
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
     ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass","gws",
-     "mrechnen","mzahlen","mgeo","mgroessen","mdaten"].forEach(m=>{
+     "mrechnen","mzahlen","mgeo","mgroessen","mdaten","gesch"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
     if(["deutsch","mathe"].includes(d.fach)) store.fach=d.fach;
@@ -8735,7 +8917,7 @@ let activeSectionId = null;
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
   zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4], tennis:[3,4], fussball:[3,4], schach:[3,4], blockwelt:[3,4],
-  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4]
+  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4], gesch:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -9019,7 +9201,7 @@ function muenzAnzeige(){
 const MODUL_GRUPPEN=[
   {id:"schreiben", emoji:"✍️", titel:"Schreiben & Lesen",
    text:"Texte schreiben, lesen und verstehen",
-   module:["vorgang","kompass"]},
+   module:["vorgang","gesch","kompass"]},
   {id:"grammatik", emoji:"🧩", titel:"Sätze & Grammatik",
    text:"Satzglieder, Wortarten, Zeitformen und mehr",
    module:["subjekt","praedikat","satzglieder","rede","zeit","wortarten","faelle"]},
