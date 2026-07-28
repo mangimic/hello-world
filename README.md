@@ -99,16 +99,17 @@ Album. Smoke-Test: `node tests/leon-smoke.js`.
 
 ## 🦔 Apfel-Igel (ab ca. 8 Jahre)
 
-Im Ordner [`felix/`](felix/) steckt ein Geschicklichkeitsspiel –
+Im Ordner [`felix/`](felix/) steckt ein Überlebens-Spiel –
 gleiche Technik (Einzeldatei-PWA, offline, werbefrei): **Apfel-Igel**.
-Als Igel fängt man auf einer Insel – zwischen Palmen, Strand und
-Meer – herabfallende Äpfel auf den Stacheln und stapelt sie –
-**100 Level** mit steigendem Tempo und immer neuen Extras:
-faule Äpfel (nicht fangen!), Gold-Äpfel (zählen 3-fach), eine
-Apfel-klauende Möwe, Inselwind und Nacht-Level, in denen nur die
-eigene Laterne leuchtet. Pro Level gibt es bis zu 3 Sterne (je nach
-übrigen Herzen), der Fortschritt bleibt im `localStorage`.
-Steuerung: Pfeiltasten/A/D oder Finger.
+Als Igel muss man auf einer Insel – zwischen Palmen, Strand und
+Meer – die Levelzeit **überleben**: Der Hunger steigt ständig, nur
+herabfallende Äpfel (auf den Stacheln gefangen und gestapelt) füllen
+den Magen. **100 Level** mit steigendem Tempo und immer neuen
+Gefahren: harte Kokosnüsse (nicht fangen – 1 Herz weg!), Gold-Äpfel
+(machen extra satt), eine Essen-klauende Möwe, Inselwind und
+Nacht-Level, in denen nur die eigene Laterne leuchtet. Pro Level gibt
+es bis zu 3 Sterne (je nach übrigen Herzen), der Fortschritt bleibt
+im `localStorage`. Steuerung: Pfeiltasten/A/D oder Finger.
 
 **🚀 [Apfel-Igel öffnen](https://mangimic.github.io/lernprofi/felix/)**
 

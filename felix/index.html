@@ -97,18 +97,20 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 #game-wrap{position:absolute; inset:0;}
 #game-canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none;}
 #hud{
-  position:absolute; top:calc(6px + var(--safe-top)); left:8px; right:8px;
-  display:flex; align-items:center; gap:10px; pointer-events:none; z-index:5;
-  font-weight:bold; font-size:18px;
+  position:absolute; top:calc(6px + var(--safe-top)); left:6px; right:6px;
+  display:flex; align-items:center; gap:5px; pointer-events:none; z-index:5;
+  font-weight:bold; font-size:15px; white-space:nowrap;
 }
 #hud .pill{
-  background:rgba(255,255,255,0.85); border-radius:14px; padding:6px 12px;
+  background:rgba(255,255,255,0.85); border-radius:12px; padding:6px 8px;
   box-shadow:0 2px 8px rgba(0,0,0,0.12);
 }
-#hud-progress{flex:1; max-width:220px; position:relative; overflow:hidden;}
-#hud-bar{position:absolute; inset:0; background:linear-gradient(90deg,#a5e8c3,#5bc98c); width:0%; z-index:-1; transition:width .25s;}
-#hud button{pointer-events:auto; border:none; font-family:inherit; cursor:pointer; font-size:20px;
-  background:rgba(255,255,255,0.85); border-radius:14px; padding:6px 12px; box-shadow:0 2px 8px rgba(0,0,0,0.12);}
+#hud-progress{flex:1; min-width:76px; max-width:200px; position:relative; overflow:hidden;}
+#hud-bar{position:absolute; inset:0; background:linear-gradient(90deg,#a5e8c3,#5bc98c); width:0%; z-index:-1; transition:width .2s;}
+#hud-bar.low{background:linear-gradient(90deg,#ffb3a7,#e74c3c);}
+#hud-hearts{letter-spacing:-2px;}
+#hud button{pointer-events:auto; border:none; font-family:inherit; cursor:pointer; font-size:16px;
+  background:rgba(255,255,255,0.85); border-radius:12px; padding:6px 9px; box-shadow:0 2px 8px rgba(0,0,0,0.12);}
 
 /* ---------- Overlay ---------- */
 #overlay{
@@ -134,7 +136,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 <div class="screen active" id="scr-start">
   <div id="start-igel">🦔🏝</div>
   <h1>Apfel-Igel</h1>
-  <div class="sub">Stapel die Äpfel auf deiner Insel – 100 Level!</div>
+  <div class="sub">Überlebe auf der Apfel-Insel – 100 Level!</div>
   <div class="stack-btns">
     <button class="btn" id="btn-play">▶ Spielen</button>
     <button class="btn blue" id="btn-levels">🗺 Levelauswahl</button>
@@ -158,7 +160,8 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   <div id="game-wrap"><canvas id="game-canvas"></canvas></div>
   <div id="hud">
     <div class="pill" id="hud-level">Level 1</div>
-    <div class="pill" id="hud-progress"><div id="hud-bar"></div><span id="hud-apples">🍎 0/10</span></div>
+    <div class="pill" id="hud-progress"><div id="hud-bar"></div><span id="hud-energy">🍎 100</span></div>
+    <div class="pill" id="hud-time">⏱ 25</div>
     <div class="pill" id="hud-hearts">❤️❤️❤️</div>
     <button id="btn-pause" title="Pause">⏸</button>
     <button id="btn-sound" title="Ton">🔊</button>
@@ -204,22 +207,24 @@ const MAX_LEVEL = 100;
 function levelConfig(n){
   return {
     level: n,
-    goal:      Math.min(10 + Math.floor(n*0.4), 45),          // Äpfel bis zum Sieg
+    time:      Math.min(25 + Math.floor(n*0.5), 75),          // Sekunden überleben
+    drain:     Math.min(7 + n*0.05, 12),                      // Hunger pro Sekunde (von 100)
     fallSpeed: Math.min(120 + n*2.4, 380),                    // px/s
     spawn:     Math.max(0.55, 1.65 - n*0.011),                // s zwischen Äpfeln
     doubleP:   Math.min(0.05 + n*0.004, 0.45),                // Chance auf Doppel-Apfel
-    goldP:     0.06,                                          // Chance auf Gold-Apfel (+3)
-    faulP:     n < 5 ? 0 : Math.min(0.06 + n*0.0018, 0.24),   // Chance auf faulen Apfel
+    goldP:     0.06,                                          // Chance auf Gold-Apfel
+    kokosP:    n < 5 ? 0 : Math.min(0.06 + n*0.0018, 0.24),   // Chance auf Kokosnuss
     gullEvery: n < 8 ? 0 : Math.max(5.5, 15 - n*0.09),        // s zwischen Möwen
     wind:      n < 25 ? 0 : Math.min(30 + (n-25)*1.4, 120),   // max. Seitenwind px/s
     night:     n >= 30 && n % 10 === 0,                       // Nacht-Level
     lives: 3
   };
 }
+const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8;
 function levelHint(n){
-  if(n === 1)  return "Fange die Äpfel mit deinen Stacheln!";
-  if(n === 5)  return "NEU: Faule Äpfel (braun) – NICHT fangen!";
-  if(n === 8)  return "NEU: Die Möwe klaut Äpfel vom Stapel!";
+  if(n === 1)  return "Überlebe! Iss Äpfel, sonst knurrt der Magen!";
+  if(n === 5)  return "NEU: Kokosnüsse – NICHT fangen, autsch!";
+  if(n === 8)  return "NEU: Die Möwe klaut dein Essen!";
   if(n === 25) return "NEU: Inselwind! Die Äpfel fliegen schräg.";
   if(n === 30) return "NEU: Nacht-Level – nur deine Laterne leuchtet!";
   if(n === 100)return "Das letzte Level – zeig alles, was du kannst!";
@@ -292,7 +297,7 @@ const game = {
   spawnT:1, gullT:6,
   hedge:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
-  caught:0, lives:3, shake:0, windX:0
+  caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0
 };
 
 function resize(){
@@ -316,6 +321,7 @@ function startLevel(n){
   game.hedge.x = game.hedge.tx = game.hedge.px = W/2; game.hedge.lean = 0;
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
   game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
+  game.energy = 100; game.timeLeft = game.cfg.time;
   game.state = "playing"; game.active = true;
   showScreen("#scr-game"); resize(); updateHUD();
   const hint = levelHint(n);
@@ -324,8 +330,11 @@ function startLevel(n){
 
 function updateHUD(){
   $("#hud-level").textContent = "Level " + game.level + (game.cfg && game.cfg.night ? " 🌙" : "");
-  $("#hud-apples").textContent = "🍎 " + game.caught + "/" + game.cfg.goal;
-  $("#hud-bar").style.width = Math.min(100, 100*game.caught/game.cfg.goal) + "%";
+  $("#hud-energy").textContent = "🍎 " + Math.ceil(game.energy);
+  const bar = $("#hud-bar");
+  bar.style.width = clamp(game.energy, 0, 100) + "%";
+  bar.classList.toggle("low", game.energy < 30);
+  $("#hud-time").textContent = "⏱ " + Math.ceil(Math.max(0, game.timeLeft));
   $("#hud-hearts").textContent = "❤️".repeat(game.lives) + "🖤".repeat(Math.max(0, 3-game.lives));
   $("#btn-sound").textContent = store.data.sound ? "🔊" : "🔇";
 }
@@ -356,16 +365,18 @@ function winLevel(){
     if(!done) btns.push({id:"ov-next", label:"▶ Level " + (game.level+1), cb:()=>startLevel(game.level+1)});
     btns.push({id:"ov-retry", label:"↻ Nochmal", cls:"blue", cb:()=>startLevel(game.level)});
     btns.push({id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels});
-    showOverlay(done ? "🏆 ALLE 100 LEVEL!" : "Level " + game.level + " geschafft!",
-      done ? "Du bist der Apfel-Igel-Meister!\nGesamt: " + store.totalStars() + " Sterne"
-           : "Du hast " + game.caught + " Äpfel gefangen!",
+    showOverlay(done ? "🏆 ALLE 100 LEVEL!" : "Überlebt! 🎉",
+      done ? "Du hast auf der Insel überlebt – alle 100 Level!\nGesamt: " + store.totalStars() + " Sterne"
+           : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!",
       stars, btns);
   }, 900);
 }
-function loseLevel(){
+function loseLevel(reason){
   game.state = "lost"; audio.lose();
+  const survived = Math.ceil(game.cfg.time - game.timeLeft);
   setTimeout(()=>{
-    showOverlay("Alle Herzen weg!", "Du hattest schon " + game.caught + " von " + game.cfg.goal + " Äpfeln.\nGleich nochmal?", 0, [
+    showOverlay(reason === "hunger" ? "Ohje, der Magen ist leer! 😵" : "Alle Herzen weg!",
+      "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt.\nGleich nochmal?", 0, [
       {id:"ov-retry", label:"↻ Nochmal versuchen", cb:()=>startLevel(game.level)},
       {id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels}
     ]);
@@ -375,7 +386,10 @@ function loseLife(x,y,msg){
   game.lives--; game.shake = 0.5; audio.bad();
   addFloat(x, y-20, msg, "#e74c3c", 1.4, 22);
   updateHUD();
-  if(game.lives <= 0) loseLevel();
+  if(game.lives <= 0) loseLevel("herzen");
+}
+function eat(amount){
+  game.energy = clamp(game.energy + amount, 0, 100);
 }
 
 /* ---------- Update ---------- */
@@ -383,10 +397,10 @@ function spawnApple(){
   const c = game.cfg, r = Math.random();
   let type = "rot";
   if(r < c.goldP) type = "gold";
-  else if(r < c.goldP + c.faulP) type = "faul";
+  else if(r < c.goldP + c.kokosP) type = "kokos";
   game.apples.push({
     x: rand(30, W-30), y: -20,
-    vy: c.fallSpeed * rand(0.9, 1.15),
+    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : 1),
     type, rot: rand(-0.4,0.4), spin: rand(-1.5,1.5)
   });
 }
@@ -404,6 +418,16 @@ function update(dt){
   const c = game.cfg;
   game.t += dt;
   if(game.state !== "playing") { updateFx(dt); return; }
+
+  /* Überlebens-Uhr + Hunger */
+  game.timeLeft -= dt;
+  game.energy -= c.drain * dt;
+  if(game.energy <= 20 && game.energy + c.drain*dt > 20){
+    addFloat(game.hedge.x, stackTopY() - 30, "Hunger! 🍎", "#e74c3c", 1.4, 20);
+  }
+  if(game.energy <= 0){ game.energy = 0; updateHUD(); loseLevel("hunger"); return; }
+  if(game.timeLeft <= 0){ game.timeLeft = 0; updateHUD(); winLevel(); return; }
+  updateHUD();
 
   /* Igel bewegen */
   const h = game.hedge;
@@ -445,36 +469,32 @@ function update(dt){
     /* gefangen? (Apfel kreuzt die Stapel-Oberkante über dem Igel) */
     if(prevY < topY && a.y >= topY && Math.abs(a.x - h.x) <= HEDGE_W/2 + 10){
       game.apples.splice(i,1);
-      if(a.type === "faul"){
+      if(a.type === "kokos"){
         burst(h.x, topY, "#6b5a25", 12);
-        loseLife(h.x, topY, "Igitt, faul! 🤢");
+        loseLife(h.x, topY, "Autsch! 🥥");
       }else if(a.type === "gold"){
         game.caught += 3;
+        eat(GOLD_ENERGY);
         game.stack.push("gold");
         burst(h.x, topY, "#ffd66b", 14);
-        addFloat(h.x, topY-16, "+3", "#f0a10f", 1, 24);
+        addFloat(h.x, topY-16, "Mampf! +" + GOLD_ENERGY, "#f0a10f", 1, 24);
         audio.gold();
       }else{
         game.caught += 1;
+        eat(APPLE_ENERGY);
         game.stack.push("rot");
         burst(h.x, topY, "#ff9d94", 6);
-        addFloat(h.x, topY-16, "+1", "#3fae72", 0.8, 20);
+        addFloat(h.x, topY-16, "+" + APPLE_ENERGY, "#3fae72", 0.8, 20);
         audio.catch();
       }
       updateHUD();
-      if(game.state === "playing" && game.caught >= c.goal){ winLevel(); }
       continue;
     }
 
-    /* auf dem Boden gelandet? */
+    /* auf dem Boden gelandet? (kostet kein Herz – aber das Essen ist weg) */
     if(a.y > gY){
       game.apples.splice(i,1);
-      if(a.type === "faul"){
-        burst(a.x, gY, "#6b5a25", 8);      /* faule dürfen runterfallen */
-      }else{
-        burst(a.x, gY, "#e74c3c", 10);
-        loseLife(a.x, gY, "-1 ❤️");
-      }
+      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : "#e74c3c", 8);
     }
   }
 
@@ -489,8 +509,9 @@ function update(dt){
         w.stole = true; w.vy = -140;
         game.stack.pop();
         game.caught = Math.max(0, game.caught - 1);
+        eat(-GULL_STEAL);
         audio.gull();
-        addFloat(tx, ty-20, "-1 🐦", "#4a6a8a", 1.2, 22);
+        addFloat(tx, ty-20, "-" + GULL_STEAL + " 🐦", "#4a6a8a", 1.2, 22);
         updateHUD();
       }
     }
@@ -518,20 +539,26 @@ function drawApple(x, y, r, type, rot=0){
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
   const g = ctx.createRadialGradient(-r*0.3,-r*0.3, r*0.2, 0,0, r);
   if(type === "gold"){ g.addColorStop(0,"#ffe9a0"); g.addColorStop(1,"#f0a10f"); }
-  else if(type === "faul"){ g.addColorStop(0,"#a08a4a"); g.addColorStop(1,"#6b5a25"); }
+  else if(type === "kokos"){ g.addColorStop(0,"#8a6a45"); g.addColorStop(1,"#5a4028"); }
   else { g.addColorStop(0,"#ff7f6e"); g.addColorStop(1,"#c0392b"); }
   ctx.fillStyle = g;
   ctx.beginPath(); ctx.arc(0,0,r,0,Math.PI*2); ctx.fill();
-  /* Stiel + Blatt */
-  ctx.strokeStyle = "#6d4a2f"; ctx.lineWidth = 3; ctx.lineCap = "round";
-  ctx.beginPath(); ctx.moveTo(0,-r+2); ctx.quadraticCurveTo(2,-r-6,5,-r-8); ctx.stroke();
-  ctx.fillStyle = type === "faul" ? "#7a8a4a" : "#5bc98c";
-  ctx.beginPath(); ctx.ellipse(-6,-r-3,6,3.5,-0.5,0,Math.PI*2); ctx.fill();
-  if(type === "faul"){
-    ctx.fillStyle = "rgba(60,50,20,0.55)";
-    [[-4,2,3],[5,-3,2.5],[1,7,2]].forEach(([sx,sy,sr])=>{
-      ctx.beginPath(); ctx.arc(sx,sy,sr,0,Math.PI*2); ctx.fill();
+  if(type === "kokos"){
+    /* Fasern + drei Keimlöcher */
+    ctx.strokeStyle = "rgba(40,26,12,0.5)"; ctx.lineWidth = 1.5;
+    [-0.5, 0.1, 0.7].forEach(a=>{
+      ctx.beginPath(); ctx.arc(0, 0, r*0.8, a, a+1.1); ctx.stroke();
     });
+    ctx.fillStyle = "#2c1d0e";
+    [[-4,-4],[4,-4],[0,3]].forEach(([sx,sy])=>{
+      ctx.beginPath(); ctx.arc(sx,sy,2.4,0,Math.PI*2); ctx.fill();
+    });
+  }else{
+    /* Stiel + Blatt */
+    ctx.strokeStyle = "#6d4a2f"; ctx.lineWidth = 3; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(0,-r+2); ctx.quadraticCurveTo(2,-r-6,5,-r-8); ctx.stroke();
+    ctx.fillStyle = "#5bc98c";
+    ctx.beginPath(); ctx.ellipse(-6,-r-3,6,3.5,-0.5,0,Math.PI*2); ctx.fill();
   }
   if(type === "gold"){
     ctx.fillStyle = "rgba(255,255,255,0.9)";
@@ -834,11 +861,12 @@ $("#btn-levels").addEventListener("click", openLevels);
 $("#btn-lvl-back").addEventListener("click", openStart);
 $("#btn-help").addEventListener("click", ()=>{
   showOverlay("So geht's 🦔", [
-    "🍎 Fange Äpfel mit deinen Stacheln – erreiche das Level-Ziel!",
-    "🍏 Verpasster Apfel = 1 Herz weg (du hast 3).",
-    "🟤 Faule Äpfel NICHT fangen – lass sie fallen!",
-    "✨ Gold-Äpfel zählen 3-fach.",
-    "🐦 Die Möwe klaut Äpfel vom Stapel – weich aus!",
+    "⏱ ÜBERLEBE, bis die Zeit abgelaufen ist!",
+    "🍎 Dein Igel wird ständig hungriger – iss Äpfel,",
+    "sonst ist der Magen leer und du verlierst!",
+    "✨ Gold-Äpfel machen extra satt.",
+    "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
+    "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
     "",
     "Steuerung: ← → Pfeiltasten, A/D oder Finger/Maus. P = Pause."

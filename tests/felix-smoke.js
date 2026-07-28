@@ -46,12 +46,12 @@ function section(t) { console.log("\n== " + t + " =="); }
     const c = window.__felixTest.levelConfig;
     return { l1: c(1), l30: c(30), l50: c(50), l100: c(100) };
   });
-  check("Level 1: 10 Äpfel, keine Möwe, kein Wind",
-    cfg.l1.goal === 10 && cfg.l1.gullEvery === 0 && cfg.l1.wind === 0 && cfg.l1.faulP === 0);
-  check("Schwierigkeit steigt (Tempo, Ziel, Spawnrate)",
+  check("Level 1: 25s überleben, keine Kokosnuss/Möwe, kein Wind",
+    cfg.l1.time === 25 && cfg.l1.kokosP === 0 && cfg.l1.gullEvery === 0 && cfg.l1.wind === 0);
+  check("Schwierigkeit steigt (Tempo, Zeit, Hunger, Spawnrate)",
     cfg.l100.fallSpeed > cfg.l50.fallSpeed && cfg.l50.fallSpeed > cfg.l1.fallSpeed &&
-    cfg.l100.goal >= cfg.l50.goal && cfg.l50.goal > cfg.l1.goal &&
-    cfg.l100.spawn < cfg.l1.spawn);
+    cfg.l100.time >= cfg.l50.time && cfg.l50.time > cfg.l1.time &&
+    cfg.l100.drain > cfg.l1.drain && cfg.l100.spawn < cfg.l1.spawn);
   check("Level 30 ist ein Nacht-Level, Level 100 auch",
     cfg.l30.night === true && cfg.l100.night === true && cfg.l50.wind > 0);
 
@@ -80,7 +80,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     window.__autopilot = setInterval(() => {
       if (g.state !== "playing") return;
       let best = null;
-      for (const a of g.apples) if (a.type !== "faul" && (!best || a.y > best.y)) best = a;
+      for (const a of g.apples) if (a.type !== "kokos" && (!best || a.y > best.y)) best = a;
       if (best) g.hedge.tx = best.x;
     }, 40);
   });
@@ -89,10 +89,11 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.evaluate(() => clearInterval(window.__autopilot));
   const g1 = await page.evaluate(() => {
     const g = window.__felixTest.game;
-    return { state: g.state, caught: g.caught, lives: g.lives };
+    return { state: g.state, caught: g.caught, lives: g.lives, energy: g.energy };
   });
-  check("Level 1 gewonnen (10 Äpfel gefangen)", g1.state === "won" && g1.caught >= 10,
-    `state=${g1.state} caught=${g1.caught}`);
+  check("Level 1 überlebt (Zeit abgelaufen, Äpfel gegessen)",
+    g1.state === "won" && g1.caught > 0 && g1.energy > 0,
+    `state=${g1.state} caught=${g1.caught} energy=${Math.round(g1.energy)}`);
   await page.waitForTimeout(1200);
   check("Erfolgs-Overlay mit Weiter-Knopf", await page.evaluate(() =>
     document.querySelector("#overlay").classList.contains("active") && !!document.querySelector("#ov-next")));
@@ -109,17 +110,20 @@ function section(t) { console.log("\n== " + t + " =="); }
   }));
   check("Level 2 läuft", l2.level === 2 && l2.state === "playing", JSON.stringify(l2));
 
-  // ---------- Herzen verlieren -> Game Over ----------
+  // ---------- Verhungern -> Game Over ----------
   section("Game Over");
   await page.evaluate(() => {
     const g = window.__felixTest.game;
     g.timeScale = 4;
-    g.hedge.tx = -500; // Igel in die Ecke -> Äpfel fallen daneben
+    g.hedge.tx = -500; // Igel in die Ecke -> isst nichts mehr -> Hunger
   });
   await page.waitForFunction(() => window.__felixTest.game.state === "lost", null, { timeout: 30000 })
     .catch(() => {});
-  const g2 = await page.evaluate(() => window.__felixTest.game.state);
-  check("3 verpasste Äpfel -> verloren", g2 === "lost", "state=" + g2);
+  const g2 = await page.evaluate(() => ({
+    state: window.__felixTest.game.state, energy: window.__felixTest.game.energy
+  }));
+  check("Nichts gegessen -> verhungert -> verloren", g2.state === "lost" && g2.energy <= 0,
+    `state=${g2.state} energy=${Math.round(g2.energy)}`);
   await page.waitForTimeout(1200);
   check("Nochmal-Knopf im Overlay", await page.evaluate(() =>
     document.querySelector("#overlay").classList.contains("active") && !!document.querySelector("#ov-retry")));
