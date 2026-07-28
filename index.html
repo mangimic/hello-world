@@ -511,8 +511,14 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.72.0";
+const APP_VERSION = "1.73.0";
 const RELEASE_NOTES = [
+  {v:"1.73.0", datum:"28.07.2026", punkte:[
+    "🧠 NEU: Konzentrations-Training auf der Startseite – zwei Spiele aus dem Buch „15 konzentrationsfördernde Lernspiele“, ganz ohne Münz-Kosten!",
+    "🔢 Zahlenkette: Merke dir eine wachsende Zahlenreihe. Jeden Tag, an dem du sie fehlerfrei auf dem Ziffernblock eintippst, kommt eine neue Zahl dazu – bis du 7 Zahlen im Kopf hast. Dann gibt es die große Feier, dein Rekord wird gespeichert und eine neue Kette beginnt.",
+    "🔤 Alphabet-Sprünge: Tippe nur jeden 2. oder 3. Buchstaben an – erst vorwärts, dann richtig knifflig rückwärts ab Z! Fehlerfreie Läufe bekommen einen ⭐.",
+    "⭐ Beide Spiele zählen für deine Mini-Missionen und das Tagesziel – und trainieren genau das, was beim Lernen hilft: merken, dranbleiben, genau hinschauen."
+  ]},
   {v:"1.72.0", datum:"27.07.2026", punkte:[
     "📚 Neues Lernfeld „Geschichten-Werkstatt“ (bei Schreiben & Lesen, nach den Aufgaben aus deinem Übungsheft): Ordne Einleitung, Hauptteil und Schluss der Minka-Geschichte zu, wähle spannende Überschriften und übe die wörtliche Rede mit Begleitsätzen („…, fragt Mutti“).",
     "⏰ Stufe 2 der Werkstatt: Zeitformen im Aufsatz! Passt die Überschrift „Heute“ oder „Gestern“ zum Text? Die Verben verraten es – und du formst Sätze vom Präteritum ins Präsens um.",
@@ -7210,6 +7216,202 @@ function ferienPlan(){
 }
 
 /* ============================================================
+   KONZENTRATIONS-TRAINING (aus „15 konzentrationsfördernde
+   Lernspiele"): zwei Spiele, die direkt das Merkvermögen und die
+   Aufmerksamkeit trainieren – fachübergreifend, ohne Münz-Kosten.
+   1) ZAHLENKETTE: Das Kind merkt sich eine wachsende Zahlenreihe.
+      Jeden Tag, an dem es die Kette fehlerfrei wiedergibt, kommt
+      EINE neue Zahl dazu (wie im Buch: über die Woche wachsen).
+      7 Zahlen geschafft -> Feier, Rekord, Neustart.
+   2) ALPHABET-SPRÜNGE: Nur jeden 2. (oder 3.) Buchstaben antippen,
+      vorwärts und rückwärts – gegen das gedankliche Durchrutschen.
+   Beide zählen als gelöste Aufgabe für Mini-Missionen (fokusZaehle).
+   ============================================================ */
+const KETTE_ZIEL=7;
+function ketteNeu(){ return [ketteZufall(), ketteZufall()]; }
+function ketteZufall(){ return 1+Math.floor(Math.random()*49); }
+let ketteEingabe=[], ketteTipp="", ketteMerkIdx=0, ketteTimer=null;
+function konzZahlen(c){
+  if(ketteTimer){ clearInterval(ketteTimer); ketteTimer=null; }
+  const K=store.kette;
+  if(!K.zahlen.length){ K.zahlen=ketteNeu(); save(); }
+  const heuteErweitert = K.erweitertAm===heuteKey();
+  c.innerHTML=`
+    <div class="card">
+      <h2>🔢 Zahlenkette</h2>
+      <p class="muted">Merke dir die Kette – jeden Tag kommt eine Zahl dazu!</p>
+      <div class="lvl-row"><span class="lvl-badge">🔗 Kette: ${K.zahlen.length} von ${KETTE_ZIEL} Zahlen${K.rekord?` · 🏆 Rekord: ${K.rekord}`:``}</span></div>
+      <div class="hint" id="ketteInfo">${heuteErweitert
+        ? "Heute ist deine Kette schon gewachsen! Du kannst trotzdem üben, sie fehlerfrei aufzusagen – morgen kommt die nächste Zahl dazu."
+        : "Sage die Kette fehlerfrei auf – dann wächst sie heute um eine Zahl!"}</div>
+      <div id="ketteHost" style="text-align:center;"></div>
+    </div>`;
+  const host=c.querySelector("#ketteHost");
+  host.innerHTML=`<button class="btn-primary" id="ketteStart" style="width:100%;">🧠 Zahlen ansehen &amp; merken</button>`;
+  host.querySelector("#ketteStart").onclick=()=>konzMerkphase(host);
+}
+function konzMerkphase(host){
+  const K=store.kette; ketteMerkIdx=0;
+  const zeig=()=>{
+    if(ketteMerkIdx>=K.zahlen.length){
+      clearInterval(ketteTimer); ketteTimer=null;
+      return konzEingabe(host);
+    }
+    host.innerHTML=`
+      <p class="muted" style="margin:6px 0 0;">Zahl ${ketteMerkIdx+1} von ${K.zahlen.length} – gut merken!</p>
+      <div style="font-size:64px; font-weight:800; margin:10px 0; color:var(--blue-ink,#1c56b3);">${K.zahlen[ketteMerkIdx]}</div>`;
+    ketteMerkIdx++;
+  };
+  zeig();
+  ketteTimer=setInterval(zeig, spielT(2200));
+}
+function konzEingabe(host){
+  ketteEingabe=[]; ketteTipp="";
+  const K=store.kette;
+  const render=()=>{
+    host.innerHTML=`
+      <p style="margin:8px 0 2px;">Tippe die Zahlen <b>in der richtigen Reihenfolge</b>:</p>
+      <div style="font-size:22px; font-weight:800; min-height:30px;">${K.zahlen.map((_,i)=>
+        i<ketteEingabe.length?ketteEingabe[i]:"·").join("  –  ")}</div>
+      <div style="font-size:30px; font-weight:800; min-height:40px; color:var(--blue-ink,#1c56b3);" id="ketteTippAnzeige">${ketteTipp||"&nbsp;"}</div>
+      <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:6px; max-width:300px; margin:0 auto;">
+        ${[1,2,3,4,5,6,7,8,9,0].map(z=>`<button class="btn-secondary kette-z" data-z="${z}" style="font-size:20px; padding:10px 0;">${z}</button>`).join("")}
+      </div>
+      <div style="display:flex; gap:8px; max-width:300px; margin:8px auto 0;">
+        <button class="btn-secondary btn-small" id="ketteLoesch" style="flex:1;">⌫</button>
+        <button class="btn-primary btn-small" id="ketteOk" style="flex:2;">✓ Zahl fertig</button>
+      </div>
+      <div id="kettefb"></div>`;
+    host.querySelectorAll(".kette-z").forEach(b=>b.onclick=()=>{
+      if(ketteTipp.length<2){ ketteTipp+=b.dataset.z; host.querySelector("#ketteTippAnzeige").textContent=ketteTipp; } });
+    host.querySelector("#ketteLoesch").onclick=()=>{ ketteTipp=""; host.querySelector("#ketteTippAnzeige").innerHTML="&nbsp;"; };
+    host.querySelector("#ketteOk").onclick=()=>{
+      if(!ketteTipp) return;
+      const erwartet=K.zahlen[ketteEingabe.length];
+      if(parseInt(ketteTipp,10)===erwartet){
+        ketteEingabe.push(erwartet); ketteTipp="";
+        if(ketteEingabe.length>=K.zahlen.length) return konzKetteGeschafft(host);
+        render();
+      } else {
+        konzKetteFehler(host);
+      }
+    };
+  };
+  render();
+}
+function konzKetteGeschafft(host){
+  const K=store.kette;
+  fokusZaehle(); // zählt für Mini-Missionen
+  const heuteErweitert = K.erweitertAm===heuteKey();
+  if(K.zahlen.length>=KETTE_ZIEL){
+    K.rekord=Math.max(K.rekord||0, K.zahlen.length);
+    const alte=K.zahlen.length;
+    K.zahlen=ketteNeu(); K.erweitertAm=""; save();
+    host.innerHTML=`<div class="feedback ok" style="text-align:left;">🏆 <b>WAHNSINN!</b> Du hast dir alle ${alte} Zahlen gemerkt –
+      die ganze Kette ist geschafft! Dein Merk-Muskel wird immer stärker. 💪<br>
+      Eine neue Kette mit 2 Zahlen wartet schon auf dich.</div>
+      <button class="btn-primary mt" id="ketteWeiter" style="width:100%;">Neue Kette starten 🔗</button>`;
+    host.querySelector("#ketteWeiter").onclick=()=>konzZahlen($("moduleContent"));
+    return;
+  }
+  if(!heuteErweitert){
+    const neue=ketteZufall();
+    K.zahlen.push(neue); K.erweitertAm=heuteKey(); save();
+    host.innerHTML=`<div class="feedback ok" style="text-align:left;">🌟 <b>Fehlerfrei!</b> Deine Kette wächst:
+      Die neue Zahl ist <b style="font-size:26px;">${neue}</b> – merk sie dir für morgen!<br>
+      🔗 Deine Kette hat jetzt <b>${K.zahlen.length} von ${KETTE_ZIEL}</b> Zahlen.</div>
+      <button class="btn-primary mt" id="ketteWeiter" style="width:100%;">Gleich nochmal üben 🧠</button>`;
+  } else {
+    host.innerHTML=`<div class="feedback ok" style="text-align:left;">🌟 <b>Fehlerfrei aufgesagt!</b> Stark geübt –
+      morgen wächst deine Kette um die nächste Zahl.</div>
+      <button class="btn-primary mt" id="ketteWeiter" style="width:100%;">Nochmal üben 🧠</button>`;
+  }
+  host.querySelector("#ketteWeiter").onclick=()=>konzZahlen($("moduleContent"));
+}
+function konzKetteFehler(host){
+  const K=store.kette;
+  host.innerHTML=`<div class="feedback tip" style="text-align:left;">Fast! An Position ${ketteEingabe.length+1} kam eine andere Zahl.<br>
+    💙 Kein Problem – Merken braucht Übung. Schau dir die Kette gleich nochmal an!</div>
+    <button class="btn-primary mt" id="ketteNochmal" style="width:100%;">🧠 Nochmal ansehen &amp; merken</button>`;
+  host.querySelector("#ketteNochmal").onclick=()=>konzMerkphase(host);
+}
+/* Alphabet-Sprünge: nur jeden 2./3. Buchstaben antippen */
+const ABC="ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const ABC_STUFEN=[
+  {id:"v2", name:"Jeder 2. – vorwärts",  schritt:2, rueck:false},
+  {id:"v3", name:"Jeder 3. – vorwärts",  schritt:3, rueck:false},
+  {id:"r2", name:"Jeder 2. – rückwärts", schritt:2, rueck:true},
+  {id:"r3", name:"Jeder 3. – rückwärts", schritt:3, rueck:true}
+];
+function abcFolge(st){
+  const basis = st.rueck ? ABC.slice().reverse() : ABC;
+  return basis.filter((_,i)=>i%st.schritt===0);
+}
+let abcStufe=0, abcPos=0, abcFehler=0;
+function konzAbc(c){
+  const st=ABC_STUFEN[abcStufe], folge=abcFolge(st);
+  abcPos=0; abcFehler=0;
+  const best=(store.abcBest||{})[st.id];
+  c.innerHTML=`
+    <div class="card">
+      <h2>🔤 Alphabet-Sprünge</h2>
+      <p class="muted">Tippe ${st.rueck?"<b>rückwärts ab Z</b>":"<b>ab A</b>"} nur <b>jeden ${st.schritt}. Buchstaben</b> an!</p>
+      <div class="chip-row">${ABC_STUFEN.map((s,i)=>
+        `<button class="chip${i===abcStufe?" on":""}" data-st="${i}">${s.name}${(store.abcBest||{})[s.id]===0?" ⭐":""}</button>`).join("")}</div>
+      <div class="hint" id="abcInfo">Los geht's: Der erste Buchstabe ist <b>${folge[0]}</b>.
+        ${best!==undefined?`Dein bester Lauf: <b>${best===0?"fehlerfrei ⭐":best+" Fehler"}</b>.`:""}</div>
+      <div style="display:grid; grid-template-columns:repeat(6,1fr); gap:5px;" id="abcGrid">
+        ${ABC.map(b=>`<button class="btn-secondary abc-taste" data-b="${b}" style="padding:9px 0; font-size:16px;">${b}</button>`).join("")}
+      </div>
+      <div id="abcfb"></div>
+    </div>`;
+  c.querySelectorAll(".chip[data-st]").forEach(b=>b.onclick=()=>{ abcStufe=+b.dataset.st; konzAbc(c); });
+  c.querySelectorAll(".abc-taste").forEach(b=>b.onclick=()=>{
+    if(b.disabled) return;
+    if(b.dataset.b===folge[abcPos]){
+      b.disabled=true; b.style.background="#f4b942"; b.style.color="#fff";
+      abcPos++;
+      if(abcPos>=folge.length){
+        fokusZaehle();
+        store.abcBest=store.abcBest||{};
+        const alt=store.abcBest[st.id];
+        if(alt===undefined || abcFehler<alt) store.abcBest[st.id]=abcFehler;
+        save();
+        const fb=c.querySelector("#abcfb");
+        fb.innerHTML=`<div class="feedback ok">🎉 <b>Geschafft – alle ${folge.length} Buchstaben!</b>
+          ${abcFehler===0?"Und das ganz ohne Fehler – ⭐ stark!":`Mit ${abcFehler} kleinen Stolperern – beim nächsten Mal klappt's noch glatter!`}</div>
+          <button class="btn-primary btn-small mt" id="abcNochmal" style="width:100%;">🔁 Nochmal</button>`;
+        fb.querySelector("#abcNochmal").onclick=()=>konzAbc(c);
+      } else {
+        c.querySelector("#abcInfo").innerHTML=`Super! Weiter – welcher Buchstabe kommt als Nächstes?`;
+      }
+    } else {
+      abcFehler++;
+      b.style.background="#f7d9d9";
+      setTimeout(()=>{ if(b.isConnected){ b.style.background=""; } }, spielT(600));
+      c.querySelector("#abcInfo").innerHTML=`💡 Denk dran: nur <b>jeder ${st.schritt}.</b> Buchstabe${st.rueck?" – und zwar rückwärts":""}! Zuletzt richtig: <b>${abcPos>0?folge[abcPos-1]:"–"}</b>`;
+    }
+  });
+}
+function konzLernen(c){
+  c.innerHTML=`
+    <div class="card"><h2>🧠 Konzentrations-Training</h2>
+      <p>Zwei kleine Spiele, die deinen <b>Merk-Muskel</b> und deine
+        <b>Aufmerksamkeit</b> trainieren – jeden Tag ein paar Minuten reichen!</p>
+      <div class="example-box">🔢 <b>Zahlenkette:</b> Merke dir eine Zahlenreihe.
+        Jeden Tag, an dem du sie fehlerfrei aufsagst, kommt eine Zahl dazu –
+        bis du ${KETTE_ZIEL} Zahlen im Kopf hast!<br><br>
+        🔤 <b>Alphabet-Sprünge:</b> Tippe nur jeden 2. oder 3. Buchstaben –
+        vorwärts ist es leicht, rückwärts wird es richtig knifflig!</div>
+      <div class="hint">💡 Diese Spiele stärken genau das, was dir beim Lernen hilft:
+        <b>dranbleiben, merken, genau hinschauen</b>.</div>
+      <button class="btn-primary mt" id="toZahlen" style="width:100%;">🔢 Zahlenkette starten</button>
+      <button class="btn-secondary mt" id="toAbc" style="width:100%;">🔤 Alphabet-Sprünge starten</button></div>`;
+  c.querySelector("#toZahlen").onclick=()=>goSection("zahlen");
+  c.querySelector("#toAbc").onclick=()=>goSection("abc");
+}
+
+/* ============================================================
    EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
    Beim ersten Start (oder über den Elternbereich) ermittelt die App
    das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
@@ -8707,6 +8909,14 @@ const MODULES = {
       {id:"blume",  icon:"🌱", label:"Blume",  render:matheFlower}
     ],
     self:{ groups:[{title:"Geschichten-Werkstatt", fragen:KRIT_GESCH}], form:KRIT_GESCH_FORM }
+  },
+  konz:{
+    id:"konz", name:"Konzentrations-Training", emoji:"🧠",
+    sections:[
+      {id:"lernen", icon:"📖", label:"Info",   render:konzLernen},
+      {id:"zahlen", icon:"🔢", label:"Zahlen", render:konzZahlen},
+      {id:"abc",    icon:"🔤", label:"ABC",    render:konzAbc}
+    ]
   }
 };
 
@@ -8758,6 +8968,8 @@ let store = {
   kompass:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   fach:"deutsch",               // "deutsch" | "mathe"
   ferien:null,                  // Leos Sommer-Reise: {start, etappe, base, spiele, lesen, testsBasis, fertig}
+  kette:{ zahlen:[], erweitertAm:"", rekord:0 }, // Zahlenkette (Merktraining)
+  abcBest:{},                   // Alphabet-Sprünge: beste Fehlerzahl je Stufe
   mrechnen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mzahlen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
@@ -8794,6 +9006,18 @@ function load(){
         lesen: (fe.lesen && typeof fe.lesen==="object") ? fe.lesen : {},
         testsBasis: Math.max(0, parseInt(fe.testsBasis,10)||0),
         fertig: typeof fe.fertig==="string" ? fe.fertig : null };
+    }
+    if(d.kette && typeof d.kette==="object"){
+      store.kette={
+        zahlen: (Array.isArray(d.kette.zahlen)?d.kette.zahlen:[]).map(z=>parseInt(z,10))
+          .filter(z=>z>=0 && z<=99).slice(0,KETTE_ZIEL),
+        erweitertAm: typeof d.kette.erweitertAm==="string" ? d.kette.erweitertAm : "",
+        rekord: Math.max(0, Math.min(KETTE_ZIEL, parseInt(d.kette.rekord,10)||0)) };
+    }
+    if(d.abcBest && typeof d.abcBest==="object"){
+      store.abcBest={};
+      ABC_STUFEN.forEach(st=>{ const v=parseInt(d.abcBest[st.id],10);
+        if(v>=0 && v<100) store.abcBest[st.id]=v; });
     }
     if(d.progress && typeof d.progress==="object"){
       Object.keys(d.progress).forEach(k=>{ const v=d.progress[k];
@@ -8917,7 +9141,7 @@ let activeSectionId = null;
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
   zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4], tennis:[3,4], fussball:[3,4], schach:[3,4], blockwelt:[3,4],
-  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4], gesch:[3,4]
+  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4], gesch:[3,4], konz:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -9347,6 +9571,17 @@ function buildModuleChooser(){
     kachel.onclick=openTestTraining;
     grid.appendChild(kachel);
   }
+  // 🧠 Konzentrations-Training (fachübergreifend, ohne Münz-Kosten)
+  {
+    const kt=store.kette||{zahlen:[]};
+    const info = kt.zahlen.length ? `🔗 Kette: ${kt.zahlen.length} Zahlen` : "Merk-Muskel & Aufmerksamkeit";
+    const konzK=document.createElement("div");
+    konzK.className="choice gruppe konz-kachel";
+    konzK.innerHTML=`<span class="emoji">🧠</span>Konzentration
+      <span class="card-lvl">${info}</span>`;
+    konzK.onclick=()=>openModule("konz");
+    grid.appendChild(konzK);
+  }
   // 🧳 Leos Sommer-Reise (Ferienprogramm, Deutsch + Mathe + Lesen)
   {
     const fr=store.ferien;
@@ -9438,7 +9673,7 @@ function goHome(){
 }
 // Übungs-Sections: hier wird der Fokus-Modus aktiv (kompakter Kopf,
 // nichts Ablenkendes – die Aufgabe passt ohne Scrollen auf den Schirm)
-const FOKUS_SECTIONS=["ueben","umstellen","aufgaben"];
+const FOKUS_SECTIONS=["ueben","umstellen","aufgaben","zahlen","abc"];
 function fokusUebung(an){ $("screen-content").classList.toggle("uebung-fokus", !!an); }
 function goSection(secId){
   stopSpeak();
