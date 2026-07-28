@@ -94,8 +94,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
-  check("Aufgeräumte Startseite: 3 Gruppen + Test-Training + Sommer-Reise + Fit-für-4 + Spielhalle",
-    (await page.locator("#moduleChooser .choice").count()) === 7
+  check("Aufgeräumte Startseite: 3 Gruppen + Test + Konzentration + Reise + Fit-für-4 + Spielhalle",
+    (await page.locator("#moduleChooser .choice").count()) === 8
     && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1
     && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1
     && (await page.locator("#moduleChooser .choice.fit4-kachel").count()) === 1);
@@ -125,7 +125,9 @@ function section(t) { console.log("\n== " + t + " =="); }
       goHome();
       return n;
     }, l);
-    const expect = await page.evaluate(lv => Object.keys(MODULES).filter(id => lv === 0 || (MODUL_KLASSE[id] || [3, 4]).includes(lv)).length, l);
+    // "konz" hat eine eigene Startseiten-Kachel statt einer Gruppe
+    const expect = await page.evaluate(lv => Object.keys(MODULES).filter(id => id !== "konz")
+      .filter(id => lv === 0 || (MODUL_KLASSE[id] || [3, 4]).includes(lv)).length, l);
     check(`Klassenfilter ${l === 0 ? "Alle" : "Klasse " + l}: ${shown} Felder in Gruppen+Spielhalle`, shown === expect, `erwartet ${expect}`);
   }
 
@@ -1938,6 +1940,94 @@ function section(t) { console.log("\n== " + t + " =="); }
     return test.punkte === 1;
   });
   check("Fit-Test: Wahl-Aufgabe mit Kontroll-Blick + Punkt", fitWahlOk);
+
+  // ---------- 8h) Konzentrations-Training: Zahlenkette + Alphabet-Sprünge ----------
+  section("Konzentrations-Training (v1.73)");
+  await fresh();
+  await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
+  check("Kachel auf der Startseite (auch bei Fach Mathe)", await page.evaluate(() => {
+    const de = document.querySelectorAll(".konz-kachel").length;
+    store.fach = "mathe"; buildModuleChooser();
+    const ma = document.querySelectorAll(".konz-kachel").length;
+    store.fach = "deutsch"; buildModuleChooser();
+    return de === 1 && ma === 1;
+  }));
+  await page.locator(".konz-kachel").click(); await page.waitForTimeout(200);
+  check("Info-Seite erklärt beide Spiele", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Zahlenkette") && t.includes("Alphabet-Sprünge");
+  }));
+  // Zahlenkette: Start mit 2 Zahlen, Merkphase, korrekte Eingabe -> Kette wächst (1x/Tag)
+  await page.evaluate(() => goSection("zahlen")); await page.waitForTimeout(150);
+  check("Zahlenkette startet mit 2 Zahlen + Fokus-Modus", await page.evaluate(() =>
+    store.kette.zahlen.length === 2 && store.kette.zahlen.every(z => z >= 1 && z <= 50)
+    && document.getElementById("screen-content").classList.contains("uebung-fokus")));
+  await page.locator("#ketteStart").click();
+  await page.waitForFunction(() => document.querySelectorAll(".kette-z").length === 10, null, { timeout: 8000 });
+  const ketteOk = await page.evaluate(async () => {
+    const tipp = async (zahl) => {
+      for (const d of String(zahl)) document.querySelector(`.kette-z[data-z="${d}"]`).click();
+      document.getElementById("ketteOk").click();
+      await new Promise(r => setTimeout(r, 40));
+    };
+    const vorher = store.kette.zahlen.slice();
+    for (const z of vorher) await tipp(z);
+    return { laenge: store.kette.zahlen.length, erweitert: store.kette.erweitertAm === heuteKey(),
+      text: document.getElementById("moduleContent").textContent.includes("wächst") };
+  });
+  check("Fehlerfrei aufgesagt: Kette wächst um 1 (heute)", ketteOk.laenge === 3 && ketteOk.erweitert && ketteOk.text, JSON.stringify(ketteOk));
+  check("Mini-Mission zählt mit (fokusZaehle)", await page.evaluate(() => missionAufg >= 1));
+  check("Nur 1 Erweiterung pro Tag + Fehler behält die Kette", await page.evaluate(async () => {
+    konzZahlen(document.getElementById("moduleContent"));
+    document.getElementById("ketteStart").click();
+    await new Promise(r => setTimeout(r, 900)); // Merkphase (schnell) abwarten
+    if (!document.querySelector(".kette-z")) return false;
+    // absichtlich falsche erste Zahl tippen
+    const falsch = (store.kette.zahlen[0] + 1) % 10;
+    document.querySelector(`.kette-z[data-z="${String(falsch)[0]}"]`).click();
+    document.getElementById("ketteOk").click();
+    await new Promise(r => setTimeout(r, 40));
+    return store.kette.zahlen.length === 3
+      && document.getElementById("moduleContent").textContent.includes("Fast!");
+  }));
+  check("7er-Kette: Feier, Rekord, Neustart mit 2 Zahlen", await page.evaluate(() => {
+    store.kette.zahlen = [11, 22, 33, 44, 55, 66, 77]; save();
+    ketteEingabe = [11, 22, 33, 44, 55, 66]; ketteTipp = "";
+    const host = document.createElement("div"); document.body.appendChild(host);
+    ketteEingabe.push(77); konzKetteGeschafft(host);
+    const ok = store.kette.rekord === 7 && store.kette.zahlen.length === 2
+      && host.textContent.includes("WAHNSINN");
+    host.remove(); return ok;
+  }));
+  // Alphabet-Sprünge
+  check("ABC-Folgen stimmen (vorwärts/rückwärts, jeder 2./3.)", await page.evaluate(() => {
+    const f = (i) => abcFolge(ABC_STUFEN[i]).join("");
+    return f(0).startsWith("ACEG") && f(0).length === 13
+      && f(1).startsWith("ADGJ") && f(2).startsWith("ZXVT") && f(3).startsWith("ZWTQ");
+  }));
+  await page.evaluate(() => goSection("abc")); await page.waitForTimeout(150);
+  check("ABC-Tastenfeld: 26 Buchstaben + 4 Stufen-Chips", (await page.locator(".abc-taste").count()) === 26
+    && (await page.locator('.chip[data-st]').count()) === 4);
+  const abcErg = await page.evaluate(async () => {
+    // Stufe 1 komplett richtig durchtippen, mit einem absichtlichen Fehler am Anfang
+    document.querySelector('.abc-taste[data-b="B"]').click(); // falsch
+    const folge = abcFolge(ABC_STUFEN[0]);
+    for (const b of folge) { document.querySelector(`.abc-taste[data-b="${b}"]`).click(); }
+    await new Promise(r => setTimeout(r, 60));
+    return { fertig: document.getElementById("abcfb").textContent.includes("Geschafft"),
+      fehler: abcFehler, best: (store.abcBest || {}).v2 };
+  });
+  check("ABC-Lauf: Fehler gezählt, Abschluss + Bestwert gespeichert",
+    abcErg.fertig && abcErg.fehler === 1 && abcErg.best === 1, JSON.stringify(abcErg));
+  check("Speicher-Migration bereinigt Kette + ABC-Bestwerte", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.kette = { zahlen: [5, "x", 999, 12], erweitertAm: 7, rekord: "99" };
+    raw.abcBest = { v2: "3", quatsch: 5, r2: -2 };
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    return store.kette.zahlen.join(",") === "5,12" && store.kette.erweitertAm === ""
+      && store.kette.rekord === 7 && store.abcBest.v2 === 3 && !("quatsch" in store.abcBest) && !("r2" in store.abcBest);
+  }));
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
