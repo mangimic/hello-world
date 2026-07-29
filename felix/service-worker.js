@@ -7,7 +7,7 @@
    ============================================================ */
 
 // Version bei jeder Änderung hochzählen -> alte Caches werden entfernt.
-const CACHE_NAME = "felix-app-v4";
+const CACHE_NAME = "felix-app-v5";
 
 const ASSETS = ["./", "./index.html", "./manifest.json", "./icon.svg"];
 

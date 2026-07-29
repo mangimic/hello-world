@@ -55,6 +55,15 @@ function section(t) { console.log("\n== " + t + " =="); }
     cfg.l100.drain > cfg.l1.drain && cfg.l100.spawn < cfg.l1.spawn);
   check("Level 30 ist ein Nacht-Level, Level 100 auch",
     cfg.l30.night === true && cfg.l100.night === true && cfg.l50.wind > 0);
+  const zones = await page.evaluate(() => {
+    const z = window.__felixTest.zoneOf;
+    return [z(1).id, z(20).id, z(21).id, z(45).id, z(70).id, z(81).id, z(100).id,
+      window.__felixTest.ZONES.length];
+  });
+  check("5 Orte: Strand bis L20, dann Dschungel/Berge/Vulkan, Schatzbucht ab L81",
+    zones[7] === 5 && zones[0] === "strand" && zones[1] === "strand" &&
+    zones[2] === "dschungel" && zones[3] === "berge" && zones[4] === "vulkan" &&
+    zones[5] === "bucht" && zones[6] === "bucht", JSON.stringify(zones));
 
   // ---------- Avatar-Editor ----------
   section("Avatar-Editor");
@@ -87,6 +96,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     night: document.querySelectorAll(".lvl-btn.night").length,
     treasure: document.querySelectorAll(".lvl-btn.treasure").length,
     deco: document.querySelectorAll(".map-deco").length,
+    zoneLabels: document.querySelectorAll(".map-zone").length,
     path: !!document.querySelector("#map-inner svg polyline")
   }));
   check("100 Stationen auf der Karte, 99 gesperrt", grid.total === 100 && grid.locked === 99,
@@ -94,6 +104,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("8 Nacht-Level markiert (30,40,…,100)", grid.night === 8, "night=" + grid.night);
   check("Schatztruhe bei Level 100, Pfad + Deko vorhanden",
     grid.treasure === 1 && grid.path && grid.deco >= 8, JSON.stringify(grid));
+  check("5 Orts-Schilder auf der Karte", grid.zoneLabels === 5, "labels=" + grid.zoneLabels);
 
   // ---------- Level 1 mit Autopilot gewinnen ----------
   section("Level 1 spielen (Autopilot)");

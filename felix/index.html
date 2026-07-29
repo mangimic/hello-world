@@ -115,6 +115,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 }
 .map-deco{position:absolute; font-size:30px; pointer-events:none; opacity:0.85;
   transform:translate(-50%,-50%);}
+.map-zone{
+  position:absolute; left:50%; transform:translate(-50%,-50%); pointer-events:none;
+  background:rgba(255,255,255,0.8); border-radius:12px; padding:4px 14px;
+  font-weight:bold; font-size:15px; color:#6b5326; white-space:nowrap;
+  box-shadow:0 2px 6px rgba(90,60,20,0.25);
+}
 .lvl-btn{
   position:absolute; width:48px; height:48px; margin-left:-24px; margin-top:-24px;
   border:none; border-radius:50%; cursor:pointer; font-family:inherit;
@@ -284,6 +290,24 @@ function levelConfig(n){
 }
 const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8;
 
+/* ---------- Orte auf der Insel (je 20 Level) ---------- */
+const ZONES = [
+  { id:"strand",    name:"Strand",      emoji:"🏖", from:1,
+    sky:["#aee3ff","#e7ffe3"], ground:"#f2d99a", groundTop:"#e0c47f" },
+  { id:"dschungel", name:"Dschungel",   emoji:"🌿", from:21,
+    sky:["#cfeec4","#eaffd8"], ground:"#6dbb7a", groundTop:"#4f9e63" },
+  { id:"berge",     name:"Berge",       emoji:"⛰", from:41,
+    sky:["#bcd7ef","#eef4fa"], ground:"#b3aa9b", groundTop:"#978d7c" },
+  { id:"vulkan",    name:"Vulkan",      emoji:"🌋", from:61,
+    sky:["#f8c9a0","#f2a68a"], ground:"#7a625c", groundTop:"#5f4a45" },
+  { id:"bucht",     name:"Schatzbucht", emoji:"🌅", from:81,
+    sky:["#ffd39e","#ffb0c4"], ground:"#f7cf88", groundTop:"#e3b468" }
+];
+function zoneOf(n){
+  for(let i = ZONES.length-1; i >= 0; i--) if(n >= ZONES[i].from) return ZONES[i];
+  return ZONES[0];
+}
+
 /* ---------- Avatare ---------- */
 const ANIMALS = [
   { id:"affe",         emoji:"🐒", name:"Affe" },
@@ -401,12 +425,15 @@ function startLevel(n){
   game.energy = 100; game.timeLeft = game.cfg.time;
   game.state = "playing"; game.active = true;
   showScreen("#scr-game"); resize(); updateHUD();
-  const hint = levelHint(n);
+  let hint = levelHint(n);
+  const zn = zoneOf(n);
+  if(!hint && zn.from === n && n > 1) hint = "Neuer Ort: " + zn.name + "! " + zn.emoji;
   if(hint) addFloat(W/2, H*0.35, hint, game.cfg.night ? "#ffffff" : "#3a4a3b", 3.2, 17);
 }
 
 function updateHUD(){
-  $("#hud-level").textContent = "Level " + game.level + (game.cfg && game.cfg.night ? " 🌙" : "");
+  $("#hud-level").textContent = "Level " + game.level + " " + zoneOf(game.level).emoji +
+    (game.cfg && game.cfg.night ? "🌙" : "");
   $("#hud-energy").textContent = "🍎 " + Math.ceil(game.energy);
   const bar = $("#hud-bar");
   bar.style.width = clamp(game.energy, 0, 100) + "%";
@@ -784,16 +811,120 @@ function drawPalm(x, y, s, flip){
   ctx.beginPath(); ctx.arc(-2,-110, 5, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
+function drawZoneBackdrop(c, gY, z){
+  const night = c.night;
+  /* --- Kulisse hinter dem Boden --- */
+  if(z.id === "strand" || z.id === "bucht"){
+    /* Meer mit Wellen */
+    const seaY = gY - 90;
+    const sea = ctx.createLinearGradient(0, seaY, 0, gY);
+    if(night){ sea.addColorStop(0,"#16305c"); sea.addColorStop(1,"#1d3d6e"); }
+    else if(z.id === "bucht"){ sea.addColorStop(0,"#e08a7a"); sea.addColorStop(1,"#f7b98a"); }
+    else { sea.addColorStop(0,"#3d8fe0"); sea.addColorStop(1,"#8fd8ff"); }
+    ctx.fillStyle = sea; ctx.fillRect(0, seaY, W, gY - seaY + 20);
+    if(z.id === "bucht" && !night){    /* tief stehende Abendsonne */
+      ctx.fillStyle = "#ffdf8a";
+      ctx.beginPath(); ctx.arc(W*0.7, seaY+2, 36, Math.PI, 0); ctx.fill();
+    }
+    ctx.strokeStyle = night ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2.5;
+    for(let i = 0; i < 4; i++){
+      const wy = seaY + 16 + i*20;
+      const wx = ((game.t*22 + i*110) % (W+120)) - 60;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx+14, wy-4, wx+28, wy);
+      ctx.quadraticCurveTo(wx+42, wy+4, wx+56, wy);
+      ctx.stroke();
+    }
+    if(z.id === "strand"){    /* kleine Nachbar-Insel am Horizont */
+      ctx.fillStyle = night ? "#2c3a55" : "#e8d49a";
+      ctx.beginPath(); ctx.ellipse(W*0.8, seaY+8, 44, 12, 0, Math.PI, 0); ctx.fill();
+    }
+  }
+  if(z.id === "dschungel"){
+    /* Blätterwand */
+    ctx.fillStyle = night ? "#183f26" : "#4fa065";
+    [[40,55],[140,70],[250,60],[350,75],[440,50]].forEach(([x,r])=>{
+      ctx.beginPath(); ctx.arc(x, gY-16, r, Math.PI, 0); ctx.fill();
+    });
+    /* Bäume */
+    ctx.fillStyle = night ? "#3a2c1c" : "#7a5a38";
+    ctx.fillRect(70, gY-70, 14, 74); ctx.fillRect(330, gY-92, 16, 96);
+    ctx.fillStyle = night ? "#1d5a40" : "#3fae72";
+    ctx.beginPath(); ctx.arc(77, gY-86, 34, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(338, gY-106, 40, 0, Math.PI*2); ctx.fill();
+    /* Lianen von oben */
+    ctx.strokeStyle = night ? "#1d5a40" : "#3fae72";
+    ctx.lineWidth = 5; ctx.lineCap = "round";
+    [[60,120],[420,150],[230,88]].forEach(([x,len],i)=>{
+      const sw = Math.sin(game.t*0.9 + i*2)*10;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.quadraticCurveTo(x+sw, len*0.6, x+sw*1.6, len); ctx.stroke();
+      ctx.fillStyle = night ? "#1d5a40" : "#5bc98c";
+      ctx.beginPath(); ctx.ellipse(x+sw*1.6, len+6, 8,5, 0.4, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  if(z.id === "berge"){
+    const mcol = night ? "#2c3a55" : "#8d9aab", scol = night ? "#8a95b5" : "#ffffff";
+    [[0.18,150],[0.52,205],[0.84,160]].forEach(([fx,hh])=>{
+      const px = W*fx;
+      ctx.fillStyle = mcol;
+      ctx.beginPath(); ctx.moveTo(px-135, gY+10); ctx.lineTo(px, gY-hh);
+      ctx.lineTo(px+135, gY+10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = scol;
+      ctx.beginPath(); ctx.moveTo(px-26, gY-hh+40); ctx.lineTo(px, gY-hh); ctx.lineTo(px+26, gY-hh+40);
+      ctx.quadraticCurveTo(px, gY-hh+54, px-26, gY-hh+40); ctx.closePath(); ctx.fill();
+    });
+  }
+  if(z.id === "vulkan"){
+    const vx = W*0.68, peak = gY-190;
+    ctx.fillStyle = night ? "#241a22" : "#4a3540";
+    ctx.beginPath(); ctx.moveTo(vx-155, gY+12); ctx.lineTo(vx-34, peak);
+    ctx.lineTo(vx+34, peak); ctx.lineTo(vx+155, gY+12); ctx.closePath(); ctx.fill();
+    /* Lava-Glühen + Krater */
+    const glow = ctx.createRadialGradient(vx, peak, 6, vx, peak, 95);
+    glow.addColorStop(0, "rgba(255,120,40,0.85)"); glow.addColorStop(1, "rgba(255,120,40,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(vx, peak, 95, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ff8a3c";
+    ctx.beginPath(); ctx.ellipse(vx, peak, 34, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 8; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(vx-14, peak+4);
+    ctx.quadraticCurveTo(vx-42, peak+80, vx-34, peak+150); ctx.stroke();
+    /* aufsteigende Funken */
+    ctx.fillStyle = "#ffb35c";
+    for(let i = 0; i < 6; i++){
+      const ph = (game.t*0.5 + i*0.37) % 1;
+      ctx.globalAlpha = 1 - ph;
+      ctx.beginPath();
+      ctx.arc(vx + Math.sin(i*2.7)*40*ph, peak - ph*110, 3.2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* --- Boden --- */
+  ctx.fillStyle = night ? shade(z.ground, 0.45) : z.ground;
+  ctx.beginPath();
+  ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = night ? shade(z.groundTop, 0.45) : z.groundTop;
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16); ctx.stroke();
+  /* Palmen nur am Wasser */
+  if(z.id === "strand" || z.id === "bucht"){
+    drawPalm(48, gY+8, 0.9, false);
+    drawPalm(W-44, gY+10, 1.05, true);
+  }
+}
 function draw(){
   const c = game.cfg, gY = groundY();
   ctx.setTransform(scale, 0, 0, scale, 0, 0);
   if(game.shake > 0){
     ctx.translate(rand(-1,1)*game.shake*8, rand(-1,1)*game.shake*8);
   }
-  /* Himmel */
+  /* Himmel (je nach Ort) */
+  const z = zoneOf(game.level);
   const sky = ctx.createLinearGradient(0,0,0,H);
   if(c.night){ sky.addColorStop(0,"#141a3d"); sky.addColorStop(1,"#2c3a68"); }
-  else { sky.addColorStop(0,"#aee3ff"); sky.addColorStop(1,"#e7ffe3"); }
+  else { sky.addColorStop(0,z.sky[0]); sky.addColorStop(1,z.sky[1]); }
   ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
   /* Sonne / Mond + Sterne */
   if(c.night){
@@ -806,40 +937,11 @@ function draw(){
       const sx = (i*137)%W, sy = 30+(i*61)%200;
       ctx.fillRect(sx, sy, 2, 2);
     }
-  }else{
+  }else if(z.id !== "bucht"){    /* in der Schatzbucht steht die Sonne tief am Meer */
     ctx.fillStyle = "#ffd66b";
     ctx.beginPath(); ctx.arc(W-70, 90, 30, 0, Math.PI*2); ctx.fill();
   }
-  /* Meer mit Wellen */
-  const seaY = gY - 90;
-  const sea = ctx.createLinearGradient(0, seaY, 0, gY);
-  if(c.night){ sea.addColorStop(0,"#16305c"); sea.addColorStop(1,"#1d3d6e"); }
-  else { sea.addColorStop(0,"#3d8fe0"); sea.addColorStop(1,"#8fd8ff"); }
-  ctx.fillStyle = sea; ctx.fillRect(0, seaY, W, gY - seaY + 20);
-  ctx.strokeStyle = c.night ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)";
-  ctx.lineWidth = 2.5;
-  for(let i = 0; i < 4; i++){
-    const wy = seaY + 16 + i*20;
-    const wx = ((game.t*22 + i*110) % (W+120)) - 60;
-    ctx.beginPath();
-    ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx+14, wy-4, wx+28, wy);
-    ctx.quadraticCurveTo(wx+42, wy+4, wx+56, wy);
-    ctx.stroke();
-  }
-  /* kleine Nachbar-Insel am Horizont */
-  ctx.fillStyle = c.night ? "#2c3a55" : "#e8d49a";
-  ctx.beginPath(); ctx.ellipse(W*0.8, seaY+8, 44, 12, 0, Math.PI, 0); ctx.fill();
-  /* Insel-Sand */
-  ctx.fillStyle = c.night ? "#6e6248" : "#f2d99a";
-  ctx.beginPath();
-  ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16);
-  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = c.night ? "#5a5039" : "#e0c47f";
-  ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16); ctx.stroke();
-  /* Palmen */
-  drawPalm(48, gY+8, 0.9, false);
-  drawPalm(W-44, gY+10, 1.05, true);
+  drawZoneBackdrop(c, gY, z);
   /* Wind-Anzeige */
   if(c.wind){
     ctx.strokeStyle = c.night ? "rgba(255,255,255,0.35)" : "rgba(90,140,110,0.5)";
@@ -984,6 +1086,14 @@ function openLevels(){
     d.style.left = x + "%"; d.style.top = y + "px";
     inner.appendChild(d);
   });
+  /* Orts-Schilder an den Abschnitts-Grenzen */
+  ZONES.forEach(zn=>{
+    const d = document.createElement("div");
+    d.className = "map-zone";
+    d.textContent = zn.emoji + " " + zn.name + " · Level " + zn.from + "–" + (zn.from+19);
+    d.style.top = (mapPos(zn.from).y + 46) + "px";
+    inner.appendChild(d);
+  });
   /* Level-Stationen */
   let currentBtn = null;
   for(let n = 1; n <= MAX_LEVEL; n++){
@@ -1088,6 +1198,8 @@ $("#btn-help").addEventListener("click", ()=>{
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
     "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
+    "🗺 Die Reise führt durch 5 Orte: Strand, Dschungel,",
+    "Berge, Vulkan und Schatzbucht!",
     "",
     "Steuerung: ← → Pfeiltasten, A/D oder Finger/Maus. P = Pause."
   ].join("\n"), 0, [
@@ -1104,7 +1216,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, ANIMALS, AV_COLORS };
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, ANIMALS, AV_COLORS, ZONES, zoneOf };
 </script>
 </body>
 </html>
