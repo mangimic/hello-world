@@ -434,8 +434,10 @@ function hideOverlay(){ $("#overlay").classList.remove("active"); }
    ========================================================= */
 const cv = $("#game-canvas"), ctx = cv.getContext("2d");
 const nightCv = document.createElement("canvas"), nctx = nightCv.getContext("2d");
-const W = 480;                 // logische Breite, Höhe folgt aus dem Bildschirm
-let H = 800, scale = 1;
+/* Feste logische Höhe, Breite folgt dem Bildschirm (Hoch- UND Querformat).
+   Sehr breite Bildschirme bekommen seitliche Ränder (Letterbox). */
+const WORLD_H = 800, MIN_W = 400, MAX_W = 960;
+let W = 480, H = WORLD_H, scale = 1, offX = 0, offY = 0;
 
 const APPLE_R = 14, APPLE_H = 24, MAX_STACK = 12;
 const AV_W = 86, AV_H = 54;
@@ -452,13 +454,20 @@ const game = {
 
 function resize(){
   const r = $("#game-wrap").getBoundingClientRect();
+  if(r.width < 10 || r.height < 10) return;   /* Spiel-Screen gerade unsichtbar */
   const dpr = window.devicePixelRatio || 1;
   cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
   nightCv.width = cv.width; nightCv.height = cv.height;
-  scale = cv.width / W;
-  H = cv.height / scale;
+  H = WORLD_H;
+  W = clamp(cv.width / cv.height * WORLD_H, MIN_W, MAX_W);
+  scale = Math.min(cv.width / W, cv.height / H);
+  offX = (cv.width - W*scale) / 2;
+  offY = (cv.height - H*scale) / 2;
+  game.player.x = clamp(game.player.x, AV_W/2, W - AV_W/2);
+  game.player.tx = clamp(game.player.tx, AV_W/2, W - AV_W/2);
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", ()=>setTimeout(resize, 150));
 
 const groundY = () => H - 64;
 const stackH  = () => Math.min(game.stack.length, MAX_STACK);
@@ -467,6 +476,7 @@ const stackTopY = () => groundY() - AV_H - stackH()*APPLE_H;
 function startLevel(n){
   audio.ensure();
   game.level = n; game.cfg = levelConfig(n);
+  showScreen("#scr-game"); resize();          /* erst ausmessen, dann Figur setzen */
   game.t = 0; game.startT = 0; game.spawnT = 1.2; game.gullT = game.cfg.gullEvery || 999;
   game.player.x = game.player.tx = game.player.px = W/2; game.player.lean = 0;
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
@@ -474,7 +484,7 @@ function startLevel(n){
   game.energy = 100; game.timeLeft = game.cfg.time;
   game.shield = store.data.panzer; game.coinsRun = 0;
   game.state = "playing"; game.active = true;
-  showScreen("#scr-game"); resize(); updateHUD();
+  updateHUD();
   let hint = levelHint(n);
   const zn = zoneOf(n);
   if(!hint && zn.from === n && n > 1) hint = "Neuer Ort: " + zn.name + "! " + zn.emoji;
@@ -593,7 +603,8 @@ function update(dt){
 
   /* Avatar bewegen */
   const h = game.player;
-  const kSpeed = 380 + game.level*1.5;
+  /* auf breiten Spielfeldern (Querformat) entsprechend schneller laufen */
+  const kSpeed = (380 + game.level*1.5) * Math.max(1, W/480);
   if(keys.left)  h.tx -= kSpeed*dt;
   if(keys.right) h.tx += kSpeed*dt;
   h.tx = clamp(h.tx, AV_W/2, W - AV_W/2);
@@ -1018,7 +1029,7 @@ function drawZoneBackdrop(c, gY, z){
 }
 function draw(){
   const c = game.cfg, gY = groundY();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, offX, offY);
   if(game.shake > 0){
     ctx.translate(rand(-1,1)*game.shake*8, rand(-1,1)*game.shake*8);
   }
@@ -1063,7 +1074,7 @@ function draw(){
   game.gulls.forEach(drawGull);
   /* Nacht-Maske mit Laternen-Licht */
   if(c.night){
-    nctx.setTransform(scale, 0, 0, scale, 0, 0);
+    nctx.setTransform(scale, 0, 0, scale, offX, offY);
     nctx.clearRect(0,0,W,H);
     nctx.fillStyle = "rgba(8,10,30,0.78)";
     nctx.fillRect(0,0,W,H);
@@ -1080,7 +1091,7 @@ function draw(){
     nctx.globalCompositeOperation = "source-over";
     ctx.setTransform(1,0,0,1,0,0);
     ctx.drawImage(nightCv, 0, 0);
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.setTransform(scale, 0, 0, scale, offX, offY);
   }
   /* Partikel + Schwebe-Texte */
   game.parts.forEach(p=>{
@@ -1098,6 +1109,19 @@ function draw(){
     ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
   });
   ctx.globalAlpha = 1;
+  /* Ränder außerhalb des Spielfelds (bei sehr breiten/schmalen Bildschirmen) */
+  if(offX > 0.5 || offY > 0.5){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = "#221c16";
+    if(offX > 0.5){
+      ctx.fillRect(0, 0, offX+1, cv.height);
+      ctx.fillRect(cv.width-offX-1, 0, offX+2, cv.height);
+    }
+    if(offY > 0.5){
+      ctx.fillRect(0, 0, cv.width, offY+1);
+      ctx.fillRect(0, cv.height-offY-1, cv.width, offY+2);
+    }
+  }
 }
 
 /* ---------- Spiel-Schleife ---------- */
@@ -1129,7 +1153,8 @@ window.addEventListener("keyup", e=>{
 let pointerDown = false;
 function pointerToWorld(e){
   const r = cv.getBoundingClientRect();
-  return (e.clientX - r.left) / r.width * W;
+  const dpr = cv.width / r.width;
+  return ((e.clientX - r.left) * dpr - offX) / scale;
 }
 cv.addEventListener("pointerdown", e=>{ pointerDown = true; game.player.tx = pointerToWorld(e); audio.ensure(); });
 cv.addEventListener("pointermove", e=>{ if(pointerDown) game.player.tx = pointerToWorld(e); });
@@ -1355,7 +1380,8 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, stackTopY };
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, stackTopY,
+  worldSize: () => ({ W, H, scale, offX, offY }) };
 </script>
 </body>
 </html>

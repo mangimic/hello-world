@@ -224,6 +224,47 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Münze gefangen -> +1 Münze", coinsAfter === coinsBefore + 1,
     `vorher=${coinsBefore} nachher=${coinsAfter}`);
 
+  // ---------- Querformat (iPad) ----------
+  section("Querformat");
+  const ctxL = await browser.newContext({ viewport: { width: 1180, height: 820 } });
+  const pl = await ctxL.newPage();
+  pl.on("pageerror", (e) => errors.push("Querformat: " + e));
+  await pl.goto(APP);
+  await pl.waitForTimeout(400);
+  await pl.evaluate(() => window.__felixTest.startLevel(1));
+  await pl.waitForTimeout(300);
+  const ws = await pl.evaluate(() => window.__felixTest.worldSize());
+  check("Spielfeld breit + volle Höhe (W=960, H=800, seitliche Ränder)",
+    Math.round(ws.W) === 960 && ws.H === 800 && ws.offX > 0, JSON.stringify(ws));
+  const caughtL = await pl.evaluate(async () => {
+    const t = window.__felixTest, g = t.game;
+    g.apples.length = 0; g.cfg.spawn = 9999; g.cfg.gullEvery = 0;
+    const before = g.caught;
+    g.apples.push({ x: g.player.x, y: t.stackTopY() - 40, vy: 220, type: "rot", rot: 0, spin: 0 });
+    await new Promise((r) => setTimeout(r, 600));
+    return g.caught - before;
+  });
+  check("Apfel fangen klappt im Querformat", caughtL === 1, "gefangen=" + caughtL);
+  const wsP = await pl.evaluate(async () => {
+    // zurück ins Hochformat simulieren
+    return window.__felixTest.worldSize();
+  });
+  await ctxL.close();
+
+  // ---------- kleines Handy hochkant ----------
+  section("Schmales Handy");
+  const ctxS = await browser.newContext({ viewport: { width: 360, height: 740 } });
+  const ps = await ctxS.newPage();
+  ps.on("pageerror", (e) => errors.push("Handy: " + e));
+  await ps.goto(APP);
+  await ps.waitForTimeout(400);
+  await ps.evaluate(() => window.__felixTest.startLevel(1));
+  await ps.waitForTimeout(300);
+  const wsS = await ps.evaluate(() => window.__felixTest.worldSize());
+  check("Hochformat weiterhin ok (H=800, Breite 400-500)",
+    wsS.H === 800 && wsS.W >= 400 && wsS.W <= 500, JSON.stringify(wsS));
+  await ctxS.close();
+
   section("Abschluss");
   check("Keine JS-Fehler insgesamt", errors.length === 0, errors.join(" | "));
 
