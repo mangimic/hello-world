@@ -60,6 +60,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 .btn:active{transform:scale(0.96);}
 .btn.blue{background:linear-gradient(180deg,#6ab5ff,#3d8fe0);}
 .btn.purple{background:linear-gradient(180deg,#c5aef0,#8d6cd0);}
+.btn.gold{background:linear-gradient(180deg,#ffd66b,#f0a10f);}
 .btn.gray{background:linear-gradient(180deg,#b8c4bb,#93a096);}
 .btn.small{font-size:17px; padding:10px 16px; border-radius:16px;}
 
@@ -102,6 +103,30 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   border:none; border-radius:16px; padding:12px 16px; width:220px;
   background:#fff; box-shadow:var(--shadow); outline:none;
 }
+
+/* ---------- Insel-Laden ---------- */
+#scr-shop{align-items:center;}
+#scr-shop .topbar{width:100%;}
+#shop-list{
+  width:min(420px,96%); display:flex; flex-direction:column; gap:12px;
+  overflow-y:auto; padding-bottom:10px;
+}
+.shop-card{
+  background:var(--card); border-radius:20px; box-shadow:var(--shadow);
+  padding:14px 16px; display:flex; align-items:center; gap:14px;
+}
+.shop-card.owned{outline:3px solid var(--green-dark); background:#eefbf2;}
+.shop-icon{font-size:34px; min-width:64px; text-align:center; letter-spacing:-6px;}
+.shop-info{flex:1;}
+.shop-name{font-weight:bold; font-size:19px;}
+.shop-desc{color:var(--muted); font-size:14px; line-height:1.25;}
+.shop-buy{
+  border:none; border-radius:14px; cursor:pointer; font-family:inherit;
+  font-size:16px; font-weight:bold; color:#fff; padding:10px 12px; white-space:nowrap;
+  background:linear-gradient(180deg,#ffd66b,#f0a10f); box-shadow:var(--shadow);
+}
+.shop-buy:disabled{background:#c9d2cb; cursor:default; box-shadow:none;}
+.shop-buy.done{background:linear-gradient(180deg,var(--green),var(--green-dark));}
 
 /* ---------- Schatzkarte ---------- */
 #map-scroll{
@@ -146,11 +171,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 #game-canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none;}
 #hud{
   position:absolute; top:calc(6px + var(--safe-top)); left:6px; right:6px;
-  display:flex; align-items:center; gap:5px; pointer-events:none; z-index:5;
-  font-weight:bold; font-size:15px; white-space:nowrap;
+  display:flex; align-items:center; gap:4px; row-gap:4px; flex-wrap:wrap;
+  pointer-events:none; z-index:5;
+  font-weight:bold; font-size:14px; white-space:nowrap;
 }
 #hud .pill{
-  background:rgba(255,255,255,0.85); border-radius:12px; padding:6px 8px;
+  background:rgba(255,255,255,0.85); border-radius:12px; padding:5px 7px;
   box-shadow:0 2px 8px rgba(0,0,0,0.12);
 }
 #hud-progress{flex:1; min-width:76px; max-width:200px; position:relative; overflow:hidden;}
@@ -189,6 +215,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <button class="btn" id="btn-play">▶ Spielen</button>
     <button class="btn blue" id="btn-levels">🗺 Schatzkarte</button>
     <button class="btn purple" id="btn-avatar">🎨 Mein Avatar</button>
+    <button class="btn gold" id="btn-shop">🛒 Insel-Laden</button>
     <button class="btn gray" id="btn-help">❓ Anleitung</button>
   </div>
   <div id="start-stars"></div>
@@ -212,6 +239,17 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   </div>
 </div>
 
+<!-- ================= Insel-Laden ================= -->
+<div class="screen" id="scr-shop">
+  <div class="topbar">
+    <button class="btn gray small" id="btn-shop-back">◀ Zurück</button>
+    <div class="title">🛒 Insel-Laden</div>
+    <div class="pill" id="shop-coins">🪙 0</div>
+  </div>
+  <div id="shop-list"></div>
+  <div class="sub" style="margin-top:10px;">Münzen sammelst du im Spiel – fang die drehenden Taler! 🪙</div>
+</div>
+
 <!-- ================= Schatzkarte ================= -->
 <div class="screen" id="scr-levels">
   <div class="topbar">
@@ -230,6 +268,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <div class="pill" id="hud-progress"><div id="hud-bar"></div><span id="hud-energy">🍎 100</span></div>
     <div class="pill" id="hud-time">⏱ 25</div>
     <div class="pill" id="hud-hearts">❤️❤️❤️</div>
+    <div class="pill" id="hud-coins">🪙 0</div>
     <button id="btn-pause" title="Pause">⏸</button>
     <button id="btn-sound" title="Ton">🔊</button>
   </div>
@@ -257,7 +296,7 @@ const rand  = (a,b) => a + Math.random()*(b-a);
 /* ---------- Speicher ---------- */
 const STORE_KEY = "felix.apfeligel";
 const store = {
-  data: { unlocked:1, stars:{}, sound:true, avatarSeen:false,
+  data: { unlocked:1, stars:{}, sound:true, avatarSeen:false, coins:0, panzer:0,
           avatar: { animal:"affe", color:"#8a5a3b", name:"" } },
   load(){
     try{
@@ -288,7 +327,14 @@ function levelConfig(n){
     lives: 3
   };
 }
-const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8;
+const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8, COIN_P = 0.08;
+
+/* ---------- Panzer im Insel-Laden ---------- */
+const PANZER = [
+  { tier:1, name:"Holz-Panzer",  icon:"🛡",     price:10, desc:"Schützt 1× pro Level vor Kokosnuss & Möwe" },
+  { tier:2, name:"Stein-Panzer", icon:"🛡🛡",   price:30, desc:"Schützt 2× pro Level vor Kokosnuss & Möwe" },
+  { tier:3, name:"Gold-Panzer",  icon:"🛡🛡🛡", price:75, desc:"Schützt 3× pro Level vor Kokosnuss & Möwe" }
+];
 
 /* ---------- Orte auf der Insel (je 20 Level) ---------- */
 const ZONES = [
@@ -355,6 +401,8 @@ const audio = {
   gold(){ [660,830,990,1320].forEach((f,i)=>this.beep(f,0.1,"sine",0.16,i*0.06)); },
   bad(){ this.beep(160, 0.25, "sawtooth", 0.2); this.beep(120, 0.3, "square", 0.1, 0.05); },
   gull(){ this.beep(950, 0.09, "square", 0.1); this.beep(700, 0.12, "square", 0.1, 0.09); },
+  coin(){ this.beep(1250, 0.07, "square", 0.12); this.beep(1650, 0.1, "square", 0.1, 0.06); },
+  block(){ this.beep(300, 0.1, "triangle", 0.22); this.beep(500, 0.12, "triangle", 0.16, 0.06); },
   win(){ [523,659,784,1047].forEach((f,i)=>this.beep(f,0.16,"triangle",0.2,i*0.12)); },
   lose(){ [400,330,260,200].forEach((f,i)=>this.beep(f,0.2,"triangle",0.18,i*0.15)); }
 };
@@ -398,7 +446,8 @@ const game = {
   spawnT:1, gullT:6,
   player:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
-  caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0
+  caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0,
+  shield:0, coinsRun:0
 };
 
 function resize(){
@@ -423,6 +472,7 @@ function startLevel(n){
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
   game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
   game.energy = 100; game.timeLeft = game.cfg.time;
+  game.shield = store.data.panzer; game.coinsRun = 0;
   game.state = "playing"; game.active = true;
   showScreen("#scr-game"); resize(); updateHUD();
   let hint = levelHint(n);
@@ -440,6 +490,7 @@ function updateHUD(){
   bar.classList.toggle("low", game.energy < 30);
   $("#hud-time").textContent = "⏱ " + Math.ceil(Math.max(0, game.timeLeft));
   $("#hud-hearts").textContent = "❤️".repeat(game.lives) + "🖤".repeat(Math.max(0, 3-game.lives));
+  $("#hud-coins").textContent = "🪙 " + store.data.coins;
   $("#btn-sound").textContent = store.data.sound ? "🔊" : "🔇";
 }
 
@@ -472,17 +523,21 @@ function winLevel(){
     const name = store.data.avatar.name;
     showOverlay(done ? "🏆 DER SCHATZ GEHÖRT DIR" + (name ? ", " + name.toUpperCase() : "") + "!"
                      : "Überlebt" + (name ? ", " + name : "") + "! 🎉",
-      done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
-           : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!",
+      (done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
+           : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!") +
+      (game.coinsRun ? "\n🪙 +" + game.coinsRun + " Münzen!" : ""),
       stars, btns);
   }, 900);
 }
 function loseLevel(reason){
   game.state = "lost"; audio.lose();
+  store.save();   /* gesammelte Münzen bleiben auch bei Niederlage */
   const survived = Math.ceil(game.cfg.time - game.timeLeft);
   setTimeout(()=>{
     showOverlay(reason === "hunger" ? "Ohje, der Magen ist leer! 😵" : "Alle Herzen weg!",
-      "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt.\nGleich nochmal?", 0, [
+      "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt." +
+      (game.coinsRun ? "\n🪙 Deine " + game.coinsRun + " neuen Münzen behältst du!" : "") +
+      "\nGleich nochmal?", 0, [
       {id:"ov-retry", label:"↻ Nochmal versuchen", cb:()=>startLevel(game.level)},
       {id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels}
     ]);
@@ -504,10 +559,11 @@ function spawnApple(){
   let type = "rot";
   if(r < c.goldP) type = "gold";
   else if(r < c.goldP + c.kokosP) type = "kokos";
+  else if(r < c.goldP + c.kokosP + COIN_P) type = "muenze";
   game.apples.push({
     x: rand(30, W-30), y: -20,
-    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : 1),
-    type, rot: rand(-0.4,0.4), spin: rand(-1.5,1.5)
+    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : type === "muenze" ? 0.85 : 1),
+    type, rot: rand(-0.4,0.4), spin: type === "muenze" ? 4 : rand(-1.5,1.5)
   });
 }
 function spawnGull(){
@@ -576,8 +632,20 @@ function update(dt){
     if(prevY < topY && a.y >= topY && Math.abs(a.x - h.x) <= AV_W/2 + 10){
       game.apples.splice(i,1);
       if(a.type === "kokos"){
-        burst(h.x, topY, "#6b5a25", 12);
-        loseLife(h.x, topY, "Autsch! 🥥");
+        if(game.shield > 0){
+          game.shield--;
+          burst(h.x, topY, "#54a9ff", 14);
+          addFloat(h.x, topY-16, "Panzer! 🛡", "#3d8fe0", 1.2, 22);
+          audio.block();
+        }else{
+          burst(h.x, topY, "#6b5a25", 12);
+          loseLife(h.x, topY, "Autsch! 🥥");
+        }
+      }else if(a.type === "muenze"){
+        store.data.coins++; game.coinsRun++;
+        burst(h.x, topY, "#ffd66b", 10);
+        addFloat(h.x, topY-16, "+1 🪙", "#c98a0a", 1, 22);
+        audio.coin();
       }else if(a.type === "gold"){
         game.caught += 3;
         eat(GOLD_ENERGY);
@@ -600,7 +668,7 @@ function update(dt){
     /* auf dem Boden gelandet? (kostet kein Herz – aber das Essen ist weg) */
     if(a.y > gY){
       game.apples.splice(i,1);
-      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : "#e74c3c", 8);
+      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : a.type === "muenze" ? "#ffd66b" : "#e74c3c", 8);
     }
   }
 
@@ -613,11 +681,18 @@ function update(dt){
       const tx = h.x, ty = stackTopY() + APPLE_H/2;
       if(Math.abs(w.x - tx) < 22 && Math.abs(w.y - ty) < 26){
         w.stole = true; w.vy = -140;
-        game.stack.pop();
-        game.caught = Math.max(0, game.caught - 1);
-        eat(-GULL_STEAL);
-        audio.gull();
-        addFloat(tx, ty-20, "-" + GULL_STEAL + " 🐦", "#4a6a8a", 1.2, 22);
+        if(game.shield > 0){
+          game.shield--;
+          burst(tx, ty, "#54a9ff", 12);
+          addFloat(tx, ty-20, "Abgeprallt! 🛡", "#3d8fe0", 1.2, 20);
+          audio.block();
+        }else{
+          game.stack.pop();
+          game.caught = Math.max(0, game.caught - 1);
+          eat(-GULL_STEAL);
+          audio.gull();
+          addFloat(tx, ty-20, "-" + GULL_STEAL + " 🐦", "#4a6a8a", 1.2, 22);
+        }
         updateHUD();
       }
     }
@@ -642,6 +717,23 @@ function updateFx(dt){
 
 /* ---------- Zeichnen ---------- */
 function drawApple(x, y, r, type, rot=0){
+  if(type === "muenze"){
+    /* drehender Taler mit Apfel-Prägung */
+    ctx.save(); ctx.translate(x,y);
+    ctx.scale(Math.max(0.15, Math.abs(Math.cos(rot))), 1);
+    const g = ctx.createRadialGradient(-r*0.3,-r*0.3, r*0.2, 0,0, r);
+    g.addColorStop(0,"#ffe9a0"); g.addColorStop(1,"#f0a10f");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0,0,r-1,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#c98a0a"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0,0,r-2,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "#c98a0a";
+    ctx.beginPath(); ctx.arc(0,1,5,0,Math.PI*2); ctx.fill();   /* Apfel-Prägung */
+    ctx.strokeStyle = "#c98a0a"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(2,-8); ctx.stroke();
+    ctx.restore();
+    return;
+  }
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
   const g = ctx.createRadialGradient(-r*0.3,-r*0.3, r*0.2, 0,0, r);
   if(type === "gold"){ g.addColorStop(0,"#ffe9a0"); g.addColorStop(1,"#f0a10f"); }
@@ -744,6 +836,16 @@ function drawPlayer(){
   ctx.fillStyle = "rgba(90,60,20,0.18)";                             /* Schatten */
   ctx.beginPath(); ctx.ellipse(0, 0, AV_W*0.42, 7, 0, 0, Math.PI*2); ctx.fill();
   drawAvatarSprite(ctx, av.animal, av.color);
+  if(game.shield > 0){                                               /* Panzer-Schutzblase */
+    const pulse = 1 + Math.sin(game.t*3)*0.03;
+    ctx.strokeStyle = "rgba(84,169,255,0.65)"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(0, -30, 52*pulse, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "rgba(84,169,255,0.12)";
+    ctx.beginPath(); ctx.arc(0, -30, 52*pulse, 0, Math.PI*2); ctx.fill();
+    ctx.font = "13px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = "#3d8fe0";
+    ctx.fillText("🛡×" + game.shield, 0, -88);
+  }
   ctx.restore();
 
   /* Apfel-Stapel */
@@ -1118,6 +1220,41 @@ function openLevels(){
   if(currentBtn) currentBtn.scrollIntoView({ block:"center" });
 }
 
+/* ---------- Insel-Laden ---------- */
+function openShop(){
+  game.active = false; game.state = "idle";
+  $("#shop-coins").textContent = "🪙 " + store.data.coins;
+  const list = $("#shop-list"); list.innerHTML = "";
+  PANZER.forEach(p=>{
+    const owned = store.data.panzer >= p.tier;
+    const card = document.createElement("div");
+    card.className = "shop-card" + (store.data.panzer === p.tier ? " owned" : "");
+    const buyable = !owned && store.data.coins >= p.price;
+    card.innerHTML =
+      '<div class="shop-icon">' + p.icon + '</div>' +
+      '<div class="shop-info"><div class="shop-name">' + p.name + '</div>' +
+      '<div class="shop-desc">' + p.desc + '</div></div>';
+    const btn = document.createElement("button");
+    btn.className = "shop-buy" + (owned ? " done" : "");
+    btn.dataset.tier = p.tier;
+    btn.textContent = owned ? "✔ Gekauft" : "🪙 " + p.price;
+    btn.disabled = owned || !buyable;
+    if(!owned && buyable){
+      btn.addEventListener("click", ()=>{
+        store.data.coins -= p.price;
+        store.data.panzer = p.tier;
+        store.save(); audio.gold();
+        openShop();
+      });
+    }
+    card.appendChild(btn);
+    list.appendChild(card);
+  });
+  showScreen("#scr-shop");
+}
+$("#btn-shop").addEventListener("click", ()=>{ audio.ensure(); openShop(); });
+$("#btn-shop-back").addEventListener("click", openStart);
+
 /* ---------- Avatar-Editor ---------- */
 let avatarThenPlay = false;
 const avCtx = $("#av-preview").getContext("2d");
@@ -1178,7 +1315,7 @@ function openStart(){
   $("#btn-play").textContent = u > 1 ? "▶ Weiter: Level " + Math.min(u, MAX_LEVEL) : "▶ Spielen";
   const hallo = av.name ? "Ahoi, " + av.name + "! " : "";
   $("#start-stars").textContent = store.totalStars() > 0
-    ? hallo + "⭐ " + store.totalStars() + " Sterne · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
+    ? hallo + "⭐ " + store.totalStars() + " · 🪙 " + store.data.coins + " · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
     : hallo + "Ab 8 Jahren · Pfeiltasten oder Finger";
   showScreen("#scr-start");
 }
@@ -1195,6 +1332,8 @@ $("#btn-help").addEventListener("click", ()=>{
     "🍎 Dein Tier wird ständig hungriger – iss Äpfel,",
     "sonst ist der Magen leer und du verlierst!",
     "✨ Gold-Äpfel machen extra satt.",
+    "🪙 Fang drehende Münzen und kauf dir im Insel-Laden",
+    "einen Panzer – der blockt Kokosnüsse und Möwen ab!",
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
     "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
@@ -1216,7 +1355,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, ANIMALS, AV_COLORS, ZONES, zoneOf };
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, stackTopY };
 </script>
 </body>
 </html>

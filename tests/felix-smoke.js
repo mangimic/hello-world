@@ -118,7 +118,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     window.__autopilot = setInterval(() => {
       if (g.state !== "playing") return;
       let best = null;
-      for (const a of g.apples) if (a.type !== "kokos" && (!best || a.y > best.y)) best = a;
+      for (const a of g.apples) if ((a.type === "rot" || a.type === "gold") && (!best || a.y > best.y)) best = a;
       if (best) g.player.tx = best.x;
     }, 40);
   });
@@ -178,6 +178,51 @@ function section(t) { console.log("\n== " + t + " =="); }
   }));
   check("Level 2 jetzt freigeschaltet (98 gesperrt)", after.locked === 98, "locked=" + after.locked);
   check("Sterne-Zähler zeigt Fortschritt", /⭐ [1-3]\/300/.test(after.total), after.total);
+
+  // ---------- Insel-Laden + Panzer ----------
+  section("Insel-Laden");
+  await page.evaluate(() => { window.__felixTest.store.data.coins = 50; window.__felixTest.openShop(); });
+  await page.waitForTimeout(200);
+  const shop = await page.evaluate(() => ({
+    cards: document.querySelectorAll(".shop-card").length,
+    coins: document.querySelector("#shop-coins").textContent
+  }));
+  check("3 Panzer im Laden, Münzstand sichtbar", shop.cards === 3 && shop.coins.includes("50"),
+    JSON.stringify(shop));
+  await page.click('.shop-buy[data-tier="1"]');
+  await page.waitForTimeout(200);
+  const bought = await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem("felix.apfeligel"));
+    return { coins: d.coins, panzer: d.panzer };
+  });
+  check("Holz-Panzer gekauft (10 Münzen bezahlt)", bought.coins === 40 && bought.panzer === 1,
+    JSON.stringify(bought));
+
+  section("Panzer blockt Kokosnuss");
+  await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.startLevel(10);
+    const g = t.game;
+    g.apples.length = 0; g.cfg.spawn = 9999; g.cfg.gullEvery = 0;
+    g.apples.push({ x: g.player.x, y: t.stackTopY() - 40, vy: 220, type: "kokos", rot: 0, spin: 0 });
+  });
+  await page.waitForTimeout(700);
+  const blocked = await page.evaluate(() => ({
+    lives: window.__felixTest.game.lives, shield: window.__felixTest.game.shield
+  }));
+  check("Kokosnuss abgeblockt: alle Herzen da, Panzer verbraucht",
+    blocked.lives === 3 && blocked.shield === 0, JSON.stringify(blocked));
+
+  section("Münze fangen");
+  const coinsBefore = await page.evaluate(() => window.__felixTest.store.data.coins);
+  await page.evaluate(() => {
+    const t = window.__felixTest, g = t.game;
+    g.apples.push({ x: g.player.x, y: t.stackTopY() - 40, vy: 220, type: "muenze", rot: 0, spin: 4 });
+  });
+  await page.waitForTimeout(700);
+  const coinsAfter = await page.evaluate(() => window.__felixTest.store.data.coins);
+  check("Münze gefangen -> +1 Münze", coinsAfter === coinsBefore + 1,
+    `vorher=${coinsBefore} nachher=${coinsAfter}`);
 
   section("Abschluss");
   check("Keine JS-Fehler insgesamt", errors.length === 0, errors.join(" | "));
