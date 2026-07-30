@@ -73,7 +73,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     animals: document.querySelectorAll(".av-animal").length,
     colors: document.querySelectorAll(".av-color").length
   }));
-  check("4 Tiere und 6 Farben zur Auswahl", avUI.animals === 4 && avUI.colors === 6,
+  check("8 Tiere und 6 Farben zur Auswahl", avUI.animals === 8 && avUI.colors === 6,
     JSON.stringify(avUI));
   await page.click('.av-animal[data-animal="krabbe"]');
   await page.evaluate(() => document.querySelectorAll(".av-color")[2].click());

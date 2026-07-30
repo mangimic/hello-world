@@ -359,7 +359,11 @@ const ANIMALS = [
   { id:"affe",         emoji:"🐒", name:"Affe" },
   { id:"schildkroete", emoji:"🐢", name:"Schildkröte" },
   { id:"krabbe",       emoji:"🦀", name:"Krabbe" },
-  { id:"papagei",      emoji:"🦜", name:"Papagei" }
+  { id:"papagei",      emoji:"🦜", name:"Papagei" },
+  { id:"delfin",       emoji:"🐬", name:"Delfin" },
+  { id:"gecko",        emoji:"🦎", name:"Gecko" },
+  { id:"flamingo",     emoji:"🦩", name:"Flamingo" },
+  { id:"pinguin",      emoji:"🐧", name:"Pinguin" }
 ];
 const AV_COLORS = ["#8a5a3b","#e74c3c","#54a9ff","#5bc98c","#b39ddb","#f0a10f"];
 const animalEmoji = id => (ANIMALS.find(a=>a.id===id) || ANIMALS[0]).emoji;
@@ -808,6 +812,61 @@ function drawAvatarSprite(c2, animal, color){
     dot(-8,-51, 2.4, "#2c2c2c"); dot(8,-51, 2.4, "#2c2c2c");
     c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
     c2.beginPath(); c2.arc(0,-20, 7, 0.4, Math.PI-0.4); c2.stroke();
+  }else if(animal === "delfin"){
+    c2.fillStyle = dark;                                             /* Schwanzflosse */
+    c2.beginPath(); c2.moveTo(0,-8); c2.lineTo(-15,3); c2.lineTo(-2,5); c2.closePath(); c2.fill();
+    c2.beginPath(); c2.moveTo(0,-8); c2.lineTo(15,3); c2.lineTo(2,5); c2.closePath(); c2.fill();
+    ell(0,-30, 15,25, color);                                        /* Körper aufrecht */
+    ell(4,-24, 8,16, "#e8f4ff");                                     /* Bauch */
+    c2.fillStyle = dark;                                             /* Rückenflosse */
+    c2.beginPath(); c2.moveTo(-11,-40); c2.lineTo(-26,-50); c2.lineTo(-9,-30); c2.closePath(); c2.fill();
+    ell(6,-27, 9,4.5, dark, 0.6);                                    /* Seitenflosse */
+    ell(16,-47, 11,6, color, -0.2);                                  /* Schnauze */
+    dot(2,-51, 2.8, "#2c2c2c");                                      /* Auge */
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
+    c2.beginPath(); c2.arc(16,-45, 6, 0.5, Math.PI*0.7); c2.stroke();
+  }else if(animal === "gecko"){
+    c2.strokeStyle = dark; c2.lineWidth = 7; c2.lineCap = "round";   /* eingerollter Schwanz */
+    c2.beginPath(); c2.moveTo(-8,-8); c2.quadraticCurveTo(-34,-6,-32,-20);
+    c2.quadraticCurveTo(-30,-30,-22,-24); c2.stroke();
+    c2.lineWidth = 5;                                                /* Arme nach oben */
+    c2.beginPath(); c2.moveTo(-8,-36); c2.lineTo(-17,-50); c2.stroke();
+    c2.beginPath(); c2.moveTo(8,-36); c2.lineTo(17,-50); c2.stroke();
+    dot(-17,-51, 4, dark); dot(17,-51, 4, dark);                     /* Kleber-Finger */
+    ell(-9,-4, 7,4, dark); ell(9,-4, 7,4, dark);                     /* Füße */
+    ell(0,-24, 13,21, color);                                        /* Körper aufrecht */
+    ell(0,-46, 12,10, color);                                        /* Kopf */
+    c2.fillStyle = shade(color, 1.25);                               /* Rückenpunkte */
+    [[-4,-18],[5,-26],[-3,-32]].forEach(([sx,sy])=>dot(sx,sy,2.4, shade(color,1.25)));
+    dot(-6,-50, 4.6, "#fff"); dot(-5,-50, 2.4, "#2c2c2c");           /* Glubschaugen */
+    dot(6,-50, 4.6, "#fff"); dot(7,-50, 2.4, "#2c2c2c");
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;
+    c2.beginPath(); c2.arc(0,-43, 5, 0.4, Math.PI-0.4); c2.stroke();
+  }else if(animal === "flamingo"){
+    c2.strokeStyle = dark; c2.lineWidth = 3.5; c2.lineCap = "round"; /* ein Bein! */
+    c2.beginPath(); c2.moveTo(0,-24); c2.lineTo(1,-2); c2.stroke();
+    c2.beginPath(); c2.moveTo(-3,-24); c2.lineTo(-5,-14); c2.stroke();  /* angezogenes Bein */
+    ell(1,0, 8,3, dark);                                             /* Fuß */
+    ell(-2,-34, 18,13, color);                                       /* Körper */
+    ell(-8,-34, 10,8, shade(color,0.85), 0.3);                       /* Flügel */
+    c2.strokeStyle = color; c2.lineWidth = 6;                        /* S-Hals */
+    c2.beginPath(); c2.moveTo(12,-40); c2.quadraticCurveTo(26,-48,24,-60); c2.stroke();
+    dot(23,-64, 7, color);                                           /* Kopf */
+    c2.fillStyle = "#f5f0e6";                                        /* Schnabel */
+    c2.beginPath(); c2.moveTo(29,-65); c2.quadraticCurveTo(38,-63,36,-57);
+    c2.lineTo(31,-60); c2.closePath(); c2.fill();
+    c2.fillStyle = "#2c2c2c";
+    c2.beginPath(); c2.moveTo(36,-57); c2.lineTo(31,-60); c2.lineTo(34,-55); c2.closePath(); c2.fill();
+    dot(22,-66, 2.2, "#2c2c2c");                                     /* Auge */
+  }else if(animal === "pinguin"){
+    ell(-12,-2, 8,4, "#f0a10f"); ell(12,-2, 8,4, "#f0a10f");         /* Füße */
+    ell(0,-26, 17,25, color);                                        /* Körper */
+    ell(2,-20, 11,16, "#ffffff");                                    /* Bauch */
+    ell(-16,-28, 5,13, dark, 0.25); ell(16,-28, 5,13, dark, -0.25);  /* Flossen */
+    dot(-3,-42, 4.4, "#fff"); dot(-2,-42, 2.3, "#2c2c2c");           /* Augen */
+    dot(8,-42, 4.4, "#fff"); dot(9,-42, 2.3, "#2c2c2c");
+    c2.fillStyle = "#f0a10f";                                        /* Schnabel */
+    c2.beginPath(); c2.moveTo(0,-38); c2.lineTo(10,-34); c2.lineTo(0,-32); c2.closePath(); c2.fill();
   }else if(animal === "papagei"){
     c2.strokeStyle = dark; c2.lineWidth = 3;                         /* Füße */
     c2.beginPath(); c2.moveTo(-8,-6); c2.lineTo(-8,0); c2.moveTo(8,-6); c2.lineTo(8,0); c2.stroke();
