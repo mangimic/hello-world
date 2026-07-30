@@ -60,6 +60,13 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 .btn:active{transform:scale(0.96);}
 .btn.blue{background:linear-gradient(180deg,#6ab5ff,#3d8fe0);}
 .btn.purple{background:linear-gradient(180deg,#c5aef0,#8d6cd0);}
+.btn.gold{background:linear-gradient(180deg,#ffd66b,#f0a10f);}
+.btn.brown{background:linear-gradient(180deg,#c9986a,#9a6b42);}
+.grid-btns{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  width:min(340px,86%); margin:14px auto 0;
+}
+.grid-btns .btn{font-size:18px; padding:13px 8px;}
 .btn.gray{background:linear-gradient(180deg,#b8c4bb,#93a096);}
 .btn.small{font-size:17px; padding:10px 16px; border-radius:16px;}
 
@@ -92,6 +99,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   display:flex; align-items:center; justify-content:center;
 }
 .av-animal.sel{border-color:var(--green-dark); background:#e7ffe3;}
+.av-animal.locked{filter:grayscale(1); opacity:0.55; position:relative;}
+.av-animal.locked::after{
+  content:"🔒"; position:absolute; font-size:15px; right:1px; bottom:1px;
+  filter:none; opacity:1;
+}
+#av-hint{color:var(--muted); font-size:15px; min-height:20px; text-align:center;}
 .av-color{
   width:42px; height:42px; border-radius:50%; border:3px solid #fff;
   cursor:pointer; box-shadow:var(--shadow);
@@ -102,6 +115,51 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   border:none; border-radius:16px; padding:12px 16px; width:220px;
   background:#fff; box-shadow:var(--shadow); outline:none;
 }
+
+/* ---------- Mein Haus ---------- */
+#scr-haus{align-items:center;}
+#scr-haus .topbar{width:100%;}
+#haus-box{
+  flex:1; overflow-y:auto; width:min(400px,96%);
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+#haus-canvas{
+  border-radius:22px; box-shadow:var(--shadow);
+  width:min(340px,92%);
+}
+#haus-status{font-weight:bold; font-size:19px; text-align:center;}
+#haus-perks{display:flex; flex-direction:column; gap:8px; width:100%;}
+.perk{
+  background:var(--card); border-radius:14px; padding:9px 12px;
+  font-size:14.5px; line-height:1.3; display:flex; gap:10px; align-items:center;
+  box-shadow:0 2px 8px rgba(40,120,70,0.12); color:var(--muted);
+}
+.perk.done{color:var(--text); outline:2.5px solid var(--green); background:#eefbf2;}
+.perk .p-icon{font-size:22px; min-width:26px; text-align:center;}
+
+/* ---------- Insel-Laden ---------- */
+#scr-shop{align-items:center;}
+#scr-shop .topbar{width:100%;}
+#shop-list{
+  width:min(420px,96%); display:flex; flex-direction:column; gap:12px;
+  overflow-y:auto; padding-bottom:10px;
+}
+.shop-card{
+  background:var(--card); border-radius:20px; box-shadow:var(--shadow);
+  padding:14px 16px; display:flex; align-items:center; gap:14px;
+}
+.shop-card.owned{outline:3px solid var(--green-dark); background:#eefbf2;}
+.shop-icon{font-size:34px; min-width:64px; text-align:center; letter-spacing:-6px;}
+.shop-info{flex:1;}
+.shop-name{font-weight:bold; font-size:19px;}
+.shop-desc{color:var(--muted); font-size:14px; line-height:1.25;}
+.shop-buy{
+  border:none; border-radius:14px; cursor:pointer; font-family:inherit;
+  font-size:16px; font-weight:bold; color:#fff; padding:10px 12px; white-space:nowrap;
+  background:linear-gradient(180deg,#ffd66b,#f0a10f); box-shadow:var(--shadow);
+}
+.shop-buy:disabled{background:#c9d2cb; cursor:default; box-shadow:none;}
+.shop-buy.done{background:linear-gradient(180deg,var(--green),var(--green-dark));}
 
 /* ---------- Schatzkarte ---------- */
 #map-scroll{
@@ -115,6 +173,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 }
 .map-deco{position:absolute; font-size:30px; pointer-events:none; opacity:0.85;
   transform:translate(-50%,-50%);}
+.map-zone{
+  position:absolute; left:50%; transform:translate(-50%,-50%); pointer-events:none;
+  background:rgba(255,255,255,0.8); border-radius:12px; padding:4px 14px;
+  font-weight:bold; font-size:15px; color:#6b5326; white-space:nowrap;
+  box-shadow:0 2px 6px rgba(90,60,20,0.25);
+}
 .lvl-btn{
   position:absolute; width:48px; height:48px; margin-left:-24px; margin-top:-24px;
   border:none; border-radius:50%; cursor:pointer; font-family:inherit;
@@ -140,11 +204,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 #game-canvas{position:absolute; inset:0; width:100%; height:100%; display:block; touch-action:none;}
 #hud{
   position:absolute; top:calc(6px + var(--safe-top)); left:6px; right:6px;
-  display:flex; align-items:center; gap:5px; pointer-events:none; z-index:5;
-  font-weight:bold; font-size:15px; white-space:nowrap;
+  display:flex; align-items:center; gap:4px; row-gap:4px; flex-wrap:wrap;
+  pointer-events:none; z-index:5;
+  font-weight:bold; font-size:14px; white-space:nowrap;
 }
 #hud .pill{
-  background:rgba(255,255,255,0.85); border-radius:12px; padding:6px 8px;
+  background:rgba(255,255,255,0.85); border-radius:12px; padding:5px 7px;
   box-shadow:0 2px 8px rgba(0,0,0,0.12);
 }
 #hud-progress{flex:1; min-width:76px; max-width:200px; position:relative; overflow:hidden;}
@@ -181,9 +246,13 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   <div class="sub">Überlebe auf der Apfel-Insel – 100 Level!</div>
   <div class="stack-btns">
     <button class="btn" id="btn-play">▶ Spielen</button>
+  </div>
+  <div class="grid-btns">
     <button class="btn blue" id="btn-levels">🗺 Schatzkarte</button>
-    <button class="btn purple" id="btn-avatar">🎨 Mein Avatar</button>
-    <button class="btn gray" id="btn-help">❓ Anleitung</button>
+    <button class="btn purple" id="btn-avatar">🎨 Avatar</button>
+    <button class="btn gold" id="btn-shop">🛒 Laden</button>
+    <button class="btn brown" id="btn-haus">🏠 Mein Haus</button>
+    <button class="btn gray" id="btn-help" style="grid-column:span 2;">❓ Anleitung</button>
   </div>
   <div id="start-stars"></div>
 </div>
@@ -199,11 +268,39 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <canvas id="av-preview" width="240" height="190"></canvas>
     <div class="av-label">Wer bist du?</div>
     <div class="av-row" id="av-animals"></div>
+    <div id="av-hint"></div>
     <div class="av-label">Deine Farbe</div>
     <div class="av-row" id="av-colors"></div>
     <input id="av-name" maxlength="12" placeholder="Dein Name" autocomplete="off">
     <button class="btn" id="btn-av-save">✔ Fertig</button>
   </div>
+</div>
+
+<!-- ================= Mein Haus ================= -->
+<div class="screen" id="scr-haus">
+  <div class="topbar">
+    <button class="btn gray small" id="btn-haus-back">◀ Zurück</button>
+    <div class="title">🏠 Mein Haus</div>
+    <div class="pill" id="haus-holz">🪵 0</div>
+  </div>
+  <div id="haus-box">
+    <canvas id="haus-canvas" width="340" height="240"></canvas>
+    <div id="haus-status"></div>
+    <button class="btn brown" id="btn-haus-bauen">Bauen</button>
+    <div id="haus-perks"></div>
+    <div class="sub" id="haus-tipp">Holz sammelst du im Spiel – fang die Bretter! 🪵</div>
+  </div>
+</div>
+
+<!-- ================= Insel-Laden ================= -->
+<div class="screen" id="scr-shop">
+  <div class="topbar">
+    <button class="btn gray small" id="btn-shop-back">◀ Zurück</button>
+    <div class="title">🛒 Insel-Laden</div>
+    <div class="pill" id="shop-coins">🪙 0</div>
+  </div>
+  <div id="shop-list"></div>
+  <div class="sub" style="margin-top:10px;">Münzen sammelst du im Spiel – fang die drehenden Taler! 🪙</div>
 </div>
 
 <!-- ================= Schatzkarte ================= -->
@@ -224,6 +321,8 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <div class="pill" id="hud-progress"><div id="hud-bar"></div><span id="hud-energy">🍎 100</span></div>
     <div class="pill" id="hud-time">⏱ 25</div>
     <div class="pill" id="hud-hearts">❤️❤️❤️</div>
+    <div class="pill" id="hud-coins">🪙 0</div>
+    <div class="pill" id="hud-holz">🪵 0</div>
     <button id="btn-pause" title="Pause">⏸</button>
     <button id="btn-sound" title="Ton">🔊</button>
   </div>
@@ -251,7 +350,8 @@ const rand  = (a,b) => a + Math.random()*(b-a);
 /* ---------- Speicher ---------- */
 const STORE_KEY = "felix.apfeligel";
 const store = {
-  data: { unlocked:1, stars:{}, sound:true, avatarSeen:false,
+  data: { unlocked:1, stars:{}, sound:true, avatarSeen:false, coins:0, panzer:0,
+          holz:0, haus:0,
           avatar: { animal:"affe", color:"#8a5a3b", name:"" } },
   load(){
     try{
@@ -282,14 +382,72 @@ function levelConfig(n){
     lives: 3
   };
 }
-const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8;
+const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8, COIN_P = 0.08, HOLZ_P = 0.07;
+
+/* ---------- Haus-Bauteile (Kosten in Holz) ---------- */
+const HAUS_TEILE = [
+  { name:"Fundament",     cost:5  },
+  { name:"Wände",         cost:10 },
+  { name:"Tür",           cost:6  },
+  { name:"Fenster",       cost:6  },
+  { name:"Palmen-Dach",   cost:12 },
+  { name:"Schornstein",   cost:8  },
+  { name:"Garten",        cost:10 },
+  { name:"Namens-Fahne",  cost:15 }
+];
+const HAUS_BONUS = 100;   /* Münzen, wenn das Haus fertig ist */
+/* Überlebens-Vorteile des Hauses (ab Baustufe X) */
+const HAUS_PERKS = [
+  { ab:2, icon:"🧱", text:"Wände: Dein Essen ist sicher – Hunger steigt 10% langsamer" },
+  { ab:4, icon:"🪟", text:"Fenster: Lampenlicht – nachts leuchtet deine Laterne weiter" },
+  { ab:6, icon:"💤", text:"Schornstein: Gut geschlafen – 1 Extra-Herz (4 statt 3)" },
+  { ab:8, icon:"🛡", text:"Fertiges Haus: +1 Gratis-Panzerladung in jedem Level" }
+];
+function hausPerks(){
+  const s = store.data.haus;
+  return {
+    drainFactor: s >= 2 ? 0.9 : 1,
+    nightLight:  s >= 4 ? 1.45 : 1,
+    extraLife:   s >= 6 ? 1 : 0,
+    extraShield: s >= 8 ? 1 : 0
+  };
+}
+
+/* ---------- Panzer im Insel-Laden ---------- */
+const PANZER = [
+  { tier:1, name:"Holz-Panzer",  icon:"🛡",     price:10, desc:"Schützt 1× pro Level vor Kokosnuss & Möwe" },
+  { tier:2, name:"Stein-Panzer", icon:"🛡🛡",   price:30, desc:"Schützt 2× pro Level vor Kokosnuss & Möwe" },
+  { tier:3, name:"Gold-Panzer",  icon:"🛡🛡🛡", price:75, desc:"Schützt 3× pro Level vor Kokosnuss & Möwe" }
+];
+
+/* ---------- Orte auf der Insel (je 20 Level) ---------- */
+const ZONES = [
+  { id:"strand",    name:"Strand",      emoji:"🏖", from:1,
+    sky:["#aee3ff","#e7ffe3"], ground:"#f2d99a", groundTop:"#e0c47f" },
+  { id:"dschungel", name:"Dschungel",   emoji:"🌿", from:21,
+    sky:["#cfeec4","#eaffd8"], ground:"#6dbb7a", groundTop:"#4f9e63" },
+  { id:"berge",     name:"Berge",       emoji:"⛰", from:41,
+    sky:["#bcd7ef","#eef4fa"], ground:"#b3aa9b", groundTop:"#978d7c" },
+  { id:"vulkan",    name:"Vulkan",      emoji:"🌋", from:61,
+    sky:["#f8c9a0","#f2a68a"], ground:"#7a625c", groundTop:"#5f4a45" },
+  { id:"bucht",     name:"Schatzbucht", emoji:"🌅", from:81,
+    sky:["#ffd39e","#ffb0c4"], ground:"#f7cf88", groundTop:"#e3b468" }
+];
+function zoneOf(n){
+  for(let i = ZONES.length-1; i >= 0; i--) if(n >= ZONES[i].from) return ZONES[i];
+  return ZONES[0];
+}
 
 /* ---------- Avatare ---------- */
 const ANIMALS = [
   { id:"affe",         emoji:"🐒", name:"Affe" },
   { id:"schildkroete", emoji:"🐢", name:"Schildkröte" },
   { id:"krabbe",       emoji:"🦀", name:"Krabbe" },
-  { id:"papagei",      emoji:"🦜", name:"Papagei" }
+  { id:"papagei",      emoji:"🦜", name:"Papagei" },
+  { id:"delfin",       emoji:"🐬", name:"Delfin",   unlock:45 },
+  { id:"gecko",        emoji:"🦎", name:"Gecko",    unlock:45 },
+  { id:"flamingo",     emoji:"🦩", name:"Flamingo", unlock:45 },
+  { id:"pinguin",      emoji:"🐧", name:"Pinguin",  unlock:45 }
 ];
 const AV_COLORS = ["#8a5a3b","#e74c3c","#54a9ff","#5bc98c","#b39ddb","#f0a10f"];
 const animalEmoji = id => (ANIMALS.find(a=>a.id===id) || ANIMALS[0]).emoji;
@@ -331,6 +489,10 @@ const audio = {
   gold(){ [660,830,990,1320].forEach((f,i)=>this.beep(f,0.1,"sine",0.16,i*0.06)); },
   bad(){ this.beep(160, 0.25, "sawtooth", 0.2); this.beep(120, 0.3, "square", 0.1, 0.05); },
   gull(){ this.beep(950, 0.09, "square", 0.1); this.beep(700, 0.12, "square", 0.1, 0.09); },
+  coin(){ this.beep(1250, 0.07, "square", 0.12); this.beep(1650, 0.1, "square", 0.1, 0.06); },
+  holz(){ this.beep(220, 0.06, "square", 0.2); this.beep(180, 0.08, "square", 0.15, 0.05); },
+  build(){ [330,392,494].forEach((f,i)=>this.beep(f, 0.12, "triangle", 0.2, i*0.09)); },
+  block(){ this.beep(300, 0.1, "triangle", 0.22); this.beep(500, 0.12, "triangle", 0.16, 0.06); },
   win(){ [523,659,784,1047].forEach((f,i)=>this.beep(f,0.16,"triangle",0.2,i*0.12)); },
   lose(){ [400,330,260,200].forEach((f,i)=>this.beep(f,0.2,"triangle",0.18,i*0.15)); }
 };
@@ -362,8 +524,10 @@ function hideOverlay(){ $("#overlay").classList.remove("active"); }
    ========================================================= */
 const cv = $("#game-canvas"), ctx = cv.getContext("2d");
 const nightCv = document.createElement("canvas"), nctx = nightCv.getContext("2d");
-const W = 480;                 // logische Breite, Höhe folgt aus dem Bildschirm
-let H = 800, scale = 1;
+/* Feste logische Höhe, Breite folgt dem Bildschirm (Hoch- UND Querformat).
+   Sehr breite Bildschirme bekommen seitliche Ränder (Letterbox). */
+const WORLD_H = 800, MIN_W = 400, MAX_W = 960;
+let W = 480, H = WORLD_H, scale = 1, offX = 0, offY = 0;
 
 const APPLE_R = 14, APPLE_H = 24, MAX_STACK = 12;
 const AV_W = 86, AV_H = 54;
@@ -374,18 +538,26 @@ const game = {
   spawnT:1, gullT:6,
   player:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
-  caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0
+  caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0,
+  shield:0, coinsRun:0, holzRun:0, maxLives:3
 };
 
 function resize(){
   const r = $("#game-wrap").getBoundingClientRect();
+  if(r.width < 10 || r.height < 10) return;   /* Spiel-Screen gerade unsichtbar */
   const dpr = window.devicePixelRatio || 1;
   cv.width = Math.round(r.width*dpr); cv.height = Math.round(r.height*dpr);
   nightCv.width = cv.width; nightCv.height = cv.height;
-  scale = cv.width / W;
-  H = cv.height / scale;
+  H = WORLD_H;
+  W = clamp(cv.width / cv.height * WORLD_H, MIN_W, MAX_W);
+  scale = Math.min(cv.width / W, cv.height / H);
+  offX = (cv.width - W*scale) / 2;
+  offY = (cv.height - H*scale) / 2;
+  game.player.x = clamp(game.player.x, AV_W/2, W - AV_W/2);
+  game.player.tx = clamp(game.player.tx, AV_W/2, W - AV_W/2);
 }
 window.addEventListener("resize", resize);
+window.addEventListener("orientationchange", ()=>setTimeout(resize, 150));
 
 const groundY = () => H - 64;
 const stackH  = () => Math.min(game.stack.length, MAX_STACK);
@@ -394,25 +566,37 @@ const stackTopY = () => groundY() - AV_H - stackH()*APPLE_H;
 function startLevel(n){
   audio.ensure();
   game.level = n; game.cfg = levelConfig(n);
+  showScreen("#scr-game"); resize();          /* erst ausmessen, dann Figur setzen */
   game.t = 0; game.startT = 0; game.spawnT = 1.2; game.gullT = game.cfg.gullEvery || 999;
   game.player.x = game.player.tx = game.player.px = W/2; game.player.lean = 0;
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
-  game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
+  const perks = hausPerks();
+  game.caught = 0; game.shake = 0;
+  game.maxLives = game.cfg.lives + perks.extraLife;
+  game.lives = game.maxLives;
   game.energy = 100; game.timeLeft = game.cfg.time;
+  game.shield = store.data.panzer + perks.extraShield;
+  game.coinsRun = 0; game.holzRun = 0;
   game.state = "playing"; game.active = true;
-  showScreen("#scr-game"); resize(); updateHUD();
-  const hint = levelHint(n);
+  updateHUD();
+  let hint = levelHint(n);
+  const zn = zoneOf(n);
+  if(!hint && zn.from === n && n > 1) hint = "Neuer Ort: " + zn.name + "! " + zn.emoji;
   if(hint) addFloat(W/2, H*0.35, hint, game.cfg.night ? "#ffffff" : "#3a4a3b", 3.2, 17);
 }
 
 function updateHUD(){
-  $("#hud-level").textContent = "Level " + game.level + (game.cfg && game.cfg.night ? " 🌙" : "");
+  $("#hud-level").textContent = "Level " + game.level + " " + zoneOf(game.level).emoji +
+    (game.cfg && game.cfg.night ? "🌙" : "");
   $("#hud-energy").textContent = "🍎 " + Math.ceil(game.energy);
   const bar = $("#hud-bar");
   bar.style.width = clamp(game.energy, 0, 100) + "%";
   bar.classList.toggle("low", game.energy < 30);
   $("#hud-time").textContent = "⏱ " + Math.ceil(Math.max(0, game.timeLeft));
-  $("#hud-hearts").textContent = "❤️".repeat(game.lives) + "🖤".repeat(Math.max(0, 3-game.lives));
+  $("#hud-hearts").textContent = "❤️".repeat(game.lives) +
+    "🖤".repeat(Math.max(0, (game.maxLives || 3) - game.lives));
+  $("#hud-coins").textContent = "🪙 " + store.data.coins;
+  $("#hud-holz").textContent = "🪵 " + store.data.holz;
   $("#btn-sound").textContent = store.data.sound ? "🔊" : "🔇";
 }
 
@@ -445,17 +629,21 @@ function winLevel(){
     const name = store.data.avatar.name;
     showOverlay(done ? "🏆 DER SCHATZ GEHÖRT DIR" + (name ? ", " + name.toUpperCase() : "") + "!"
                      : "Überlebt" + (name ? ", " + name : "") + "! 🎉",
-      done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
-           : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!",
+      (done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
+           : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!") +
+      lootText("\n"),
       stars, btns);
   }, 900);
 }
 function loseLevel(reason){
   game.state = "lost"; audio.lose();
+  store.save();   /* gesammelte Münzen bleiben auch bei Niederlage */
   const survived = Math.ceil(game.cfg.time - game.timeLeft);
   setTimeout(()=>{
     showOverlay(reason === "hunger" ? "Ohje, der Magen ist leer! 😵" : "Alle Herzen weg!",
-      "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt.\nGleich nochmal?", 0, [
+      "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt." +
+      lootText("\nDeine Beute behältst du: ") +
+      "\nGleich nochmal?", 0, [
       {id:"ov-retry", label:"↻ Nochmal versuchen", cb:()=>startLevel(game.level)},
       {id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels}
     ]);
@@ -470,6 +658,12 @@ function loseLife(x,y,msg){
 function eat(amount){
   game.energy = clamp(game.energy + amount, 0, 100);
 }
+function lootText(prefix){
+  const parts = [];
+  if(game.coinsRun) parts.push("🪙 +" + game.coinsRun);
+  if(game.holzRun) parts.push("🪵 +" + game.holzRun);
+  return parts.length ? prefix + parts.join(" · ") : "";
+}
 
 /* ---------- Update ---------- */
 function spawnApple(){
@@ -477,10 +671,12 @@ function spawnApple(){
   let type = "rot";
   if(r < c.goldP) type = "gold";
   else if(r < c.goldP + c.kokosP) type = "kokos";
+  else if(r < c.goldP + c.kokosP + COIN_P) type = "muenze";
+  else if(r < c.goldP + c.kokosP + COIN_P + HOLZ_P) type = "holz";
   game.apples.push({
     x: rand(30, W-30), y: -20,
-    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : 1),
-    type, rot: rand(-0.4,0.4), spin: rand(-1.5,1.5)
+    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : type === "muenze" || type === "holz" ? 0.85 : 1),
+    type, rot: rand(-0.4,0.4), spin: type === "muenze" ? 4 : rand(-1.5,1.5)
   });
 }
 function spawnGull(){
@@ -498,9 +694,9 @@ function update(dt){
   game.t += dt;
   if(game.state !== "playing") { updateFx(dt); return; }
 
-  /* Überlebens-Uhr + Hunger */
+  /* Überlebens-Uhr + Hunger (Haus-Wände schützen das Essen) */
   game.timeLeft -= dt;
-  game.energy -= c.drain * dt;
+  game.energy -= c.drain * dt * hausPerks().drainFactor;
   if(game.energy <= 20 && game.energy + c.drain*dt > 20){
     addFloat(game.player.x, stackTopY() - 30, "Hunger! 🍎", "#e74c3c", 1.4, 20);
   }
@@ -510,7 +706,8 @@ function update(dt){
 
   /* Avatar bewegen */
   const h = game.player;
-  const kSpeed = 380 + game.level*1.5;
+  /* auf breiten Spielfeldern (Querformat) entsprechend schneller laufen */
+  const kSpeed = (380 + game.level*1.5) * Math.max(1, W/480);
   if(keys.left)  h.tx -= kSpeed*dt;
   if(keys.right) h.tx += kSpeed*dt;
   h.tx = clamp(h.tx, AV_W/2, W - AV_W/2);
@@ -549,8 +746,25 @@ function update(dt){
     if(prevY < topY && a.y >= topY && Math.abs(a.x - h.x) <= AV_W/2 + 10){
       game.apples.splice(i,1);
       if(a.type === "kokos"){
-        burst(h.x, topY, "#6b5a25", 12);
-        loseLife(h.x, topY, "Autsch! 🥥");
+        if(game.shield > 0){
+          game.shield--;
+          burst(h.x, topY, "#54a9ff", 14);
+          addFloat(h.x, topY-16, "Panzer! 🛡", "#3d8fe0", 1.2, 22);
+          audio.block();
+        }else{
+          burst(h.x, topY, "#6b5a25", 12);
+          loseLife(h.x, topY, "Autsch! 🥥");
+        }
+      }else if(a.type === "muenze"){
+        store.data.coins++; game.coinsRun++;
+        burst(h.x, topY, "#ffd66b", 10);
+        addFloat(h.x, topY-16, "+1 🪙", "#c98a0a", 1, 22);
+        audio.coin();
+      }else if(a.type === "holz"){
+        store.data.holz++; game.holzRun++;
+        burst(h.x, topY, "#c9986a", 10);
+        addFloat(h.x, topY-16, "+1 🪵", "#9a6b42", 1, 22);
+        audio.holz();
       }else if(a.type === "gold"){
         game.caught += 3;
         eat(GOLD_ENERGY);
@@ -573,7 +787,8 @@ function update(dt){
     /* auf dem Boden gelandet? (kostet kein Herz – aber das Essen ist weg) */
     if(a.y > gY){
       game.apples.splice(i,1);
-      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : "#e74c3c", 8);
+      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : a.type === "muenze" ? "#ffd66b" :
+                     a.type === "holz" ? "#c9986a" : "#e74c3c", 8);
     }
   }
 
@@ -586,11 +801,18 @@ function update(dt){
       const tx = h.x, ty = stackTopY() + APPLE_H/2;
       if(Math.abs(w.x - tx) < 22 && Math.abs(w.y - ty) < 26){
         w.stole = true; w.vy = -140;
-        game.stack.pop();
-        game.caught = Math.max(0, game.caught - 1);
-        eat(-GULL_STEAL);
-        audio.gull();
-        addFloat(tx, ty-20, "-" + GULL_STEAL + " 🐦", "#4a6a8a", 1.2, 22);
+        if(game.shield > 0){
+          game.shield--;
+          burst(tx, ty, "#54a9ff", 12);
+          addFloat(tx, ty-20, "Abgeprallt! 🛡", "#3d8fe0", 1.2, 20);
+          audio.block();
+        }else{
+          game.stack.pop();
+          game.caught = Math.max(0, game.caught - 1);
+          eat(-GULL_STEAL);
+          audio.gull();
+          addFloat(tx, ty-20, "-" + GULL_STEAL + " 🐦", "#4a6a8a", 1.2, 22);
+        }
         updateHUD();
       }
     }
@@ -615,6 +837,35 @@ function updateFx(dt){
 
 /* ---------- Zeichnen ---------- */
 function drawApple(x, y, r, type, rot=0){
+  if(type === "holz"){
+    /* Holzbrett */
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+    ctx.fillStyle = "#b98955";
+    ctx.fillRect(-16,-6, 32, 12);
+    ctx.strokeStyle = "#9a6b42"; ctx.lineWidth = 1.5;
+    ctx.strokeRect(-16,-6, 32, 12);
+    ctx.beginPath(); ctx.moveTo(-10,-2); ctx.lineTo(6,-2); ctx.stroke();   /* Maserung */
+    ctx.beginPath(); ctx.moveTo(-4,2); ctx.lineTo(12,2); ctx.stroke();
+    ctx.restore();
+    return;
+  }
+  if(type === "muenze"){
+    /* drehender Taler mit Apfel-Prägung */
+    ctx.save(); ctx.translate(x,y);
+    ctx.scale(Math.max(0.15, Math.abs(Math.cos(rot))), 1);
+    const g = ctx.createRadialGradient(-r*0.3,-r*0.3, r*0.2, 0,0, r);
+    g.addColorStop(0,"#ffe9a0"); g.addColorStop(1,"#f0a10f");
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(0,0,r-1,0,Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#c98a0a"; ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.arc(0,0,r-2,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "#c98a0a";
+    ctx.beginPath(); ctx.arc(0,1,5,0,Math.PI*2); ctx.fill();   /* Apfel-Prägung */
+    ctx.strokeStyle = "#c98a0a"; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0,-3); ctx.lineTo(2,-8); ctx.stroke();
+    ctx.restore();
+    return;
+  }
   ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
   const g = ctx.createRadialGradient(-r*0.3,-r*0.3, r*0.2, 0,0, r);
   if(type === "gold"){ g.addColorStop(0,"#ffe9a0"); g.addColorStop(1,"#f0a10f"); }
@@ -678,6 +929,61 @@ function drawAvatarSprite(c2, animal, color){
     dot(-8,-51, 2.4, "#2c2c2c"); dot(8,-51, 2.4, "#2c2c2c");
     c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
     c2.beginPath(); c2.arc(0,-20, 7, 0.4, Math.PI-0.4); c2.stroke();
+  }else if(animal === "delfin"){
+    c2.fillStyle = dark;                                             /* Schwanzflosse */
+    c2.beginPath(); c2.moveTo(0,-8); c2.lineTo(-15,3); c2.lineTo(-2,5); c2.closePath(); c2.fill();
+    c2.beginPath(); c2.moveTo(0,-8); c2.lineTo(15,3); c2.lineTo(2,5); c2.closePath(); c2.fill();
+    ell(0,-30, 15,25, color);                                        /* Körper aufrecht */
+    ell(4,-24, 8,16, "#e8f4ff");                                     /* Bauch */
+    c2.fillStyle = dark;                                             /* Rückenflosse */
+    c2.beginPath(); c2.moveTo(-11,-40); c2.lineTo(-26,-50); c2.lineTo(-9,-30); c2.closePath(); c2.fill();
+    ell(6,-27, 9,4.5, dark, 0.6);                                    /* Seitenflosse */
+    ell(16,-47, 11,6, color, -0.2);                                  /* Schnauze */
+    dot(2,-51, 2.8, "#2c2c2c");                                      /* Auge */
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;                    /* Lächeln */
+    c2.beginPath(); c2.arc(16,-45, 6, 0.5, Math.PI*0.7); c2.stroke();
+  }else if(animal === "gecko"){
+    c2.strokeStyle = dark; c2.lineWidth = 7; c2.lineCap = "round";   /* eingerollter Schwanz */
+    c2.beginPath(); c2.moveTo(-8,-8); c2.quadraticCurveTo(-34,-6,-32,-20);
+    c2.quadraticCurveTo(-30,-30,-22,-24); c2.stroke();
+    c2.lineWidth = 5;                                                /* Arme nach oben */
+    c2.beginPath(); c2.moveTo(-8,-36); c2.lineTo(-17,-50); c2.stroke();
+    c2.beginPath(); c2.moveTo(8,-36); c2.lineTo(17,-50); c2.stroke();
+    dot(-17,-51, 4, dark); dot(17,-51, 4, dark);                     /* Kleber-Finger */
+    ell(-9,-4, 7,4, dark); ell(9,-4, 7,4, dark);                     /* Füße */
+    ell(0,-24, 13,21, color);                                        /* Körper aufrecht */
+    ell(0,-46, 12,10, color);                                        /* Kopf */
+    c2.fillStyle = shade(color, 1.25);                               /* Rückenpunkte */
+    [[-4,-18],[5,-26],[-3,-32]].forEach(([sx,sy])=>dot(sx,sy,2.4, shade(color,1.25)));
+    dot(-6,-50, 4.6, "#fff"); dot(-5,-50, 2.4, "#2c2c2c");           /* Glubschaugen */
+    dot(6,-50, 4.6, "#fff"); dot(7,-50, 2.4, "#2c2c2c");
+    c2.strokeStyle = "#2c2c2c"; c2.lineWidth = 2;
+    c2.beginPath(); c2.arc(0,-43, 5, 0.4, Math.PI-0.4); c2.stroke();
+  }else if(animal === "flamingo"){
+    c2.strokeStyle = dark; c2.lineWidth = 3.5; c2.lineCap = "round"; /* ein Bein! */
+    c2.beginPath(); c2.moveTo(0,-24); c2.lineTo(1,-2); c2.stroke();
+    c2.beginPath(); c2.moveTo(-3,-24); c2.lineTo(-5,-14); c2.stroke();  /* angezogenes Bein */
+    ell(1,0, 8,3, dark);                                             /* Fuß */
+    ell(-2,-34, 18,13, color);                                       /* Körper */
+    ell(-8,-34, 10,8, shade(color,0.85), 0.3);                       /* Flügel */
+    c2.strokeStyle = color; c2.lineWidth = 6;                        /* S-Hals */
+    c2.beginPath(); c2.moveTo(12,-40); c2.quadraticCurveTo(26,-48,24,-60); c2.stroke();
+    dot(23,-64, 7, color);                                           /* Kopf */
+    c2.fillStyle = "#f5f0e6";                                        /* Schnabel */
+    c2.beginPath(); c2.moveTo(29,-65); c2.quadraticCurveTo(38,-63,36,-57);
+    c2.lineTo(31,-60); c2.closePath(); c2.fill();
+    c2.fillStyle = "#2c2c2c";
+    c2.beginPath(); c2.moveTo(36,-57); c2.lineTo(31,-60); c2.lineTo(34,-55); c2.closePath(); c2.fill();
+    dot(22,-66, 2.2, "#2c2c2c");                                     /* Auge */
+  }else if(animal === "pinguin"){
+    ell(-12,-2, 8,4, "#f0a10f"); ell(12,-2, 8,4, "#f0a10f");         /* Füße */
+    ell(0,-26, 17,25, color);                                        /* Körper */
+    ell(2,-20, 11,16, "#ffffff");                                    /* Bauch */
+    ell(-16,-28, 5,13, dark, 0.25); ell(16,-28, 5,13, dark, -0.25);  /* Flossen */
+    dot(-3,-42, 4.4, "#fff"); dot(-2,-42, 2.3, "#2c2c2c");           /* Augen */
+    dot(8,-42, 4.4, "#fff"); dot(9,-42, 2.3, "#2c2c2c");
+    c2.fillStyle = "#f0a10f";                                        /* Schnabel */
+    c2.beginPath(); c2.moveTo(0,-38); c2.lineTo(10,-34); c2.lineTo(0,-32); c2.closePath(); c2.fill();
   }else if(animal === "papagei"){
     c2.strokeStyle = dark; c2.lineWidth = 3;                         /* Füße */
     c2.beginPath(); c2.moveTo(-8,-6); c2.lineTo(-8,0); c2.moveTo(8,-6); c2.lineTo(8,0); c2.stroke();
@@ -717,6 +1023,16 @@ function drawPlayer(){
   ctx.fillStyle = "rgba(90,60,20,0.18)";                             /* Schatten */
   ctx.beginPath(); ctx.ellipse(0, 0, AV_W*0.42, 7, 0, 0, Math.PI*2); ctx.fill();
   drawAvatarSprite(ctx, av.animal, av.color);
+  if(game.shield > 0){                                               /* Panzer-Schutzblase */
+    const pulse = 1 + Math.sin(game.t*3)*0.03;
+    ctx.strokeStyle = "rgba(84,169,255,0.65)"; ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.arc(0, -30, 52*pulse, 0, Math.PI*2); ctx.stroke();
+    ctx.fillStyle = "rgba(84,169,255,0.12)";
+    ctx.beginPath(); ctx.arc(0, -30, 52*pulse, 0, Math.PI*2); ctx.fill();
+    ctx.font = "13px sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = "#3d8fe0";
+    ctx.fillText("🛡×" + game.shield, 0, -88);
+  }
   ctx.restore();
 
   /* Apfel-Stapel */
@@ -784,16 +1100,120 @@ function drawPalm(x, y, s, flip){
   ctx.beginPath(); ctx.arc(-2,-110, 5, 0, Math.PI*2); ctx.fill();
   ctx.restore();
 }
+function drawZoneBackdrop(c, gY, z){
+  const night = c.night;
+  /* --- Kulisse hinter dem Boden --- */
+  if(z.id === "strand" || z.id === "bucht"){
+    /* Meer mit Wellen */
+    const seaY = gY - 90;
+    const sea = ctx.createLinearGradient(0, seaY, 0, gY);
+    if(night){ sea.addColorStop(0,"#16305c"); sea.addColorStop(1,"#1d3d6e"); }
+    else if(z.id === "bucht"){ sea.addColorStop(0,"#e08a7a"); sea.addColorStop(1,"#f7b98a"); }
+    else { sea.addColorStop(0,"#3d8fe0"); sea.addColorStop(1,"#8fd8ff"); }
+    ctx.fillStyle = sea; ctx.fillRect(0, seaY, W, gY - seaY + 20);
+    if(z.id === "bucht" && !night){    /* tief stehende Abendsonne */
+      ctx.fillStyle = "#ffdf8a";
+      ctx.beginPath(); ctx.arc(W*0.7, seaY+2, 36, Math.PI, 0); ctx.fill();
+    }
+    ctx.strokeStyle = night ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2.5;
+    for(let i = 0; i < 4; i++){
+      const wy = seaY + 16 + i*20;
+      const wx = ((game.t*22 + i*110) % (W+120)) - 60;
+      ctx.beginPath();
+      ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx+14, wy-4, wx+28, wy);
+      ctx.quadraticCurveTo(wx+42, wy+4, wx+56, wy);
+      ctx.stroke();
+    }
+    if(z.id === "strand"){    /* kleine Nachbar-Insel am Horizont */
+      ctx.fillStyle = night ? "#2c3a55" : "#e8d49a";
+      ctx.beginPath(); ctx.ellipse(W*0.8, seaY+8, 44, 12, 0, Math.PI, 0); ctx.fill();
+    }
+  }
+  if(z.id === "dschungel"){
+    /* Blätterwand */
+    ctx.fillStyle = night ? "#183f26" : "#4fa065";
+    [[40,55],[140,70],[250,60],[350,75],[440,50]].forEach(([x,r])=>{
+      ctx.beginPath(); ctx.arc(x, gY-16, r, Math.PI, 0); ctx.fill();
+    });
+    /* Bäume */
+    ctx.fillStyle = night ? "#3a2c1c" : "#7a5a38";
+    ctx.fillRect(70, gY-70, 14, 74); ctx.fillRect(330, gY-92, 16, 96);
+    ctx.fillStyle = night ? "#1d5a40" : "#3fae72";
+    ctx.beginPath(); ctx.arc(77, gY-86, 34, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(338, gY-106, 40, 0, Math.PI*2); ctx.fill();
+    /* Lianen von oben */
+    ctx.strokeStyle = night ? "#1d5a40" : "#3fae72";
+    ctx.lineWidth = 5; ctx.lineCap = "round";
+    [[60,120],[420,150],[230,88]].forEach(([x,len],i)=>{
+      const sw = Math.sin(game.t*0.9 + i*2)*10;
+      ctx.beginPath(); ctx.moveTo(x,0); ctx.quadraticCurveTo(x+sw, len*0.6, x+sw*1.6, len); ctx.stroke();
+      ctx.fillStyle = night ? "#1d5a40" : "#5bc98c";
+      ctx.beginPath(); ctx.ellipse(x+sw*1.6, len+6, 8,5, 0.4, 0, Math.PI*2); ctx.fill();
+    });
+  }
+  if(z.id === "berge"){
+    const mcol = night ? "#2c3a55" : "#8d9aab", scol = night ? "#8a95b5" : "#ffffff";
+    [[0.18,150],[0.52,205],[0.84,160]].forEach(([fx,hh])=>{
+      const px = W*fx;
+      ctx.fillStyle = mcol;
+      ctx.beginPath(); ctx.moveTo(px-135, gY+10); ctx.lineTo(px, gY-hh);
+      ctx.lineTo(px+135, gY+10); ctx.closePath(); ctx.fill();
+      ctx.fillStyle = scol;
+      ctx.beginPath(); ctx.moveTo(px-26, gY-hh+40); ctx.lineTo(px, gY-hh); ctx.lineTo(px+26, gY-hh+40);
+      ctx.quadraticCurveTo(px, gY-hh+54, px-26, gY-hh+40); ctx.closePath(); ctx.fill();
+    });
+  }
+  if(z.id === "vulkan"){
+    const vx = W*0.68, peak = gY-190;
+    ctx.fillStyle = night ? "#241a22" : "#4a3540";
+    ctx.beginPath(); ctx.moveTo(vx-155, gY+12); ctx.lineTo(vx-34, peak);
+    ctx.lineTo(vx+34, peak); ctx.lineTo(vx+155, gY+12); ctx.closePath(); ctx.fill();
+    /* Lava-Glühen + Krater */
+    const glow = ctx.createRadialGradient(vx, peak, 6, vx, peak, 95);
+    glow.addColorStop(0, "rgba(255,120,40,0.85)"); glow.addColorStop(1, "rgba(255,120,40,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath(); ctx.arc(vx, peak, 95, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle = "#ff8a3c";
+    ctx.beginPath(); ctx.ellipse(vx, peak, 34, 10, 0, 0, Math.PI*2); ctx.fill();
+    ctx.strokeStyle = "#ff8a3c"; ctx.lineWidth = 8; ctx.lineCap = "round";
+    ctx.beginPath(); ctx.moveTo(vx-14, peak+4);
+    ctx.quadraticCurveTo(vx-42, peak+80, vx-34, peak+150); ctx.stroke();
+    /* aufsteigende Funken */
+    ctx.fillStyle = "#ffb35c";
+    for(let i = 0; i < 6; i++){
+      const ph = (game.t*0.5 + i*0.37) % 1;
+      ctx.globalAlpha = 1 - ph;
+      ctx.beginPath();
+      ctx.arc(vx + Math.sin(i*2.7)*40*ph, peak - ph*110, 3.2, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  }
+  /* --- Boden --- */
+  ctx.fillStyle = night ? shade(z.ground, 0.45) : z.ground;
+  ctx.beginPath();
+  ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+  ctx.strokeStyle = night ? shade(z.groundTop, 0.45) : z.groundTop;
+  ctx.lineWidth = 6;
+  ctx.beginPath(); ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16); ctx.stroke();
+  /* Palmen nur am Wasser */
+  if(z.id === "strand" || z.id === "bucht"){
+    drawPalm(48, gY+8, 0.9, false);
+    drawPalm(W-44, gY+10, 1.05, true);
+  }
+}
 function draw(){
   const c = game.cfg, gY = groundY();
-  ctx.setTransform(scale, 0, 0, scale, 0, 0);
+  ctx.setTransform(scale, 0, 0, scale, offX, offY);
   if(game.shake > 0){
     ctx.translate(rand(-1,1)*game.shake*8, rand(-1,1)*game.shake*8);
   }
-  /* Himmel */
+  /* Himmel (je nach Ort) */
+  const z = zoneOf(game.level);
   const sky = ctx.createLinearGradient(0,0,0,H);
   if(c.night){ sky.addColorStop(0,"#141a3d"); sky.addColorStop(1,"#2c3a68"); }
-  else { sky.addColorStop(0,"#aee3ff"); sky.addColorStop(1,"#e7ffe3"); }
+  else { sky.addColorStop(0,z.sky[0]); sky.addColorStop(1,z.sky[1]); }
   ctx.fillStyle = sky; ctx.fillRect(0,0,W,H);
   /* Sonne / Mond + Sterne */
   if(c.night){
@@ -806,40 +1226,11 @@ function draw(){
       const sx = (i*137)%W, sy = 30+(i*61)%200;
       ctx.fillRect(sx, sy, 2, 2);
     }
-  }else{
+  }else if(z.id !== "bucht"){    /* in der Schatzbucht steht die Sonne tief am Meer */
     ctx.fillStyle = "#ffd66b";
     ctx.beginPath(); ctx.arc(W-70, 90, 30, 0, Math.PI*2); ctx.fill();
   }
-  /* Meer mit Wellen */
-  const seaY = gY - 90;
-  const sea = ctx.createLinearGradient(0, seaY, 0, gY);
-  if(c.night){ sea.addColorStop(0,"#16305c"); sea.addColorStop(1,"#1d3d6e"); }
-  else { sea.addColorStop(0,"#3d8fe0"); sea.addColorStop(1,"#8fd8ff"); }
-  ctx.fillStyle = sea; ctx.fillRect(0, seaY, W, gY - seaY + 20);
-  ctx.strokeStyle = c.night ? "rgba(255,255,255,0.18)" : "rgba(255,255,255,0.5)";
-  ctx.lineWidth = 2.5;
-  for(let i = 0; i < 4; i++){
-    const wy = seaY + 16 + i*20;
-    const wx = ((game.t*22 + i*110) % (W+120)) - 60;
-    ctx.beginPath();
-    ctx.moveTo(wx, wy); ctx.quadraticCurveTo(wx+14, wy-4, wx+28, wy);
-    ctx.quadraticCurveTo(wx+42, wy+4, wx+56, wy);
-    ctx.stroke();
-  }
-  /* kleine Nachbar-Insel am Horizont */
-  ctx.fillStyle = c.night ? "#2c3a55" : "#e8d49a";
-  ctx.beginPath(); ctx.ellipse(W*0.8, seaY+8, 44, 12, 0, Math.PI, 0); ctx.fill();
-  /* Insel-Sand */
-  ctx.fillStyle = c.night ? "#6e6248" : "#f2d99a";
-  ctx.beginPath();
-  ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16);
-  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
-  ctx.strokeStyle = c.night ? "#5a5039" : "#e0c47f";
-  ctx.lineWidth = 6;
-  ctx.beginPath(); ctx.moveTo(0, gY+16); ctx.quadraticCurveTo(W/2, gY-10, W, gY+16); ctx.stroke();
-  /* Palmen */
-  drawPalm(48, gY+8, 0.9, false);
-  drawPalm(W-44, gY+10, 1.05, true);
+  drawZoneBackdrop(c, gY, z);
   /* Wind-Anzeige */
   if(c.wind){
     ctx.strokeStyle = c.night ? "rgba(255,255,255,0.35)" : "rgba(90,140,110,0.5)";
@@ -859,7 +1250,7 @@ function draw(){
   game.gulls.forEach(drawGull);
   /* Nacht-Maske mit Laternen-Licht */
   if(c.night){
-    nctx.setTransform(scale, 0, 0, scale, 0, 0);
+    nctx.setTransform(scale, 0, 0, scale, offX, offY);
     nctx.clearRect(0,0,W,H);
     nctx.fillStyle = "rgba(8,10,30,0.78)";
     nctx.fillRect(0,0,W,H);
@@ -870,13 +1261,13 @@ function draw(){
       nctx.fillStyle = g;
       nctx.beginPath(); nctx.arc(x,y,r,0,Math.PI*2); nctx.fill();
     };
-    hole(game.player.x, stackTopY(), 200);
+    hole(game.player.x, stackTopY(), 200 * hausPerks().nightLight);
     game.apples.forEach(a => hole(a.x, a.y, 52));
     game.gulls.forEach(w => hole(w.x, w.y, 46));
     nctx.globalCompositeOperation = "source-over";
     ctx.setTransform(1,0,0,1,0,0);
     ctx.drawImage(nightCv, 0, 0);
-    ctx.setTransform(scale, 0, 0, scale, 0, 0);
+    ctx.setTransform(scale, 0, 0, scale, offX, offY);
   }
   /* Partikel + Schwebe-Texte */
   game.parts.forEach(p=>{
@@ -894,6 +1285,19 @@ function draw(){
     ctx.fillStyle = f.color; ctx.fillText(f.text, f.x, f.y);
   });
   ctx.globalAlpha = 1;
+  /* Ränder außerhalb des Spielfelds (bei sehr breiten/schmalen Bildschirmen) */
+  if(offX > 0.5 || offY > 0.5){
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.fillStyle = "#221c16";
+    if(offX > 0.5){
+      ctx.fillRect(0, 0, offX+1, cv.height);
+      ctx.fillRect(cv.width-offX-1, 0, offX+2, cv.height);
+    }
+    if(offY > 0.5){
+      ctx.fillRect(0, 0, cv.width, offY+1);
+      ctx.fillRect(0, cv.height-offY-1, cv.width, offY+2);
+    }
+  }
 }
 
 /* ---------- Spiel-Schleife ---------- */
@@ -925,7 +1329,8 @@ window.addEventListener("keyup", e=>{
 let pointerDown = false;
 function pointerToWorld(e){
   const r = cv.getBoundingClientRect();
-  return (e.clientX - r.left) / r.width * W;
+  const dpr = cv.width / r.width;
+  return ((e.clientX - r.left) * dpr - offX) / scale;
 }
 cv.addEventListener("pointerdown", e=>{ pointerDown = true; game.player.tx = pointerToWorld(e); audio.ensure(); });
 cv.addEventListener("pointermove", e=>{ if(pointerDown) game.player.tx = pointerToWorld(e); });
@@ -984,6 +1389,14 @@ function openLevels(){
     d.style.left = x + "%"; d.style.top = y + "px";
     inner.appendChild(d);
   });
+  /* Orts-Schilder an den Abschnitts-Grenzen */
+  ZONES.forEach(zn=>{
+    const d = document.createElement("div");
+    d.className = "map-zone";
+    d.textContent = zn.emoji + " " + zn.name + " · Level " + zn.from + "–" + (zn.from+19);
+    d.style.top = (mapPos(zn.from).y + 46) + "px";
+    inner.appendChild(d);
+  });
   /* Level-Stationen */
   let currentBtn = null;
   for(let n = 1; n <= MAX_LEVEL; n++){
@@ -1008,6 +1421,173 @@ function openLevels(){
   if(currentBtn) currentBtn.scrollIntoView({ block:"center" });
 }
 
+/* ---------- Mein Haus ---------- */
+const hausCv = $("#haus-canvas"), hctx = hausCv.getContext("2d");
+function drawHaus(){
+  const s = store.data.haus, g = hctx, av = store.data.avatar;
+  g.setTransform(1,0,0,1,0,0);
+  /* Himmel, Meer, Sand */
+  const sky = g.createLinearGradient(0,0,0,240);
+  sky.addColorStop(0,"#aee3ff"); sky.addColorStop(1,"#e7ffe3");
+  g.fillStyle = sky; g.fillRect(0,0,340,240);
+  g.fillStyle = "#6db9ef"; g.fillRect(0,150,340,28);
+  g.fillStyle = "#f2d99a"; g.fillRect(0,172,340,68);
+  g.fillStyle = "#ffd66b";
+  g.beginPath(); g.arc(304,34,20,0,Math.PI*2); g.fill();
+  if(s >= 1){                                    /* Fundament */
+    g.fillStyle = "#9a9a92"; g.fillRect(95,193,160,14);
+    g.fillStyle = "#7f7f78";
+    [105,135,168,200,232].forEach(x=>{ g.beginPath(); g.arc(x,200,5,0,Math.PI*2); g.fill(); });
+  }
+  if(s >= 2){                                    /* Wände */
+    g.fillStyle = "#c9986a"; g.fillRect(103,125,144,68);
+    g.strokeStyle = "#9a6b42"; g.lineWidth = 1.5;
+    for(let y = 140; y < 193; y += 14){
+      g.beginPath(); g.moveTo(103,y); g.lineTo(247,y); g.stroke();
+    }
+  }
+  if(s >= 3){                                    /* Tür */
+    g.fillStyle = "#7a5a38";
+    g.fillRect(160,152,32,41);
+    g.beginPath(); g.arc(176,152,16,Math.PI,0); g.fill();
+    g.fillStyle = "#ffd66b";
+    g.beginPath(); g.arc(185,172,3,0,Math.PI*2); g.fill();
+  }
+  if(s >= 4){                                    /* Fenster */
+    [[115,138],[208,138]].forEach(([x,y])=>{
+      g.fillStyle = "#bfe6ff"; g.fillRect(x,y,27,22);
+      g.strokeStyle = "#7a5a38"; g.lineWidth = 2.5; g.strokeRect(x,y,27,22);
+      g.beginPath(); g.moveTo(x+13.5,y); g.lineTo(x+13.5,y+22);
+      g.moveTo(x,y+11); g.lineTo(x+27,y+11); g.stroke();
+    });
+  }
+  if(s >= 5){                                    /* Palmen-Dach */
+    g.fillStyle = "#3fae72";
+    g.beginPath(); g.moveTo(90,127); g.lineTo(175,78); g.lineTo(260,127); g.closePath(); g.fill();
+    g.strokeStyle = "#2c8a56"; g.lineWidth = 2;
+    [0.3,0.5,0.7].forEach(f=>{
+      g.beginPath(); g.moveTo(90+170*f, 127); g.lineTo(175, 78+ (127-78)*(1-f)*0.2); g.stroke();
+    });
+  }
+  if(s >= 6){                                    /* Schornstein + Rauch */
+    g.fillStyle = "#b06a4a"; g.fillRect(220,86,16,28);
+    g.fillStyle = "rgba(200,200,200,0.8)";
+    [[228,74,5],[234,62,7],[227,48,8]].forEach(([x,y,r])=>{
+      g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    });
+  }
+  if(s >= 7){                                    /* Garten */
+    g.strokeStyle = "#9a6b42"; g.lineWidth = 6; g.lineCap = "round";
+    g.beginPath(); g.moveTo(300,225); g.quadraticCurveTo(305,195,298,175); g.stroke();
+    g.strokeStyle = "#3fae72"; g.lineWidth = 5;
+    [[-20,-8],[18,-6],[-2,-18]].forEach(([dx,dy])=>{
+      g.beginPath(); g.moveTo(298,175); g.quadraticCurveTo(298+dx*0.7,168+dy,298+dx,178+dy); g.stroke();
+    });
+    ["#e74c3c","#ffd66b","#b39ddb","#e74c3c","#ffd66b"].forEach((f,i)=>{
+      g.fillStyle = f;
+      g.beginPath(); g.arc(112+i*32, 213, 4, 0, Math.PI*2); g.fill();
+      g.fillStyle = "#3fae72"; g.fillRect(111+i*32, 217, 2, 6);
+    });
+  }
+  if(s >= 8){                                    /* Namens-Fahne */
+    g.strokeStyle = "#5a4630"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(175,78); g.lineTo(175,46); g.stroke();
+    g.fillStyle = "#e74c3c"; g.fillRect(175,46,52,17);
+    g.fillStyle = "#fff"; g.font = "bold 10px 'Comic Sans MS','Segoe UI',sans-serif";
+    g.textAlign = "center";
+    g.fillText((store.data.avatar.name || "MEINS").toUpperCase().slice(0,8), 201, 58);
+  }
+  /* Avatar vor dem Haus */
+  g.save(); g.translate(52,222); g.scale(0.85,0.85);
+  drawAvatarSprite(g, av.animal, av.color);
+  g.restore();
+}
+function openHaus(){
+  game.active = false; game.state = "idle";
+  const s = store.data.haus;
+  $("#haus-holz").textContent = "🪵 " + store.data.holz;
+  const btn = $("#btn-haus-bauen");
+  if(s >= HAUS_TEILE.length){
+    $("#haus-status").textContent = "🎉 Dein Haus ist fertig!";
+    btn.style.display = "none";
+    $("#haus-tipp").textContent = "Ein echtes Zuhause auf der Apfel-Insel! 🏝";
+  }else{
+    const teil = HAUS_TEILE[s];
+    $("#haus-status").textContent = "Bauteil " + (s+1) + " von " + HAUS_TEILE.length + ": " + teil.name;
+    btn.style.display = "";
+    btn.textContent = "🔨 " + teil.name + " bauen (🪵 " + teil.cost + ")";
+    btn.disabled = store.data.holz < teil.cost;
+    $("#haus-tipp").textContent = store.data.holz < teil.cost
+      ? "Noch " + (teil.cost - store.data.holz) + " Holz nötig – fang die Bretter im Spiel! 🪵"
+      : "Du hast genug Holz – bau los!";
+  }
+  /* Überlebens-Vorteile auflisten */
+  const pbox = $("#haus-perks"); pbox.innerHTML = "";
+  HAUS_PERKS.forEach(p=>{
+    const done = s >= p.ab;
+    const d = document.createElement("div");
+    d.className = "perk" + (done ? " done" : "");
+    d.innerHTML = '<div class="p-icon">' + (done ? p.icon : "🔒") + '</div><div>' +
+      (done ? "✔ " : "Ab Bauteil " + p.ab + ": ") + p.text + "</div>";
+    pbox.appendChild(d);
+  });
+  drawHaus();
+  showScreen("#scr-haus");
+}
+$("#btn-haus-bauen").addEventListener("click", ()=>{
+  const teil = HAUS_TEILE[store.data.haus];
+  if(!teil || store.data.holz < teil.cost) return;
+  store.data.holz -= teil.cost;
+  store.data.haus++;
+  audio.build();
+  if(store.data.haus === HAUS_TEILE.length){
+    store.data.coins += HAUS_BONUS;
+    store.save(); openHaus();
+    showOverlay("🏆 HAUS FERTIG!", "Du hast dir dein Insel-Haus gebaut!\nBelohnung: 🪙 +" + HAUS_BONUS + " Münzen!", 0, [
+      {id:"ov-next", label:"Super!", cb:openHaus}
+    ]);
+  }else{
+    store.save(); openHaus();
+  }
+});
+$("#btn-haus").addEventListener("click", ()=>{ audio.ensure(); openHaus(); });
+$("#btn-haus-back").addEventListener("click", openStart);
+
+/* ---------- Insel-Laden ---------- */
+function openShop(){
+  game.active = false; game.state = "idle";
+  $("#shop-coins").textContent = "🪙 " + store.data.coins;
+  const list = $("#shop-list"); list.innerHTML = "";
+  PANZER.forEach(p=>{
+    const owned = store.data.panzer >= p.tier;
+    const card = document.createElement("div");
+    card.className = "shop-card" + (store.data.panzer === p.tier ? " owned" : "");
+    const buyable = !owned && store.data.coins >= p.price;
+    card.innerHTML =
+      '<div class="shop-icon">' + p.icon + '</div>' +
+      '<div class="shop-info"><div class="shop-name">' + p.name + '</div>' +
+      '<div class="shop-desc">' + p.desc + '</div></div>';
+    const btn = document.createElement("button");
+    btn.className = "shop-buy" + (owned ? " done" : "");
+    btn.dataset.tier = p.tier;
+    btn.textContent = owned ? "✔ Gekauft" : "🪙 " + p.price;
+    btn.disabled = owned || !buyable;
+    if(!owned && buyable){
+      btn.addEventListener("click", ()=>{
+        store.data.coins -= p.price;
+        store.data.panzer = p.tier;
+        store.save(); audio.gold();
+        openShop();
+      });
+    }
+    card.appendChild(btn);
+    list.appendChild(card);
+  });
+  showScreen("#scr-shop");
+}
+$("#btn-shop").addEventListener("click", ()=>{ audio.ensure(); openShop(); });
+$("#btn-shop-back").addEventListener("click", openStart);
+
 /* ---------- Avatar-Editor ---------- */
 let avatarThenPlay = false;
 const avCtx = $("#av-preview").getContext("2d");
@@ -1021,16 +1601,25 @@ function drawAvatarPreview(){
 function buildAvatarUI(){
   const av = store.data.avatar;
   const an = $("#av-animals"); an.innerHTML = "";
+  let anyLocked = false;
   ANIMALS.forEach(a=>{
+    const locked = (a.unlock || 1) > store.data.unlocked;
+    if(locked) anyLocked = true;
     const b = document.createElement("button");
-    b.className = "av-animal" + (av.animal === a.id ? " sel" : "");
+    b.className = "av-animal" + (av.animal === a.id ? " sel" : "") + (locked ? " locked" : "");
     b.dataset.animal = a.id;
     b.textContent = a.emoji; b.title = a.name;
     b.addEventListener("click", ()=>{
+      if(locked){
+        audio.bad();
+        $("#av-hint").textContent = "🔒 " + a.name + " schaltest du frei, wenn du Level " + a.unlock + " erreichst!";
+        return;
+      }
       av.animal = a.id; buildAvatarUI(); drawAvatarPreview(); audio.catch();
     });
     an.appendChild(b);
   });
+  $("#av-hint").textContent = anyLocked ? "🔒 Neue Tiere schaltest du ab Level 45 frei!" : "";
   const co = $("#av-colors"); co.innerHTML = "";
   AV_COLORS.forEach(c=>{
     const b = document.createElement("button");
@@ -1068,7 +1657,7 @@ function openStart(){
   $("#btn-play").textContent = u > 1 ? "▶ Weiter: Level " + Math.min(u, MAX_LEVEL) : "▶ Spielen";
   const hallo = av.name ? "Ahoi, " + av.name + "! " : "";
   $("#start-stars").textContent = store.totalStars() > 0
-    ? hallo + "⭐ " + store.totalStars() + " Sterne · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
+    ? hallo + "⭐ " + store.totalStars() + " · 🪙 " + store.data.coins + " · Level " + Math.min(u, MAX_LEVEL) + "/" + MAX_LEVEL
     : hallo + "Ab 8 Jahren · Pfeiltasten oder Finger";
   showScreen("#scr-start");
 }
@@ -1085,9 +1674,15 @@ $("#btn-help").addEventListener("click", ()=>{
     "🍎 Dein Tier wird ständig hungriger – iss Äpfel,",
     "sonst ist der Magen leer und du verlierst!",
     "✨ Gold-Äpfel machen extra satt.",
+    "🪙 Fang drehende Münzen und kauf dir im Insel-Laden",
+    "einen Panzer – der blockt Kokosnüsse und Möwen ab!",
+    "🪵 Fang Holz-Bretter und bau dir dein Insel-Haus – es hilft",
+    "dir beim Überleben: weniger Hunger, mehr Licht, Extra-Herz!",
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
     "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
+    "🗺 Die Reise führt durch 5 Orte: Strand, Dschungel,",
+    "Berge, Vulkan und Schatzbucht!",
     "",
     "Steuerung: ← → Pfeiltasten, A/D oder Finger/Maus. P = Pause."
   ].join("\n"), 0, [
@@ -1104,7 +1699,8 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, ANIMALS, AV_COLORS };
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, openHaus, hausPerks, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, HAUS_TEILE, stackTopY,
+  worldSize: () => ({ W, H, scale, offX, offY }) };
 </script>
 </body>
 </html>
