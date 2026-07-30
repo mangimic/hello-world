@@ -2,7 +2,7 @@
 /* ============================================================
    Smoke-Test für Apfel-Igel (felix/index.html).
 
-   Aufruf:   node tests/felix-smoke.js
+   Aufruf:   node felix/tests/felix-smoke.js (oder aus felix/: node tests/felix-smoke.js)
    Voraussetzung: npm install playwright (Chromium vorhanden oder
    CHROMIUM_PATH auf eine Chromium-Binärdatei setzen)
    Exit-Code 0 = alles grün, 1 = mindestens ein Test rot.
@@ -16,7 +16,7 @@
 const path = require("path");
 const { chromium } = require("playwright");
 
-const APP = "file://" + path.resolve(__dirname, "..", "felix", "index.html");
+const APP = "file://" + path.resolve(__dirname, "..", "index.html");
 const EXE = process.env.CHROMIUM_PATH || "/opt/pw-browsers/chromium";
 
 let pass = 0, fail = 0;
