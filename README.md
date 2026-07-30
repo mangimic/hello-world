@@ -117,7 +117,9 @@ extra satt), eine Essen-klauende Möwe, Inselwind und Nacht-Level,
 in denen nur die eigene Laterne leuchtet. Unterwegs fallen drehende
 **Münzen** vom Himmel – davon kauft man im **Insel-Laden** einen
 Panzer (Holz/Stein/Gold), der als Schutzblase Kokosnüsse und
-Möwen-Angriffe abblockt. Pro Level gibt es bis zu
+Möwen-Angriffe abblockt – und **Holz-Bretter**, aus denen man sich
+Stück für Stück ein **eigenes Insel-Haus** baut (8 Bauteile vom
+Fundament bis zur Namens-Fahne, fertiges Haus = 100 Münzen Bonus). Pro Level gibt es bis zu
 3 Sterne (je nach übrigen Herzen), der Fortschritt bleibt im
 `localStorage`. Steuerung: Pfeiltasten/A/D oder Finger.
 

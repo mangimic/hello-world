@@ -279,6 +279,42 @@ function section(t) { console.log("\n== " + t + " =="); }
     wsS.H === 800 && wsS.W >= 400 && wsS.W <= 500, JSON.stringify(wsS));
   await ctxS.close();
 
+  // ---------- Mein Haus ----------
+  section("Mein Haus");
+  await page.evaluate(() => { window.__felixTest.store.data.holz = 20; window.__felixTest.openHaus(); });
+  await page.waitForTimeout(200);
+  const haus0 = await page.evaluate(() => ({
+    status: document.querySelector("#haus-status").textContent,
+    btn: document.querySelector("#btn-haus-bauen").textContent,
+    disabled: document.querySelector("#btn-haus-bauen").disabled
+  }));
+  check("Haus-Bereich zeigt Bauteil 1 (Fundament, baubar)",
+    haus0.status.includes("1 von 8") && haus0.status.includes("Fundament") && !haus0.disabled,
+    JSON.stringify(haus0));
+  await page.click("#btn-haus-bauen");
+  await page.waitForTimeout(200);
+  const haus1 = await page.evaluate(() => {
+    const d = JSON.parse(localStorage.getItem("felix.apfeligel"));
+    return { haus: d.haus, holz: d.holz, status: document.querySelector("#haus-status").textContent };
+  });
+  check("Fundament gebaut (5 Holz bezahlt, Teil 2 dran)",
+    haus1.haus === 1 && haus1.holz === 15 && haus1.status.includes("2 von 8"),
+    JSON.stringify(haus1));
+
+  section("Holz fangen");
+  const holzBefore = await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.startLevel(3);
+    const g = t.game;
+    g.apples.length = 0; g.cfg.spawn = 9999; g.cfg.gullEvery = 0;
+    g.apples.push({ x: g.player.x, y: t.stackTopY() - 40, vy: 220, type: "holz", rot: 0, spin: 0 });
+    return t.store.data.holz;
+  });
+  await page.waitForTimeout(700);
+  const holzAfter = await page.evaluate(() => window.__felixTest.store.data.holz);
+  check("Holzbrett gefangen -> +1 Holz", holzAfter === holzBefore + 1,
+    `vorher=${holzBefore} nachher=${holzAfter}`);
+
   section("Abschluss");
   check("Keine JS-Fehler insgesamt", errors.length === 0, errors.join(" | "));
 

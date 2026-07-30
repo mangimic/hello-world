@@ -61,6 +61,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
 .btn.blue{background:linear-gradient(180deg,#6ab5ff,#3d8fe0);}
 .btn.purple{background:linear-gradient(180deg,#c5aef0,#8d6cd0);}
 .btn.gold{background:linear-gradient(180deg,#ffd66b,#f0a10f);}
+.btn.brown{background:linear-gradient(180deg,#c9986a,#9a6b42);}
+.grid-btns{
+  display:grid; grid-template-columns:1fr 1fr; gap:12px;
+  width:min(340px,86%); margin:14px auto 0;
+}
+.grid-btns .btn{font-size:18px; padding:13px 8px;}
 .btn.gray{background:linear-gradient(180deg,#b8c4bb,#93a096);}
 .btn.small{font-size:17px; padding:10px 16px; border-radius:16px;}
 
@@ -109,6 +115,19 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   border:none; border-radius:16px; padding:12px 16px; width:220px;
   background:#fff; box-shadow:var(--shadow); outline:none;
 }
+
+/* ---------- Mein Haus ---------- */
+#scr-haus{align-items:center;}
+#scr-haus .topbar{width:100%;}
+#haus-box{
+  flex:1; overflow-y:auto; width:min(400px,96%);
+  display:flex; flex-direction:column; align-items:center; gap:12px;
+}
+#haus-canvas{
+  border-radius:22px; box-shadow:var(--shadow);
+  width:min(340px,92%);
+}
+#haus-status{font-weight:bold; font-size:19px; text-align:center;}
 
 /* ---------- Insel-Laden ---------- */
 #scr-shop{align-items:center;}
@@ -219,10 +238,13 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   <div class="sub">Überlebe auf der Apfel-Insel – 100 Level!</div>
   <div class="stack-btns">
     <button class="btn" id="btn-play">▶ Spielen</button>
+  </div>
+  <div class="grid-btns">
     <button class="btn blue" id="btn-levels">🗺 Schatzkarte</button>
-    <button class="btn purple" id="btn-avatar">🎨 Mein Avatar</button>
-    <button class="btn gold" id="btn-shop">🛒 Insel-Laden</button>
-    <button class="btn gray" id="btn-help">❓ Anleitung</button>
+    <button class="btn purple" id="btn-avatar">🎨 Avatar</button>
+    <button class="btn gold" id="btn-shop">🛒 Laden</button>
+    <button class="btn brown" id="btn-haus">🏠 Mein Haus</button>
+    <button class="btn gray" id="btn-help" style="grid-column:span 2;">❓ Anleitung</button>
   </div>
   <div id="start-stars"></div>
 </div>
@@ -243,6 +265,21 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <div class="av-row" id="av-colors"></div>
     <input id="av-name" maxlength="12" placeholder="Dein Name" autocomplete="off">
     <button class="btn" id="btn-av-save">✔ Fertig</button>
+  </div>
+</div>
+
+<!-- ================= Mein Haus ================= -->
+<div class="screen" id="scr-haus">
+  <div class="topbar">
+    <button class="btn gray small" id="btn-haus-back">◀ Zurück</button>
+    <div class="title">🏠 Mein Haus</div>
+    <div class="pill" id="haus-holz">🪵 0</div>
+  </div>
+  <div id="haus-box">
+    <canvas id="haus-canvas" width="340" height="240"></canvas>
+    <div id="haus-status"></div>
+    <button class="btn brown" id="btn-haus-bauen">Bauen</button>
+    <div class="sub" id="haus-tipp">Holz sammelst du im Spiel – fang die Bretter! 🪵</div>
   </div>
 </div>
 
@@ -276,6 +313,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <div class="pill" id="hud-time">⏱ 25</div>
     <div class="pill" id="hud-hearts">❤️❤️❤️</div>
     <div class="pill" id="hud-coins">🪙 0</div>
+    <div class="pill" id="hud-holz">🪵 0</div>
     <button id="btn-pause" title="Pause">⏸</button>
     <button id="btn-sound" title="Ton">🔊</button>
   </div>
@@ -304,6 +342,7 @@ const rand  = (a,b) => a + Math.random()*(b-a);
 const STORE_KEY = "felix.apfeligel";
 const store = {
   data: { unlocked:1, stars:{}, sound:true, avatarSeen:false, coins:0, panzer:0,
+          holz:0, haus:0,
           avatar: { animal:"affe", color:"#8a5a3b", name:"" } },
   load(){
     try{
@@ -334,7 +373,20 @@ function levelConfig(n){
     lives: 3
   };
 }
-const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8, COIN_P = 0.08;
+const APPLE_ENERGY = 18, GOLD_ENERGY = 45, GULL_STEAL = 8, COIN_P = 0.08, HOLZ_P = 0.07;
+
+/* ---------- Haus-Bauteile (Kosten in Holz) ---------- */
+const HAUS_TEILE = [
+  { name:"Fundament",     cost:5  },
+  { name:"Wände",         cost:10 },
+  { name:"Tür",           cost:6  },
+  { name:"Fenster",       cost:6  },
+  { name:"Palmen-Dach",   cost:12 },
+  { name:"Schornstein",   cost:8  },
+  { name:"Garten",        cost:10 },
+  { name:"Namens-Fahne",  cost:15 }
+];
+const HAUS_BONUS = 100;   /* Münzen, wenn das Haus fertig ist */
 
 /* ---------- Panzer im Insel-Laden ---------- */
 const PANZER = [
@@ -413,6 +465,8 @@ const audio = {
   bad(){ this.beep(160, 0.25, "sawtooth", 0.2); this.beep(120, 0.3, "square", 0.1, 0.05); },
   gull(){ this.beep(950, 0.09, "square", 0.1); this.beep(700, 0.12, "square", 0.1, 0.09); },
   coin(){ this.beep(1250, 0.07, "square", 0.12); this.beep(1650, 0.1, "square", 0.1, 0.06); },
+  holz(){ this.beep(220, 0.06, "square", 0.2); this.beep(180, 0.08, "square", 0.15, 0.05); },
+  build(){ [330,392,494].forEach((f,i)=>this.beep(f, 0.12, "triangle", 0.2, i*0.09)); },
   block(){ this.beep(300, 0.1, "triangle", 0.22); this.beep(500, 0.12, "triangle", 0.16, 0.06); },
   win(){ [523,659,784,1047].forEach((f,i)=>this.beep(f,0.16,"triangle",0.2,i*0.12)); },
   lose(){ [400,330,260,200].forEach((f,i)=>this.beep(f,0.2,"triangle",0.18,i*0.15)); }
@@ -460,7 +514,7 @@ const game = {
   player:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
   caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0,
-  shield:0, coinsRun:0
+  shield:0, coinsRun:0, holzRun:0
 };
 
 function resize(){
@@ -493,7 +547,7 @@ function startLevel(n){
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
   game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
   game.energy = 100; game.timeLeft = game.cfg.time;
-  game.shield = store.data.panzer; game.coinsRun = 0;
+  game.shield = store.data.panzer; game.coinsRun = 0; game.holzRun = 0;
   game.state = "playing"; game.active = true;
   updateHUD();
   let hint = levelHint(n);
@@ -512,6 +566,7 @@ function updateHUD(){
   $("#hud-time").textContent = "⏱ " + Math.ceil(Math.max(0, game.timeLeft));
   $("#hud-hearts").textContent = "❤️".repeat(game.lives) + "🖤".repeat(Math.max(0, 3-game.lives));
   $("#hud-coins").textContent = "🪙 " + store.data.coins;
+  $("#hud-holz").textContent = "🪵 " + store.data.holz;
   $("#btn-sound").textContent = store.data.sound ? "🔊" : "🔇";
 }
 
@@ -546,7 +601,7 @@ function winLevel(){
                      : "Überlebt" + (name ? ", " + name : "") + "! 🎉",
       (done ? "Du hast alle 100 Level überlebt und die\nSchatztruhe erreicht! 💰\nGesamt: " + store.totalStars() + " Sterne"
            : game.cfg.time + " Sekunden durchgehalten und " + game.caught + " Äpfel gegessen!") +
-      (game.coinsRun ? "\n🪙 +" + game.coinsRun + " Münzen!" : ""),
+      lootText("\n"),
       stars, btns);
   }, 900);
 }
@@ -557,7 +612,7 @@ function loseLevel(reason){
   setTimeout(()=>{
     showOverlay(reason === "hunger" ? "Ohje, der Magen ist leer! 😵" : "Alle Herzen weg!",
       "Du hast " + survived + " von " + game.cfg.time + " Sekunden überlebt." +
-      (game.coinsRun ? "\n🪙 Deine " + game.coinsRun + " neuen Münzen behältst du!" : "") +
+      lootText("\nDeine Beute behältst du: ") +
       "\nGleich nochmal?", 0, [
       {id:"ov-retry", label:"↻ Nochmal versuchen", cb:()=>startLevel(game.level)},
       {id:"ov-levels", label:"🗺 Levelauswahl", cls:"gray", cb:openLevels}
@@ -573,6 +628,12 @@ function loseLife(x,y,msg){
 function eat(amount){
   game.energy = clamp(game.energy + amount, 0, 100);
 }
+function lootText(prefix){
+  const parts = [];
+  if(game.coinsRun) parts.push("🪙 +" + game.coinsRun);
+  if(game.holzRun) parts.push("🪵 +" + game.holzRun);
+  return parts.length ? prefix + parts.join(" · ") : "";
+}
 
 /* ---------- Update ---------- */
 function spawnApple(){
@@ -581,9 +642,10 @@ function spawnApple(){
   if(r < c.goldP) type = "gold";
   else if(r < c.goldP + c.kokosP) type = "kokos";
   else if(r < c.goldP + c.kokosP + COIN_P) type = "muenze";
+  else if(r < c.goldP + c.kokosP + COIN_P + HOLZ_P) type = "holz";
   game.apples.push({
     x: rand(30, W-30), y: -20,
-    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : type === "muenze" ? 0.85 : 1),
+    vy: c.fallSpeed * rand(0.9, 1.15) * (type === "kokos" ? 1.2 : type === "muenze" || type === "holz" ? 0.85 : 1),
     type, rot: rand(-0.4,0.4), spin: type === "muenze" ? 4 : rand(-1.5,1.5)
   });
 }
@@ -668,6 +730,11 @@ function update(dt){
         burst(h.x, topY, "#ffd66b", 10);
         addFloat(h.x, topY-16, "+1 🪙", "#c98a0a", 1, 22);
         audio.coin();
+      }else if(a.type === "holz"){
+        store.data.holz++; game.holzRun++;
+        burst(h.x, topY, "#c9986a", 10);
+        addFloat(h.x, topY-16, "+1 🪵", "#9a6b42", 1, 22);
+        audio.holz();
       }else if(a.type === "gold"){
         game.caught += 3;
         eat(GOLD_ENERGY);
@@ -690,7 +757,8 @@ function update(dt){
     /* auf dem Boden gelandet? (kostet kein Herz – aber das Essen ist weg) */
     if(a.y > gY){
       game.apples.splice(i,1);
-      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : a.type === "muenze" ? "#ffd66b" : "#e74c3c", 8);
+      burst(a.x, gY, a.type === "kokos" ? "#6b5a25" : a.type === "muenze" ? "#ffd66b" :
+                     a.type === "holz" ? "#c9986a" : "#e74c3c", 8);
     }
   }
 
@@ -739,6 +807,18 @@ function updateFx(dt){
 
 /* ---------- Zeichnen ---------- */
 function drawApple(x, y, r, type, rot=0){
+  if(type === "holz"){
+    /* Holzbrett */
+    ctx.save(); ctx.translate(x,y); ctx.rotate(rot);
+    ctx.fillStyle = "#b98955";
+    ctx.fillRect(-16,-6, 32, 12);
+    ctx.strokeStyle = "#9a6b42"; ctx.lineWidth = 1.5;
+    ctx.strokeRect(-16,-6, 32, 12);
+    ctx.beginPath(); ctx.moveTo(-10,-2); ctx.lineTo(6,-2); ctx.stroke();   /* Maserung */
+    ctx.beginPath(); ctx.moveTo(-4,2); ctx.lineTo(12,2); ctx.stroke();
+    ctx.restore();
+    return;
+  }
   if(type === "muenze"){
     /* drehender Taler mit Apfel-Prägung */
     ctx.save(); ctx.translate(x,y);
@@ -1311,6 +1391,128 @@ function openLevels(){
   if(currentBtn) currentBtn.scrollIntoView({ block:"center" });
 }
 
+/* ---------- Mein Haus ---------- */
+const hausCv = $("#haus-canvas"), hctx = hausCv.getContext("2d");
+function drawHaus(){
+  const s = store.data.haus, g = hctx, av = store.data.avatar;
+  g.setTransform(1,0,0,1,0,0);
+  /* Himmel, Meer, Sand */
+  const sky = g.createLinearGradient(0,0,0,240);
+  sky.addColorStop(0,"#aee3ff"); sky.addColorStop(1,"#e7ffe3");
+  g.fillStyle = sky; g.fillRect(0,0,340,240);
+  g.fillStyle = "#6db9ef"; g.fillRect(0,150,340,28);
+  g.fillStyle = "#f2d99a"; g.fillRect(0,172,340,68);
+  g.fillStyle = "#ffd66b";
+  g.beginPath(); g.arc(304,34,20,0,Math.PI*2); g.fill();
+  if(s >= 1){                                    /* Fundament */
+    g.fillStyle = "#9a9a92"; g.fillRect(95,193,160,14);
+    g.fillStyle = "#7f7f78";
+    [105,135,168,200,232].forEach(x=>{ g.beginPath(); g.arc(x,200,5,0,Math.PI*2); g.fill(); });
+  }
+  if(s >= 2){                                    /* Wände */
+    g.fillStyle = "#c9986a"; g.fillRect(103,125,144,68);
+    g.strokeStyle = "#9a6b42"; g.lineWidth = 1.5;
+    for(let y = 140; y < 193; y += 14){
+      g.beginPath(); g.moveTo(103,y); g.lineTo(247,y); g.stroke();
+    }
+  }
+  if(s >= 3){                                    /* Tür */
+    g.fillStyle = "#7a5a38";
+    g.fillRect(160,152,32,41);
+    g.beginPath(); g.arc(176,152,16,Math.PI,0); g.fill();
+    g.fillStyle = "#ffd66b";
+    g.beginPath(); g.arc(185,172,3,0,Math.PI*2); g.fill();
+  }
+  if(s >= 4){                                    /* Fenster */
+    [[115,138],[208,138]].forEach(([x,y])=>{
+      g.fillStyle = "#bfe6ff"; g.fillRect(x,y,27,22);
+      g.strokeStyle = "#7a5a38"; g.lineWidth = 2.5; g.strokeRect(x,y,27,22);
+      g.beginPath(); g.moveTo(x+13.5,y); g.lineTo(x+13.5,y+22);
+      g.moveTo(x,y+11); g.lineTo(x+27,y+11); g.stroke();
+    });
+  }
+  if(s >= 5){                                    /* Palmen-Dach */
+    g.fillStyle = "#3fae72";
+    g.beginPath(); g.moveTo(90,127); g.lineTo(175,78); g.lineTo(260,127); g.closePath(); g.fill();
+    g.strokeStyle = "#2c8a56"; g.lineWidth = 2;
+    [0.3,0.5,0.7].forEach(f=>{
+      g.beginPath(); g.moveTo(90+170*f, 127); g.lineTo(175, 78+ (127-78)*(1-f)*0.2); g.stroke();
+    });
+  }
+  if(s >= 6){                                    /* Schornstein + Rauch */
+    g.fillStyle = "#b06a4a"; g.fillRect(220,86,16,28);
+    g.fillStyle = "rgba(200,200,200,0.8)";
+    [[228,74,5],[234,62,7],[227,48,8]].forEach(([x,y,r])=>{
+      g.beginPath(); g.arc(x,y,r,0,Math.PI*2); g.fill();
+    });
+  }
+  if(s >= 7){                                    /* Garten */
+    g.strokeStyle = "#9a6b42"; g.lineWidth = 6; g.lineCap = "round";
+    g.beginPath(); g.moveTo(300,225); g.quadraticCurveTo(305,195,298,175); g.stroke();
+    g.strokeStyle = "#3fae72"; g.lineWidth = 5;
+    [[-20,-8],[18,-6],[-2,-18]].forEach(([dx,dy])=>{
+      g.beginPath(); g.moveTo(298,175); g.quadraticCurveTo(298+dx*0.7,168+dy,298+dx,178+dy); g.stroke();
+    });
+    ["#e74c3c","#ffd66b","#b39ddb","#e74c3c","#ffd66b"].forEach((f,i)=>{
+      g.fillStyle = f;
+      g.beginPath(); g.arc(112+i*32, 213, 4, 0, Math.PI*2); g.fill();
+      g.fillStyle = "#3fae72"; g.fillRect(111+i*32, 217, 2, 6);
+    });
+  }
+  if(s >= 8){                                    /* Namens-Fahne */
+    g.strokeStyle = "#5a4630"; g.lineWidth = 3;
+    g.beginPath(); g.moveTo(175,78); g.lineTo(175,46); g.stroke();
+    g.fillStyle = "#e74c3c"; g.fillRect(175,46,52,17);
+    g.fillStyle = "#fff"; g.font = "bold 10px 'Comic Sans MS','Segoe UI',sans-serif";
+    g.textAlign = "center";
+    g.fillText((store.data.avatar.name || "MEINS").toUpperCase().slice(0,8), 201, 58);
+  }
+  /* Avatar vor dem Haus */
+  g.save(); g.translate(52,222); g.scale(0.85,0.85);
+  drawAvatarSprite(g, av.animal, av.color);
+  g.restore();
+}
+function openHaus(){
+  game.active = false; game.state = "idle";
+  const s = store.data.haus;
+  $("#haus-holz").textContent = "🪵 " + store.data.holz;
+  const btn = $("#btn-haus-bauen");
+  if(s >= HAUS_TEILE.length){
+    $("#haus-status").textContent = "🎉 Dein Haus ist fertig!";
+    btn.style.display = "none";
+    $("#haus-tipp").textContent = "Ein echtes Zuhause auf der Apfel-Insel! 🏝";
+  }else{
+    const teil = HAUS_TEILE[s];
+    $("#haus-status").textContent = "Bauteil " + (s+1) + " von " + HAUS_TEILE.length + ": " + teil.name;
+    btn.style.display = "";
+    btn.textContent = "🔨 " + teil.name + " bauen (🪵 " + teil.cost + ")";
+    btn.disabled = store.data.holz < teil.cost;
+    $("#haus-tipp").textContent = store.data.holz < teil.cost
+      ? "Noch " + (teil.cost - store.data.holz) + " Holz nötig – fang die Bretter im Spiel! 🪵"
+      : "Du hast genug Holz – bau los!";
+  }
+  drawHaus();
+  showScreen("#scr-haus");
+}
+$("#btn-haus-bauen").addEventListener("click", ()=>{
+  const teil = HAUS_TEILE[store.data.haus];
+  if(!teil || store.data.holz < teil.cost) return;
+  store.data.holz -= teil.cost;
+  store.data.haus++;
+  audio.build();
+  if(store.data.haus === HAUS_TEILE.length){
+    store.data.coins += HAUS_BONUS;
+    store.save(); openHaus();
+    showOverlay("🏆 HAUS FERTIG!", "Du hast dir dein Insel-Haus gebaut!\nBelohnung: 🪙 +" + HAUS_BONUS + " Münzen!", 0, [
+      {id:"ov-next", label:"Super!", cb:openHaus}
+    ]);
+  }else{
+    store.save(); openHaus();
+  }
+});
+$("#btn-haus").addEventListener("click", ()=>{ audio.ensure(); openHaus(); });
+$("#btn-haus-back").addEventListener("click", openStart);
+
 /* ---------- Insel-Laden ---------- */
 function openShop(){
   game.active = false; game.state = "idle";
@@ -1434,6 +1636,7 @@ $("#btn-help").addEventListener("click", ()=>{
     "✨ Gold-Äpfel machen extra satt.",
     "🪙 Fang drehende Münzen und kauf dir im Insel-Laden",
     "einen Panzer – der blockt Kokosnüsse und Möwen ab!",
+    "🪵 Fang Holz-Bretter und bau dir dein eigenes Insel-Haus!",
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
     "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
@@ -1455,7 +1658,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, stackTopY,
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, openHaus, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, HAUS_TEILE, stackTopY,
   worldSize: () => ({ W, H, scale, offX, offY }) };
 </script>
 </body>
