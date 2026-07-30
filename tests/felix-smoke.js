@@ -75,6 +75,20 @@ function section(t) { console.log("\n== " + t + " =="); }
   }));
   check("8 Tiere und 6 Farben zur Auswahl", avUI.animals === 8 && avUI.colors === 6,
     JSON.stringify(avUI));
+  const lockedStart = await page.evaluate(() => ({
+    locked: document.querySelectorAll(".av-animal.locked").length,
+    hint: document.querySelector("#av-hint").textContent
+  }));
+  check("4 neue Tiere anfangs gesperrt (Hinweis: ab Level 45)",
+    lockedStart.locked === 4 && lockedStart.hint.includes("45"), JSON.stringify(lockedStart));
+  const lockedL45 = await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.store.data.unlocked = 45; t.openAvatar(false);
+    const n = document.querySelectorAll(".av-animal.locked").length;
+    t.store.data.unlocked = 1; t.openAvatar(false);   // zurücksetzen für die restlichen Tests
+    return n;
+  });
+  check("Ab Level 45 sind alle 8 Tiere frei", lockedL45 === 0, "locked=" + lockedL45);
   await page.click('.av-animal[data-animal="krabbe"]');
   await page.evaluate(() => document.querySelectorAll(".av-color")[2].click());
   await page.fill("#av-name", "Felix");

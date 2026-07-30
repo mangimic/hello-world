@@ -93,6 +93,12 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   display:flex; align-items:center; justify-content:center;
 }
 .av-animal.sel{border-color:var(--green-dark); background:#e7ffe3;}
+.av-animal.locked{filter:grayscale(1); opacity:0.55; position:relative;}
+.av-animal.locked::after{
+  content:"🔒"; position:absolute; font-size:15px; right:1px; bottom:1px;
+  filter:none; opacity:1;
+}
+#av-hint{color:var(--muted); font-size:15px; min-height:20px; text-align:center;}
 .av-color{
   width:42px; height:42px; border-radius:50%; border:3px solid #fff;
   cursor:pointer; box-shadow:var(--shadow);
@@ -232,6 +238,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <canvas id="av-preview" width="240" height="190"></canvas>
     <div class="av-label">Wer bist du?</div>
     <div class="av-row" id="av-animals"></div>
+    <div id="av-hint"></div>
     <div class="av-label">Deine Farbe</div>
     <div class="av-row" id="av-colors"></div>
     <input id="av-name" maxlength="12" placeholder="Dein Name" autocomplete="off">
@@ -360,10 +367,10 @@ const ANIMALS = [
   { id:"schildkroete", emoji:"🐢", name:"Schildkröte" },
   { id:"krabbe",       emoji:"🦀", name:"Krabbe" },
   { id:"papagei",      emoji:"🦜", name:"Papagei" },
-  { id:"delfin",       emoji:"🐬", name:"Delfin" },
-  { id:"gecko",        emoji:"🦎", name:"Gecko" },
-  { id:"flamingo",     emoji:"🦩", name:"Flamingo" },
-  { id:"pinguin",      emoji:"🐧", name:"Pinguin" }
+  { id:"delfin",       emoji:"🐬", name:"Delfin",   unlock:45 },
+  { id:"gecko",        emoji:"🦎", name:"Gecko",    unlock:45 },
+  { id:"flamingo",     emoji:"🦩", name:"Flamingo", unlock:45 },
+  { id:"pinguin",      emoji:"🐧", name:"Pinguin",  unlock:45 }
 ];
 const AV_COLORS = ["#8a5a3b","#e74c3c","#54a9ff","#5bc98c","#b39ddb","#f0a10f"];
 const animalEmoji = id => (ANIMALS.find(a=>a.id===id) || ANIMALS[0]).emoji;
@@ -1352,16 +1359,25 @@ function drawAvatarPreview(){
 function buildAvatarUI(){
   const av = store.data.avatar;
   const an = $("#av-animals"); an.innerHTML = "";
+  let anyLocked = false;
   ANIMALS.forEach(a=>{
+    const locked = (a.unlock || 1) > store.data.unlocked;
+    if(locked) anyLocked = true;
     const b = document.createElement("button");
-    b.className = "av-animal" + (av.animal === a.id ? " sel" : "");
+    b.className = "av-animal" + (av.animal === a.id ? " sel" : "") + (locked ? " locked" : "");
     b.dataset.animal = a.id;
     b.textContent = a.emoji; b.title = a.name;
     b.addEventListener("click", ()=>{
+      if(locked){
+        audio.bad();
+        $("#av-hint").textContent = "🔒 " + a.name + " schaltest du frei, wenn du Level " + a.unlock + " erreichst!";
+        return;
+      }
       av.animal = a.id; buildAvatarUI(); drawAvatarPreview(); audio.catch();
     });
     an.appendChild(b);
   });
+  $("#av-hint").textContent = anyLocked ? "🔒 Neue Tiere schaltest du ab Level 45 frei!" : "";
   const co = $("#av-colors"); co.innerHTML = "";
   AV_COLORS.forEach(c=>{
     const b = document.createElement("button");

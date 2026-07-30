@@ -102,8 +102,9 @@ Album. Smoke-Test: `node tests/leon-smoke.js`.
 Im Ordner [`felix/`](felix/) steckt ein Überlebens-Spiel –
 gleiche Technik (Einzeldatei-PWA, offline, werbefrei):
 **Apfel-Insel**. Zuerst baut man sich einen **Avatar** (8 Tiere:
-Affe, Schildkröte, Krabbe, Papagei, Delfin, Gecko, Flamingo oder
-Pinguin – dazu 6 Farben und der eigene Name), dann
+Affe, Schildkröte, Krabbe oder Papagei von Anfang an – Delfin,
+Gecko, Flamingo und Pinguin schaltet man ab Level 45 frei; dazu
+6 Farben und der eigene Name), dann
 heißt es auf der Insel – zwischen Palmen, Strand und Meer – die
 Levelzeit **überleben**: Der Hunger steigt ständig, nur
 herabfallende Äpfel (gefangen und gestapelt) füllen den Magen.
