@@ -119,7 +119,11 @@ in denen nur die eigene Laterne leuchtet. Unterwegs fallen drehende
 Panzer (Holz/Stein/Gold), der als Schutzblase Kokosnüsse und
 Möwen-Angriffe abblockt – und **Holz-Bretter**, aus denen man sich
 Stück für Stück ein **eigenes Insel-Haus** baut (8 Bauteile vom
-Fundament bis zur Namens-Fahne, fertiges Haus = 100 Münzen Bonus). Pro Level gibt es bis zu
+Fundament bis zur Namens-Fahne, fertiges Haus = 100 Münzen Bonus).
+Das Haus hilft beim Überleben: ab den Wänden sinkt der Hunger
+langsamer, Fenster vergrößern das Laternen-Licht in Nacht-Leveln,
+der Schornstein bringt ein viertes Herz und das fertige Haus eine
+Gratis-Panzerladung pro Level. Pro Level gibt es bis zu
 3 Sterne (je nach übrigen Herzen), der Fortschritt bleibt im
 `localStorage`. Steuerung: Pfeiltasten/A/D oder Finger.
 

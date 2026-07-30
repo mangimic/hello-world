@@ -128,6 +128,14 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
   width:min(340px,92%);
 }
 #haus-status{font-weight:bold; font-size:19px; text-align:center;}
+#haus-perks{display:flex; flex-direction:column; gap:8px; width:100%;}
+.perk{
+  background:var(--card); border-radius:14px; padding:9px 12px;
+  font-size:14.5px; line-height:1.3; display:flex; gap:10px; align-items:center;
+  box-shadow:0 2px 8px rgba(40,120,70,0.12); color:var(--muted);
+}
+.perk.done{color:var(--text); outline:2.5px solid var(--green); background:#eefbf2;}
+.perk .p-icon{font-size:22px; min-width:26px; text-align:center;}
 
 /* ---------- Insel-Laden ---------- */
 #scr-shop{align-items:center;}
@@ -279,6 +287,7 @@ h1{font-size:44px; margin:8px 0 0; text-align:center; text-shadow:0 3px 0 rgba(2
     <canvas id="haus-canvas" width="340" height="240"></canvas>
     <div id="haus-status"></div>
     <button class="btn brown" id="btn-haus-bauen">Bauen</button>
+    <div id="haus-perks"></div>
     <div class="sub" id="haus-tipp">Holz sammelst du im Spiel – fang die Bretter! 🪵</div>
   </div>
 </div>
@@ -387,6 +396,22 @@ const HAUS_TEILE = [
   { name:"Namens-Fahne",  cost:15 }
 ];
 const HAUS_BONUS = 100;   /* Münzen, wenn das Haus fertig ist */
+/* Überlebens-Vorteile des Hauses (ab Baustufe X) */
+const HAUS_PERKS = [
+  { ab:2, icon:"🧱", text:"Wände: Dein Essen ist sicher – Hunger steigt 10% langsamer" },
+  { ab:4, icon:"🪟", text:"Fenster: Lampenlicht – nachts leuchtet deine Laterne weiter" },
+  { ab:6, icon:"💤", text:"Schornstein: Gut geschlafen – 1 Extra-Herz (4 statt 3)" },
+  { ab:8, icon:"🛡", text:"Fertiges Haus: +1 Gratis-Panzerladung in jedem Level" }
+];
+function hausPerks(){
+  const s = store.data.haus;
+  return {
+    drainFactor: s >= 2 ? 0.9 : 1,
+    nightLight:  s >= 4 ? 1.45 : 1,
+    extraLife:   s >= 6 ? 1 : 0,
+    extraShield: s >= 8 ? 1 : 0
+  };
+}
 
 /* ---------- Panzer im Insel-Laden ---------- */
 const PANZER = [
@@ -514,7 +539,7 @@ const game = {
   player:{ x:W/2, tx:W/2, lean:0, px:W/2 },
   stack:[], apples:[], gulls:[], parts:[], floats:[],
   caught:0, lives:3, energy:100, timeLeft:0, shake:0, windX:0,
-  shield:0, coinsRun:0, holzRun:0
+  shield:0, coinsRun:0, holzRun:0, maxLives:3
 };
 
 function resize(){
@@ -545,9 +570,13 @@ function startLevel(n){
   game.t = 0; game.startT = 0; game.spawnT = 1.2; game.gullT = game.cfg.gullEvery || 999;
   game.player.x = game.player.tx = game.player.px = W/2; game.player.lean = 0;
   game.stack = []; game.apples = []; game.gulls = []; game.parts = []; game.floats = [];
-  game.caught = 0; game.lives = game.cfg.lives; game.shake = 0;
+  const perks = hausPerks();
+  game.caught = 0; game.shake = 0;
+  game.maxLives = game.cfg.lives + perks.extraLife;
+  game.lives = game.maxLives;
   game.energy = 100; game.timeLeft = game.cfg.time;
-  game.shield = store.data.panzer; game.coinsRun = 0; game.holzRun = 0;
+  game.shield = store.data.panzer + perks.extraShield;
+  game.coinsRun = 0; game.holzRun = 0;
   game.state = "playing"; game.active = true;
   updateHUD();
   let hint = levelHint(n);
@@ -564,7 +593,8 @@ function updateHUD(){
   bar.style.width = clamp(game.energy, 0, 100) + "%";
   bar.classList.toggle("low", game.energy < 30);
   $("#hud-time").textContent = "⏱ " + Math.ceil(Math.max(0, game.timeLeft));
-  $("#hud-hearts").textContent = "❤️".repeat(game.lives) + "🖤".repeat(Math.max(0, 3-game.lives));
+  $("#hud-hearts").textContent = "❤️".repeat(game.lives) +
+    "🖤".repeat(Math.max(0, (game.maxLives || 3) - game.lives));
   $("#hud-coins").textContent = "🪙 " + store.data.coins;
   $("#hud-holz").textContent = "🪵 " + store.data.holz;
   $("#btn-sound").textContent = store.data.sound ? "🔊" : "🔇";
@@ -664,9 +694,9 @@ function update(dt){
   game.t += dt;
   if(game.state !== "playing") { updateFx(dt); return; }
 
-  /* Überlebens-Uhr + Hunger */
+  /* Überlebens-Uhr + Hunger (Haus-Wände schützen das Essen) */
   game.timeLeft -= dt;
-  game.energy -= c.drain * dt;
+  game.energy -= c.drain * dt * hausPerks().drainFactor;
   if(game.energy <= 20 && game.energy + c.drain*dt > 20){
     addFloat(game.player.x, stackTopY() - 30, "Hunger! 🍎", "#e74c3c", 1.4, 20);
   }
@@ -1231,7 +1261,7 @@ function draw(){
       nctx.fillStyle = g;
       nctx.beginPath(); nctx.arc(x,y,r,0,Math.PI*2); nctx.fill();
     };
-    hole(game.player.x, stackTopY(), 200);
+    hole(game.player.x, stackTopY(), 200 * hausPerks().nightLight);
     game.apples.forEach(a => hole(a.x, a.y, 52));
     game.gulls.forEach(w => hole(w.x, w.y, 46));
     nctx.globalCompositeOperation = "source-over";
@@ -1491,6 +1521,16 @@ function openHaus(){
       ? "Noch " + (teil.cost - store.data.holz) + " Holz nötig – fang die Bretter im Spiel! 🪵"
       : "Du hast genug Holz – bau los!";
   }
+  /* Überlebens-Vorteile auflisten */
+  const pbox = $("#haus-perks"); pbox.innerHTML = "";
+  HAUS_PERKS.forEach(p=>{
+    const done = s >= p.ab;
+    const d = document.createElement("div");
+    d.className = "perk" + (done ? " done" : "");
+    d.innerHTML = '<div class="p-icon">' + (done ? p.icon : "🔒") + '</div><div>' +
+      (done ? "✔ " : "Ab Bauteil " + p.ab + ": ") + p.text + "</div>";
+    pbox.appendChild(d);
+  });
   drawHaus();
   showScreen("#scr-haus");
 }
@@ -1636,7 +1676,8 @@ $("#btn-help").addEventListener("click", ()=>{
     "✨ Gold-Äpfel machen extra satt.",
     "🪙 Fang drehende Münzen und kauf dir im Insel-Laden",
     "einen Panzer – der blockt Kokosnüsse und Möwen ab!",
-    "🪵 Fang Holz-Bretter und bau dir dein eigenes Insel-Haus!",
+    "🪵 Fang Holz-Bretter und bau dir dein Insel-Haus – es hilft",
+    "dir beim Überleben: weniger Hunger, mehr Licht, Extra-Herz!",
     "🥥 Kokosnüsse NICHT fangen – autsch, 1 Herz weg (du hast 3)!",
     "🐦 Die Möwe klaut dein Essen – weich aus!",
     "🌬 Ab Level 25 weht Inselwind, ab Level 30 gibt es Nacht-Level.",
@@ -1658,7 +1699,7 @@ if("serviceWorker" in navigator && location.protocol.startsWith("http")){
 openStart();
 resize();
 window.__felixReady = true;
-window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, openHaus, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, HAUS_TEILE, stackTopY,
+window.__felixTest = { game, startLevel, levelConfig, store, openLevels, openStart, openAvatar, saveAvatar, openShop, openHaus, hausPerks, ANIMALS, AV_COLORS, ZONES, zoneOf, PANZER, HAUS_TEILE, stackTopY,
   worldSize: () => ({ W, H, scale, offX, offY }) };
 </script>
 </body>

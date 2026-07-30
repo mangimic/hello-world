@@ -315,6 +315,39 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Holzbrett gefangen -> +1 Holz", holzAfter === holzBefore + 1,
     `vorher=${holzBefore} nachher=${holzAfter}`);
 
+  // ---------- Haus hilft beim Überleben ----------
+  section("Haus-Vorteile");
+  const perkUI = await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.store.data.haus = 8;
+    t.openHaus();
+    return {
+      perks: document.querySelectorAll(".perk").length,
+      done: document.querySelectorAll(".perk.done").length
+    };
+  });
+  check("4 Vorteile gelistet, bei fertigem Haus alle aktiv",
+    perkUI.perks === 4 && perkUI.done === 4, JSON.stringify(perkUI));
+  const perkGame = await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.startLevel(5);   // Panzer-Stufe ist 1 (aus dem Laden-Test)
+    return {
+      lives: t.game.lives, maxLives: t.game.maxLives, shield: t.game.shield,
+      drain: t.hausPerks().drainFactor, licht: t.hausPerks().nightLight
+    };
+  });
+  check("Fertiges Haus: 4 Herzen, Panzer+1, Hunger langsamer, mehr Licht",
+    perkGame.lives === 4 && perkGame.maxLives === 4 && perkGame.shield === 2 &&
+    perkGame.drain === 0.9 && perkGame.licht > 1, JSON.stringify(perkGame));
+  const perkOff = await page.evaluate(() => {
+    const t = window.__felixTest;
+    t.store.data.haus = 0;
+    t.startLevel(5);
+    return { lives: t.game.lives, shield: t.game.shield, drain: t.hausPerks().drainFactor };
+  });
+  check("Ohne Haus: 3 Herzen, normaler Hunger",
+    perkOff.lives === 3 && perkOff.shield === 1 && perkOff.drain === 1, JSON.stringify(perkOff));
+
   section("Abschluss");
   check("Keine JS-Fehler insgesamt", errors.length === 0, errors.join(" | "));
 
