@@ -511,8 +511,14 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.78.0";
+const APP_VERSION = "1.79.0";
 const RELEASE_NOTES = [
+  {v:"1.79.0", datum:"03.08.2026", punkte:[
+    "🎁 NEU: Die Lernprofi-Stimme – eine natürliche deutsche Stimme direkt in der App, unabhängig von den Systemstimmen! Im Elternbereich → „Vorlesen“ einmalig ~30 MB laden (im WLAN), danach funktioniert sie KOMPLETT OFFLINE. Beim Laden wird nur die Stimm-Datei geholt – es werden keine Daten gesendet.",
+    "🔀 Frei wählbar: Lernprofi-Stimme an/aus (dann übernimmt wieder die Systemstimme), mit Probehören und der Möglichkeit, das Paket jederzeit wieder vom Gerät zu löschen. Fällt etwas aus, springt automatisch die Systemstimme ein.",
+    "📖 Die Mitlese-Markierung (Karaoke) und die Tempo-Stufen (Langsam/Normal/Schnell) funktionieren auch mit der neuen Stimme.",
+    "🪶 Der App-Start bleibt schlank: Die Sprach-Technik wird erst geladen, wenn ihr sie wirklich benutzt."
+  ]},
   {v:"1.78.0", datum:"03.08.2026", punkte:[
     "🗣️ Schöneres Vorlesen – ganz ohne dicke App: Die besten Stimmen stecken als KOSTENLOSES Sprachpaket in deinem Gerät (Google/Apple/Microsoft). Der Elternbereich → „Vorlesen“ zeigt jetzt eine Qualitäts-Ampel: Ist schon eine Spitzen-Stimme aktiv – oder lohnt sich das Sprachpaket?",
     "📦 Schritt-für-Schritt-Anleitung fürs Sprachpaket, passend zu deinem Gerät (Android, iPhone/iPad, Windows, Mac) – einmal im WLAN laden, danach klingt das Vorlesen fast menschlich und funktioniert KOMPLETT OFFLINE. Danach einfach „🔄 Stimmen neu prüfen“ tippen.",
@@ -977,9 +983,13 @@ function themaName(){ const t=THEMEN.find(x=>x.id===store.thema); return t?t.nam
    Abschneiden, Start/Stopp-Knopf und Mitlese-Markierung
    (das gerade gesprochene Wort leuchtet auf).
    ============================================================ */
-function speechOK(){ return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window); }
+function speechOK(){
+  try{ if(stimmPaketAktiv()) return true; }catch(e){}
+  return ("speechSynthesis" in window) && ("SpeechSynthesisUtterance" in window);
+}
 function stopSpeak(){
-  if(speechOK()){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+  try{ stimmStopp(); sprechLauf++; }catch(e){}
+  if("speechSynthesis" in window){ try{ window.speechSynthesis.cancel(); }catch(e){} }
   sprechKnopfReset();
 }
 // Deutsche Stimmen des Geräts, beste zuerst. Die Qualität schwankt enorm:
@@ -1044,16 +1054,98 @@ function speakChunks(plain, maxLen){
   }
   return chunks;
 }
+/* ============================================================
+   LERNPROFI-STIMME – eingebautes Sprachpaket (Piper/VITS im Browser)
+   Die Engine-Dateien (WASM) liegen im App-Ordner stimme/ und laufen
+   komplett offline. Das deutsche Stimm-Modell (~30 MB) lädt der
+   Elternbereich EINMALIG von huggingface.co und speichert es dauerhaft
+   im Browser (OPFS) – danach funktioniert alles ohne Internet.
+   Beim Download werden KEINE Daten gesendet, nur die Datei geholt.
+   Das Skript wird erst nachgeladen, wenn das Paket wirklich genutzt
+   wird – der App-Start bleibt schlank.
+   ============================================================ */
+const STIMM_VOICE="de_DE-thorsten-low";
+let vitsPromise=null, stimmAudio=null, stimmTimer=[];
+function stimmPaketGeladen(){ try{ return !!(store.stimmPaket && store.stimmPaket.geladen); }catch(e){ return false; } }
+function stimmPaketAktiv(){ try{ return stimmPaketGeladen() && store.stimmPaket.aktiv!==false; }catch(e){ return false; } }
+function vitsLaden(){
+  if(vitsPromise) return vitsPromise;
+  vitsPromise=new Promise((res,rej)=>{
+    if(window.VitsWeb) return res(window.VitsWeb);
+    const s=document.createElement("script");
+    s.src="stimme/vits-bundle.js";
+    s.onload=()=>window.VitsWeb?res(window.VitsWeb):rej(new Error("Stimm-Skript unvollständig"));
+    s.onerror=()=>{ vitsPromise=null; rej(new Error("stimme/vits-bundle.js nicht ladbar")); };
+    document.head.appendChild(s);
+  });
+  return vitsPromise;
+}
+function stimmStopp(){
+  stimmTimer.forEach(clearTimeout); stimmTimer=[];
+  if(stimmAudio){ try{ stimmAudio.onended=null; stimmAudio.pause(); }catch(e){} stimmAudio=null; }
+}
+function stimmTempo(){ return {langsam:0.75, normal:0.9, schnell:1.05}[store.leseTempo||"normal"]||0.9; }
+function piperSpeak(plain, onEnd, onWort, lauf){
+  const chunks=speakChunks(plain, 220);
+  const fertigAlle=()=>{ if(lauf===sprechLauf && onEnd) onEnd(); };
+  const spiele=(i, blobP)=>{
+    blobP.then(blob=>{
+      if(lauf!==sprechLauf) return;
+      const url=URL.createObjectURL(blob);
+      const a=new Audio(url); stimmAudio=a;
+      a.playbackRate=stimmTempo();
+      try{ a.preservesPitch=true; }catch(e){}
+      // nächstes Stück schon vorbereiten, während dieses läuft
+      const naechste = i+1<chunks.length ? vitsPromise.then(v=>v.predict({text:chunks[i+1].text, voiceId:STIMM_VOICE})) : null;
+      a.onloadedmetadata=()=>{
+        if(lauf!==sprechLauf || !onWort || !isFinite(a.duration)) return;
+        // Mitlese-Markierung: Wort-Zeitpunkte proportional zur Wortlänge
+        const ws=chunks[i].text.split(/\s+/).filter(Boolean);
+        const gesamt=ws.reduce((s,w)=>s+w.length+1,0)||1;
+        const dauerMs=(a.duration*1000)/(a.playbackRate||1);
+        let acc=0;
+        ws.forEach((w,wi)=>{
+          const t=acc/gesamt*dauerMs;
+          stimmTimer.push(setTimeout(()=>{ if(lauf===sprechLauf) onWort(chunks[i].w0+wi); }, t));
+          acc+=w.length+1;
+        });
+      };
+      a.onended=()=>{
+        URL.revokeObjectURL(url);
+        if(lauf!==sprechLauf) return;
+        if(naechste) spiele(i+1, naechste); else fertigAlle();
+      };
+      a.onerror=fertigAlle;
+      a.play().catch(fertigAlle);
+    }).catch(()=>{
+      if(lauf!==sprechLauf) return;
+      toast("⚠️ Lernprofi-Stimme gerade nicht verfügbar – die Systemstimme übernimmt.");
+      systemSpeak(plain, onEnd, onWort, lauf);
+    });
+  };
+  vitsLaden().then(v=>spiele(0, v.predict({text:chunks[0].text, voiceId:STIMM_VOICE})))
+    .catch(()=>{
+      if(lauf!==sprechLauf) return;
+      toast("⚠️ Lernprofi-Stimme nicht ladbar – die Systemstimme übernimmt.");
+      systemSpeak(plain, onEnd, onWort, lauf);
+    });
+}
 let sprechLauf=0; // Laufnummer: Wort-Meldungen alter Läufe verfallen
 function speak(text, onEnd, onWort){
-  if(!speechOK() || !text){ return; }
+  if(!text) return;
   sprechKnopfReset(); // laufende Box-Vorlesung sauber beenden (Knopf + Markierung)
+  stimmStopp();
+  const lauf=++sprechLauf;
+  const plain=String(text).replace(/\s+/g," ").trim().slice(0,4000);
+  if(!plain){ if(onEnd) onEnd(); return; }
+  if("speechSynthesis" in window){ try{ window.speechSynthesis.cancel(); }catch(e){} }
+  if(stimmPaketAktiv()){ piperSpeak(plain, onEnd, onWort, lauf); return; }
+  if(!("speechSynthesis" in window) || !("SpeechSynthesisUtterance" in window)){ if(onEnd) onEnd(); return; }
+  systemSpeak(plain, onEnd, onWort, lauf);
+}
+function systemSpeak(plain, onEnd, onWort, lauf){
   try{
     const sp=window.speechSynthesis;
-    sp.cancel();
-    const lauf=++sprechLauf;
-    const plain=String(text).replace(/\s+/g," ").trim().slice(0,4000);
-    if(!plain){ if(onEnd) onEnd(); return; }
     const stimme=speakStimme(), rate=speakRate();
     // Bei „Langsam" kleine Stücke: die Pausen dazwischen wirken wie
     // Atempausen beim Diktieren und geben Zeit zum Mitlesen.
@@ -8288,7 +8380,10 @@ function renderAdminVorlesen(c){
   const tempoBtns=TEMPI.map(([id,label])=>
     `<button class="seg${(store.leseTempo||"normal")===id?" on":""}" data-tempo="${id}">${label}</button>`).join("");
   const q=stimmQualitaet(stimmen);
-  const ampel = !speechOK() ? "" :
+  const ampel = stimmPaketAktiv()
+    ? `<div class="feedback ok" style="text-align:left;">🎁 <b>Lernprofi-Stimme aktiv</b> – sie klingt natürlich
+        und funktioniert komplett offline. Einstellungen dazu unten.</div>`
+    : !speechOK() ? "" :
     q.stufe==="top" ? `<div class="feedback ok" style="text-align:left;">✅ <b>Spitzen-Stimme aktiv:</b> „${q.beste.name}“ –
         besser geht es kaum. ${q.beste.localService?"Sie funktioniert auch offline.":"⚠️ Sie braucht allerdings Internet – für unterwegs lohnt sich zusätzlich ein Sprachpaket (Anleitung unten)."}</div>`
     : q.stufe==="gut" ? `<div class="lvl-note" style="text-align:left;">🟡 <b>Gute Stimme gefunden</b> („${q.beste.name}“).
@@ -8318,6 +8413,27 @@ function renderAdminVorlesen(c){
       <div class="seg-line"><span class="seg-label">Tempo</span>
         <div class="seg-row">${tempoBtns}</div></div>
     </div>
+    <div class="card" id="lpStimmeKarte">
+      <h3>🎁 Lernprofi-Stimme (eingebaut)</h3>
+      ${stimmPaketGeladen() ? `
+        <div class="feedback ok" style="text-align:left;">✅ <b>Sprachpaket ist geladen</b> und auf dem Gerät gespeichert –
+          es funktioniert komplett offline.</div>
+        <div class="seg-line"><span class="seg-label">Benutzen</span>
+          <div class="seg-row">
+            <button class="seg${store.stimmPaket.aktiv!==false?" on":""}" data-lp="1">An</button>
+            <button class="seg${store.stimmPaket.aktiv===false?" on":""}" data-lp="0">Aus (Systemstimme)</button>
+          </div></div>
+        <button class="btn-secondary btn-small mt" id="lpTest" style="width:100%;">▶️ Probehören</button>
+        <button class="linklike" id="lpWeg" style="margin-top:6px; font-size:13px;">🗑️ Sprachpaket vom Gerät entfernen</button>
+      ` : `
+        <p class="muted">Eine <b>natürliche deutsche Stimme direkt in der App</b> – unabhängig von den
+          Systemstimmen. Einmalig <b>~30 MB</b> laden (im WLAN), danach funktioniert sie
+          <b>komplett offline</b>. Beim Laden wird nur die Stimm-Datei geholt
+          (von huggingface.co) – es werden <b>keine Daten gesendet</b>.</p>
+        <button class="btn-primary btn-small mt" id="lpLaden" style="width:100%;">⬇️ Sprachpaket jetzt laden (~30 MB)</button>
+        <div class="lvl-note" id="lpProg" style="text-align:left; display:none;"></div>
+      `}
+    </div>
     <div class="card" id="sprachpaketKarte">
       <h3>📦 Sprachpaket: das Vorlesen deutlich verschönern</h3>
       <p class="muted">Die schönsten Stimmen stecken als <b>kostenloses Sprachpaket</b>
@@ -8328,6 +8444,41 @@ function renderAdminVorlesen(c){
       <button class="btn-primary btn-small mt" id="stimmenPruefen" style="width:100%;">🔄 Stimmen neu prüfen</button>
     </div>`;
   admBindTabs(c);
+  // --- Lernprofi-Stimme: laden / an-aus / probehören / entfernen ---
+  const lpLaden=c.querySelector("#lpLaden");
+  if(lpLaden) lpLaden.onclick=async()=>{
+    lpLaden.disabled=true;
+    const prog=c.querySelector("#lpProg");
+    if(prog){ prog.style.display="block"; prog.textContent="⬇️ Verbinde …"; }
+    try{
+      const v=await vitsLaden();
+      await v.download(STIMM_VOICE, p=>{
+        if(prog && p && p.total) prog.textContent="⬇️ Lade Sprachpaket … "+Math.round(p.loaded/p.total*100)+" % ("+Math.round(p.loaded/1048576)+" MB)";
+      });
+      store.stimmPaket={ geladen:true, aktiv:true }; save();
+      toast("🎉 Lernprofi-Stimme geladen – ab jetzt auch offline!");
+      renderAdminVorlesen(c);
+    }catch(e){
+      lpLaden.disabled=false;
+      if(prog) prog.textContent = navigator.onLine===false
+        ? "⚠️ Kein Internet – geh fürs einmalige Laden kurz online (am besten WLAN)."
+        : "⚠️ Download hier nicht möglich (diese Umgebung blockiert ihn evtl.). In der installierten App bzw. über die App-Adresse klappt es.";
+    }
+  };
+  c.querySelectorAll(".seg[data-lp]").forEach(b=>b.onclick=()=>{
+    store.stimmPaket.aktiv = b.dataset.lp==="1"; save(); stopSpeak();
+    const y=window.scrollY; renderAdminVorlesen(c); window.scrollTo(0,y);
+  });
+  const lpTest=c.querySelector("#lpTest");
+  if(lpTest) lpTest.onclick=()=>speak("Hallo"+(store.name?" "+store.name:"")+"! Ich bin deine Lernprofi-Stimme. Viel Spaß beim Lernen!");
+  const lpWeg=c.querySelector("#lpWeg");
+  if(lpWeg) lpWeg.onclick=()=>appConfirm(
+    "Sprachpaket (~30 MB) vom Gerät löschen? Du kannst es jederzeit neu laden.", async()=>{
+    try{ const v=await vitsLaden(); await v.remove(STIMM_VOICE); }catch(e){}
+    store.stimmPaket={ geladen:false, aktiv:false }; save(); stopSpeak();
+    toast("🗑️ Sprachpaket entfernt.");
+    renderAdminVorlesen(c);
+  });
   const pruef=c.querySelector("#stimmenPruefen");
   if(pruef) pruef.onclick=()=>{
     // getVoices() erneut anstoßen – manche Browser melden neue Stimmen erst dann
@@ -9371,7 +9522,8 @@ let store = {
   zeitLimit:20,                 // Time-Boxing: Lernzeit pro Tag in Minuten (0 = aus)
   zeit:{ tag:"", sek:0 },       // heute verbrauchte Lernzeit
   leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" | "aus" (nur bestätigen) | "ganzaus"
-  stimme:"",                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
+  stimme:"",
+  stimmPaket:{ geladen:false, aktiv:false }, // eingebaute Lernprofi-Stimme (Piper)                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
   leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
   profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
   profilHistorie:[],            // alle Schatzsuchen: [{datum, r, g}] (max. 20)
@@ -9492,6 +9644,8 @@ function load(){
     }
     if("zeitLimit" in d){ const v=parseInt(d.zeitLimit,10); if(v>=0 && v<=180) store.zeitLimit=v; }
     if(["immer","mix","aus","ganzaus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
+    if(d.stimmPaket && typeof d.stimmPaket==="object")
+      store.stimmPaket={ geladen:!!d.stimmPaket.geladen, aktiv:!!d.stimmPaket.aktiv };
     if(typeof d.stimme==="string") store.stimme=d.stimme;
     if(["langsam","normal","schnell"].includes(d.leseTempo)) store.leseTempo=d.leseTempo;
     if(d.profil && typeof d.profil==="object"){

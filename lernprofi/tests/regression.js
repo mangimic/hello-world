@@ -2214,8 +2214,79 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("„Neu prüfen“ rendert neu + meldet Ergebnis als Toast", await page.evaluate(() =>
     !!document.getElementById("sprachpaketKarte")
     && document.getElementById("appToast").textContent.includes("Geprüft")));
-  check("Schlank geblieben: keine externen Downloads im Code", await page.evaluate(() =>
-    !document.documentElement.outerHTML.match(/huggingface|cdn\.|\.onnx|piper|\.wasm/i)));
+  check("Keine Fremd-CDNs im App-Code (Engine liegt lokal in stimme/)", await page.evaluate(() =>
+    !document.documentElement.outerHTML.match(/cdn\.jsdelivr|cdnjs\.cloudflare|unpkg\.com/i)));
+
+  // ---------- 8l) Lernprofi-Stimme (eingebautes Sprachpaket) ----------
+  section("Lernprofi-Stimme (v1.79)");
+  await fresh();
+  check("Eltern-Tab: Karte mit Download-Knopf und Datenschutz-Hinweis", await page.evaluate(() => {
+    openAdmin(); adminTab = "vorlesen"; renderAdmin(document.getElementById("moduleContent"));
+    const t = document.getElementById("lpStimmeKarte").textContent;
+    return !!document.getElementById("lpLaden") && t.includes("30 MB")
+      && t.includes("komplett offline") && t.includes("keine Daten gesendet");
+  }));
+  // VitsWeb mocken: Download mit Fortschritt + predict liefert ein Mini-WAV
+  await page.evaluate(() => {
+    const sr = 8000, n = 1600, b = new ArrayBuffer(44 + n * 2), v = new DataView(b);
+    const w = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o + i, str.charCodeAt(i)); };
+    w(0, "RIFF"); v.setUint32(4, 36 + n * 2, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, sr, true);
+    v.setUint32(28, sr * 2, true); v.setUint16(32, 2, true); v.setUint16(34, 16, true);
+    w(36, "data"); v.setUint32(40, n * 2, true);
+    window.__wav = new Blob([b], { type: "audio/wav" });
+    window.__mock = { downloads: 0, predicts: 0, removed: 0 };
+    window.VitsWeb = {
+      download: async (id, cb) => { window.__mock.downloads++; cb({ loaded: 15728640, total: 31457280 }); cb({ loaded: 31457280, total: 31457280 }); },
+      predict: async () => { window.__mock.predicts++; return window.__wav; },
+      remove: async () => { window.__mock.removed++; },
+      stored: async () => ["de_DE-thorsten-low"]
+    };
+  });
+  await page.locator("#lpLaden").click(); await page.waitForTimeout(300);
+  check("Download-Flow: Fortschritt, gespeichert, aktiv, UI wechselt", await page.evaluate(() =>
+    window.__mock.downloads === 1 && store.stimmPaket.geladen && store.stimmPaket.aktiv !== false
+    && !!document.querySelector('.seg[data-lp="1"].on') && !!document.getElementById("lpTest")));
+  check("Ampel meldet die aktive Lernprofi-Stimme", (await page.locator("#moduleContent").textContent()).includes("Lernprofi-Stimme aktiv"));
+  // speak() nutzt jetzt die eingebaute Stimme: predict + komplette Abspielkette
+  const gesprochen = await page.evaluate(() => new Promise(res => {
+    const worte = [];
+    speak("Hallo kleiner Löwe", () => res({ ende: true, predicts: window.__mock.predicts, worte }),
+      (i) => worte.push(i));
+    setTimeout(() => res({ ende: false, predicts: window.__mock.predicts, worte }), 4000);
+  }));
+  check("speak(): predict gerufen, Audio bis zum Ende, Karaoke-Wörter gemeldet",
+    gesprochen.ende && gesprochen.predicts >= 1 && gesprochen.worte.length === 3
+    && gesprochen.worte.join(",") === "0,1,2", JSON.stringify(gesprochen));
+  check("speechOK() gilt auch mit Paket (Vorlese-Knöpfe bleiben)", await page.evaluate(() => speechOK()));
+  check("stopSpeak() räumt Audio und Wort-Timer auf", await page.evaluate(() => {
+    speak("Eins zwei drei vier fünf sechs");
+    stopSpeak();
+    return stimmAudio === null && stimmTimer.length === 0;
+  }));
+  // Aus-Schalter: Systemstimme übernimmt (predict wird nicht mehr gerufen)
+  await page.locator('.seg[data-lp="0"]').click(); await page.waitForTimeout(150);
+  check("Aus: speak() geht zurück zur Systemstimme", await page.evaluate(() => {
+    const vorher = window.__mock.predicts;
+    speak("Test"); stopSpeak();
+    return store.stimmPaket.aktiv === false && window.__mock.predicts === vorher;
+  }));
+  // Entfernen mit Bestätigung
+  await page.locator('.seg[data-lp="1"]').click(); await page.waitForTimeout(120);
+  await page.locator("#lpWeg").click(); await page.waitForTimeout(120);
+  await page.locator("#acJa").click(); await page.waitForTimeout(200);
+  check("Entfernen: remove gerufen, Zustand zurück, Download wieder anbietbar", await page.evaluate(() =>
+    window.__mock.removed === 1 && !store.stimmPaket.geladen && !!document.getElementById("lpLaden")));
+  check("Migration bereinigt stimmPaket", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.stimmPaket = { geladen: "ja", aktiv: 0 };
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    return store.stimmPaket.geladen === true && store.stimmPaket.aktiv === false;
+  }));
+  check("Engine-Dateien liegen in der App (stimme/)", await page.evaluate(() => true)
+    && ["vits-bundle.js", "piper_phonemize.wasm", "piper_phonemize.data", "ort-wasm-simd.wasm", "ort-wasm.wasm"]
+      .every(f => fs.existsSync(path.resolve(__dirname, "..", "stimme", f))));
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
