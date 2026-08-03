@@ -511,8 +511,15 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.74.0";
+const APP_VERSION = "1.75.0";
 const RELEASE_NOTES = [
+  {v:"1.75.0", datum:"28.07.2026", punkte:[
+    "💪 NEU: „Stark mit Leo“ – dein Mindset- und Freundschafts-Training auf der Startseite! Hier übst du, was stärker macht als Muskeln: freundlich ankommen, dazugehören ohne dich zu verbiegen – und nach blöden Momenten wieder aufstehen wie ein Stehauf-Löwe.",
+    "🤝 Situations-Training: Du triffst Kinder wie Ben, Mia und Tom in echten Momenten (Mitspielen fragen, Streit, Verlieren, neues Kind in der Klasse, „alle machen das – ich eigentlich nicht“) und entscheidest, was am besten wirkt. Jede Antwort bringt einen bestärkenden Leo-Tipp – Stufe 2 wird kniffliger (Gruppendruck, zu den eigenen Hobbys stehen).",
+    "🧰 Leos Werkzeugkiste: 6 Sätze, die fast immer helfen – von „Darf ich mitspielen?“ bis „Stopp, das mag ich nicht.“ Mit Wochen-Auftrag: Probiere einen davon im echten Leben aus!",
+    "🦁 Mut-Satz des Tages: Wähle jeden Tag EINEN Satz, der dir gehört (z. B. „Echte Freunde mögen mich wegen MIR“) – er wird vorgelesen und steht auf deiner Startseiten-Kachel.",
+    "🌱 Blumen-Selbstcheck: „Habe ich jemanden ausreden lassen? Habe ich etwas gemacht, das MIR Spaß macht?“ – ohne Noten, nur für dich."
+  ]},
   {v:"1.74.0", datum:"28.07.2026", punkte:[
     "⚡ NEU im Konzentrations-Training: Blitzlesen! Wie auf deinem Übungsblatt aus der Schule: Lies in 1 Minute so viele Tier-Wörter wie möglich LAUT vor – alle 80 Tiere von der Biene bis zur Bachstelze sind dabei.",
     "⏱️ Die App stoppt die Zeit mit Uhr und Zeitbalken, sagt „Stopp!“ und du tippst das letzte geschaffte Wort an – die Wörter werden automatisch gezählt.",
@@ -1321,7 +1328,8 @@ const FIELD_POOLS = {
   mgeo:()=>MATHE_DATEN.mgeo,
   mgroessen:()=>MATHE_DATEN.mgroessen,
   mdaten:()=>MATHE_DATEN.mdaten,
-  gesch:()=>GESCH_DATEN
+  gesch:()=>GESCH_DATEN,
+  stark:()=>STARK_DATEN
 };
 function fieldProg(key){ if(!store.progress[key]) store.progress[key]={unlocked:1,runs:0,crown:false}; return store.progress[key]; }
 function fieldHard(key){ const h=FIELD_POOLS[key]().hard; return (h&&h.length)?h:null; }
@@ -7526,6 +7534,188 @@ function konzLernen(c){
 }
 
 /* ============================================================
+   STARK MIT LEO – Mindset- und Freundschafts-Training
+   Ziele (aus dem Eltern-Wunsch): sich in der Gruppe freundlich
+   bemerkbar machen statt zu stören, respektvoller Umgang,
+   dazugehören OHNE sich zu verbiegen (eigene Interessen ernst
+   nehmen), Resilienz („Stehauf-Löwe"). Bewusst OHNE Bewertung
+   des Kindes: Situationen mit Identifikations-Figuren (Ben, Mia,
+   Tom …), bestärkendes Feedback bei JEDER Antwort, Werkzeugkiste
+   mit Hilfe-Sätzen, täglicher Mut-Satz und Blumen-Selbstcheck.
+   ============================================================ */
+const STARK_DATEN={
+  easy:[
+    {kontext:"Auf dem Schulhof spielen Kinder Fangen. Ben möchte mitmachen.",
+     f:"Was klappt am besten?", r:"Freundlich fragen: „Darf ich mitspielen?“",
+     x:["Einfach dazwischenrennen und alle erschrecken","Nichts sagen und traurig zugucken"],
+     tipp:"Eine freundliche Frage wirkt fast immer – die meisten sagen Ja!"},
+    {kontext:"Mia erzählt in der Gruppe von ihrem Wochenende. Du möchtest auch etwas erzählen.",
+     f:"Was machst du?", r:"Mia ausreden lassen – und dann erzählen",
+     x:["Lauter reden als Mia","Dazwischenrufen: „Ich war auch weg!“"],
+     tipp:"Wer zuhört, bekommt auch Zuhörer. Dein Moment kommt gleich danach!"},
+    {f:"Du möchtest, dass die anderen dich beachten. Was wirkt am besten?",
+     r:"Etwas Nettes sagen oder jemandem helfen",
+     x:["Laut Quatsch machen","Andere ärgern"],
+     tipp:"Mit Quatsch bekommst du kurz Blicke – mit Freundlichkeit echte Freunde."},
+    {kontext:"Tom hat ein tolles Tor geschossen.",
+     f:"Was sagt ein guter Freund?", r:"„Stark! Super Tor!“",
+     x:["„Das kann ich viel besser!“","Nichts – einfach wegschauen"],
+     tipp:"Ein Kompliment kostet nichts – und macht euch beide froh."},
+    {f:"Ein Kind aus deiner Klasse steht in der Pause ganz alleine. Was tust du?",
+     r:"Hingehen und fragen: „Willst du mitmachen?“",
+     x:["So tun, als wäre es nicht da","Warten, dass es von selbst kommt"],
+     tipp:"Genau so beginnen Freundschaften: Einer traut sich und geht den ersten Schritt."},
+    {kontext:"Beim Spielen läuft es nicht so, wie du willst. Du merkst, dass du wütend wirst.",
+     f:"Was hilft dir jetzt?", r:"Tief atmen und sagen: „Ich brauche kurz eine Pause.“",
+     x:["Das Spiel kaputt machen","Ganz laut schreien"],
+     tipp:"Gefühle in Worten sagen – das verstehen alle. Und die Wut wird kleiner."},
+    {f:"Was macht dich zu einem guten Freund?",
+     r:"Zuhören, teilen und freundlich sein",
+     x:["Immer der Beste sein","Die coolsten Sachen besitzen"],
+     tipp:"Freunde suchen keinen Superhelden – sie suchen jemanden, der nett zu ihnen ist."},
+    {kontext:"Lisa kichert, weil du im Diktat einen Fehler gemacht hast.",
+     f:"Was denkst du am besten?", r:"„Fehler passieren – daraus lerne ich.“",
+     x:["„Ich kann das eben nicht.“","„Ich mache nie wieder mit.“"],
+     tipp:"Fehler sind Trainings-Schritte. Jeder macht sie – wirklich jeder, auch Erwachsene."},
+    {f:"Du willst in der Klasse etwas sagen, bist aber aufgeregt. Was hilft?",
+     r:"Einmal tief atmen und langsam sprechen",
+     x:["Ganz schnell alles herausreden","Lieber gar nichts sagen"],
+     tipp:"Langsam sprechen wirkt stark – und deine Gedanken bleiben sortiert."},
+    {kontext:"Zwei Kinder streiten sich um den Ball.",
+     f:"Was ist ein fairer Vorschlag?", r:"„Wir wechseln uns ab!“",
+     x:["Den Ball einfach wegnehmen","Beim Streiten mitschreien"],
+     tipp:"Wer faire Ideen hat, wird gern zum Spielen eingeladen."},
+    {f:"Jemand sagt „Stopp!“ beim Toben. Was tust du?",
+     r:"Sofort aufhören",
+     x:["Weitermachen – war ja nur Spaß","Noch wilder toben"],
+     tipp:"„Stopp“ gilt immer. Wer es respektiert, dem vertrauen die anderen."},
+    {f:"Wie zeigst du jemandem, dass du wirklich zuhörst?",
+     r:"Anschauen, nicken, nachfragen",
+     x:["Nebenbei etwas anderes machen","Schnell vom eigenen Thema anfangen"],
+     tipp:"Zuhören ist ein Geschenk – und kommt fast immer zu dir zurück."}
+  ],
+  hard:[
+    {kontext:"Ben spielt im Verein Fußball, weil fast alle aus seiner Klasse dort sind. Aber eigentlich mag er viel lieber Schach und Klettern.",
+     f:"Was rätst du Ben?", r:"Mach das, was DIR Spaß macht – dort findest du Freunde, die wirklich zu dir passen",
+     x:["Bleib beim Fußball, sonst gehörst du nicht dazu","Hör am besten mit allen Hobbys auf"],
+     tipp:"Bei dem, was du liebst, bist du ganz du selbst – und genau so findet man die besten Freunde."},
+    {kontext:"Die Gruppe lacht über einen Witz, der ein Kind traurig macht.",
+     f:"Was ist mutig?", r:"Nicht mitlachen – und dem Kind beistehen",
+     x:["Mitlachen, um dazuzugehören","So tun, als hättest du nichts gehört"],
+     tipp:"Mut heißt manchmal: anders sein als die Gruppe. Genau das macht dich stark."},
+    {f:"Du darfst bei einem Spiel gerade nicht mitmachen. Was ist die stärkste Reaktion?",
+     r:"„Okay – ich frage später nochmal oder spiele solange etwas anderes.“",
+     x:["Stören, bis das Spiel keinen Spaß mehr macht","„Dann frage ich eben NIE wieder!“"],
+     tipp:"Ein Nein ist kein Nein für immer – und es ist kein Urteil über dich."},
+    {kontext:"Du erzählst begeistert von deinem Hobby. Ein Kind sagt: „Das ist doch langweilig!“",
+     f:"Was denkst du am besten?", r:"„MIR macht es Spaß – und das reicht.“",
+     x:["„Dann erzähle ich nie wieder etwas.“","„Ich brauche coolere Hobbys.“"],
+     tipp:"Nicht jeder muss toll finden, was du magst – du magst ja auch nicht alles von anderen."},
+    {f:"Woran erkennst du einen ECHTEN Freund?",
+     r:"Er mag dich auch dann, wenn du mal einen Fehler machst",
+     x:["Er will, dass du alles genauso machst wie er","Er lacht, wenn dir etwas misslingt"],
+     tipp:"Bei echten Freunden musst du dich nicht verstellen."},
+    {kontext:"Fast alle in der Klasse sammeln gerade dieselben Karten. Du findest sie eigentlich langweilig – kaufst sie aber trotzdem.",
+     f:"Was steckt dahinter – und was stimmt wirklich?", r:"Der Wunsch dazuzugehören – aber du gehörst auch OHNE gleiche Sachen dazu",
+     x:["Gleiche Karten machen automatisch Freunde","Du brauchst einfach MEHR Karten als die anderen"],
+     tipp:"Dazugehören kommt vom Mitmachen und Freundlich-Sein – nicht vom Gleich-Sein."},
+    {kontext:"Im Stuhlkreis reden alle durcheinander. Du willst etwas Wichtiges sagen.",
+     f:"Was wirkt am besten?", r:"Melden, kurz warten – dann ruhig und deutlich sprechen",
+     x:["Am lautesten von allen sein","Beleidigt schweigen"],
+     tipp:"Ruhig und deutlich schlägt laut und wild – dann hören dir wirklich alle zu."},
+    {f:"Du hast beim Spiel verloren und die anderen jubeln. Was ist stark?",
+     r:"„Glückwunsch! Nächstes Mal gewinne ich.“",
+     x:["Schimpfen und das Spielfeld verlassen","Die anderen Schummler nennen"],
+     tipp:"Gut verlieren können beeindruckt mehr als jeder Sieg – ehrlich!"},
+    {kontext:"Ein neues Kind ist in der Klasse und kennt noch niemanden.",
+     f:"Was wäre ein starker erster Schritt von dir?", r:"„Hallo, ich bin … – willst du in der Pause mit uns spielen?“",
+     x:["Abwarten, ob es überhaupt cool ist","Das können ja die anderen machen"],
+     tipp:"Wer auf andere zugeht, wirkt stark – und gewinnt oft einen Freund."},
+    {f:"Jemand ärgert dich mit Absicht, damit du ausrastest. Was ist die stärkste Antwort?",
+     r:"Ruhig bleiben, weggehen – und wenn es nicht aufhört, Hilfe holen",
+     x:["Zurückärgern, bis er aufgibt","Sofort losschreien"],
+     tipp:"Wer dich ärgert, will deine Wut sehen. Bekommt er sie nicht, verliert er die Lust."},
+    {kontext:"Du übst seit Wochen Schach und wirst richtig gut. Ein Kind sagt: „Schach ist was für Langweiler.“",
+     f:"Was antwortest du selbstbewusst und freundlich?", r:"„Ich mag es. Willst du mal eine Partie gegen mich probieren?“",
+     x:["„Stimmt … ich höre lieber auf.“","„Du bist doch selbst langweilig!“"],
+     tipp:"Zu deinem Hobby stehen UND freundlich bleiben – das ist echtes Selbstbewusstsein."},
+    {f:"Leo sagt: „Sei ein Stehauf-Löwe!“ Was meint er damit?",
+     r:"Nach einem blöden Tag wieder aufstehen und weitermachen",
+     x:["Niemals traurig sein dürfen","Immer und überall gewinnen"],
+     tipp:"Stark ist nicht, wer nie hinfällt – stark ist, wer wieder aufsteht. Traurig sein ist erlaubt!"}
+  ]
+};
+const STARK_SAETZE=[
+  "Ich bin gut, so wie ich bin.",
+  "Ich muss nicht so sein wie die anderen.",
+  "Ich darf Fehler machen – daraus lerne ich.",
+  "Ich frage freundlich – das wirkt.",
+  "Echte Freunde mögen mich wegen MIR.",
+  "Ich kann warten, bis ich dran bin.",
+  "Ich sage, was ich fühle.",
+  "Neues auszuprobieren ist mutig.",
+  "Zuhören macht mich stark.",
+  "Ein Lächeln öffnet Türen.",
+  "Ich bleibe ruhig, auch wenn es schwer ist.",
+  "Heute mache ich etwas, das MIR Spaß macht."
+];
+const KRIT_STARK=[
+  "Habe ich jemanden ausreden lassen?",
+  "Habe ich freundlich gefragt, statt laut zu werden?",
+  "Habe ich etwas gemacht, das MIR Spaß macht?",
+  "Bin ich nach etwas Blödem wieder aufgestanden?"
+];
+const KRIT_STARK_FORM=["Ich war heute freundlich.","Ich habe zugehört.","Ich bin zu mir gestanden."];
+function starkLernen(c){
+  c.innerHTML=`
+    <div class="card"><h2>💪 Stark mit Leo</h2>
+      <div class="ew-leo" style="margin:8px 0;"><span class="ew-kopf">🦁</span>
+        <div class="bubble"><b>Hallo!</b> Hier trainieren wir, was stärker macht als Muskeln:
+        <b>freundlich ankommen</b>, <b>dazugehören, ohne dich zu verbiegen</b> –
+        und nach blöden Momenten <b>wieder aufstehen</b> wie ein Stehauf-Löwe.</div></div>
+      <p class="muted">In den Übungen triffst du Kinder wie Ben, Mia und Tom in echten
+        Situationen – du entscheidest, was am besten wirkt. Es gibt kein Versagen:
+        Jede Antwort bringt dir einen Leo-Tipp.</p></div>
+    <div class="card"><h3>🧰 Leos Werkzeugkiste – Sätze, die fast immer helfen</h3>
+      <div class="example-box">„Darf ich mitspielen?“<br>
+        „Cool gemacht!“<br>
+        „Ich sehe das anders, weil …“<br>
+        „Stopp, das mag ich nicht.“<br>
+        „Kannst du mir das zeigen?“<br>
+        „Ich brauche kurz eine Pause.“</div>
+      <div class="hint">💡 Probiere diese Woche EINEN Satz davon im echten Leben aus –
+        du wirst staunen, wie gut er wirkt.</div>
+      <button class="btn-primary mt" id="toUeben" style="width:100%;">Los: Situationen trainieren</button>
+      <button class="btn-secondary mt" id="toMut" style="width:100%;">🦁 Meinen Mut-Satz wählen</button></div>`;
+  c.querySelector("#toUeben").onclick=()=>goSection("ueben");
+  c.querySelector("#toMut").onclick=()=>goSection("mut");
+}
+function starkMut(c){
+  const M=store.mutSatz||{};
+  const heute = M.tag===heuteKey() ? M.idx : null;
+  c.innerHTML=`
+    <div class="card">
+      <h2>🦁 Dein Mut-Satz für heute</h2>
+      ${heute!==null
+        ? `<div class="feedback ok" style="text-align:center; font-size:17px;">„${STARK_SAETZE[heute]}“</div>
+           <p class="muted" style="text-align:center;">Das ist dein Satz für heute – sag ihn dir leise vor,
+           wenn du ihn brauchst. Morgen darfst du einen neuen wählen!</p>`
+        : `<p class="muted">Such dir EINEN Satz aus, der heute zu dir passt.
+           Sprich ihn einmal laut – er gehört dann den ganzen Tag dir!</p>
+           <div style="display:flex; flex-direction:column; gap:6px;">
+             ${STARK_SAETZE.map((s,i)=>`<button class="btn-secondary mut-satz" data-i="${i}" style="text-align:left; font-size:15px;">${s}</button>`).join("")}
+           </div>`}
+    </div>`;
+  c.querySelectorAll(".mut-satz").forEach(b=>b.onclick=()=>{
+    store.mutSatz={ tag:heuteKey(), idx:+b.dataset.i }; save();
+    if(speechOK()) speak(STARK_SAETZE[+b.dataset.i]);
+    toast("🦁 Starker Satz! Er gehört heute dir.");
+    starkMut(c);
+  });
+}
+function starkFlower(c){ renderFlower(c, MODULES.stark.self, store.stark.self); }
+
+/* ============================================================
    EINWERTUNG – „Schatzsuche mit Leo" (spielerischer Einstufungstest)
    Beim ersten Start (oder über den Elternbereich) ermittelt die App
    das Niveau des Kindes im Treppen-Prinzip: richtig -> schwerere
@@ -9032,6 +9222,16 @@ const MODULES = {
       {id:"abc",    icon:"🔤", label:"ABC",    render:konzAbc},
       {id:"blitz",  icon:"⚡", label:"Blitz",  render:konzBlitz}
     ]
+  },
+  stark:{
+    id:"stark", name:"Stark mit Leo", emoji:"💪",
+    sections:[
+      {id:"lernen", icon:"🦁", label:"Leo",    render:starkLernen},
+      {id:"ueben",  icon:"🤝", label:"Üben",   render:matheUeben},
+      {id:"mut",    icon:"✨", label:"Mut",    render:starkMut},
+      {id:"blume",  icon:"🌱", label:"Blume",  render:starkFlower}
+    ],
+    self:{ groups:[{title:"Stark mit Leo", fragen:KRIT_STARK}], form:KRIT_STARK_FORM }
   }
 };
 
@@ -9091,7 +9291,9 @@ let store = {
   mgeo:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mgroessen:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
   mdaten:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
-  gesch:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } }
+  gesch:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  stark:{ self:{ groups:[[0,0,0,0]], form:[false,false,false] } },
+  mutSatz:{ tag:"", idx:0 }      // Mut-Satz des Tages (Stark mit Leo)
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
@@ -9108,7 +9310,7 @@ function load(){
       if(d.vorgang.self) mergeSelf(store.vorgang.self, d.vorgang.self);
     }
     ["subjekt","praedikat","satzglieder","rede","zeit","grossklein","dassdas","wortarten","faelle","doppel","kompass","gws",
-     "mrechnen","mzahlen","mgeo","mgroessen","mdaten","gesch"].forEach(m=>{
+     "mrechnen","mzahlen","mgeo","mgroessen","mdaten","gesch","stark"].forEach(m=>{
       if(d[m] && d[m].self) mergeSelf(store[m].self, d[m].self);
     });
     if(["deutsch","mathe"].includes(d.fach)) store.fach=d.fach;
@@ -9135,6 +9337,10 @@ function load(){
         runden: (Array.isArray(d.blitz.runden)?d.blitz.runden:[]).map(r=>parseInt(r,10))
           .filter(r=>r>=1 && r<=BLITZ_TIERE.length).slice(0,BLITZ_RUNDEN),
         best: Math.max(0, Math.min(BLITZ_TIERE.length, parseInt(d.blitz.best,10)||0)) };
+    }
+    if(d.mutSatz && typeof d.mutSatz==="object"){
+      store.mutSatz={ tag: typeof d.mutSatz.tag==="string" ? d.mutSatz.tag : "",
+        idx: Math.max(0, Math.min(STARK_SAETZE.length-1, parseInt(d.mutSatz.idx,10)||0)) };
     }
     if(d.abcBest && typeof d.abcBest==="object"){
       store.abcBest={};
@@ -9263,7 +9469,7 @@ let activeSectionId = null;
 const MODUL_KLASSE = {
   vorgang:[3,4], subjekt:[3,4], praedikat:[3,4], satzglieder:[3,4], rede:[3,4],
   zeit:[3,4], grossklein:[3], wortarten:[3,4], dassdas:[4], faelle:[4], doppel:[3], kompass:[4], gws:[3,4], spiel:[3,4], tennis:[3,4], fussball:[3,4], schach:[3,4], blockwelt:[3,4],
-  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4], gesch:[3,4], konz:[3,4]
+  mrechnen:[3,4], mzahlen:[3,4], mgeo:[3,4], mgroessen:[3,4], mdaten:[3,4], gesch:[3,4], konz:[3,4], stark:[3,4]
 };
 function buildLevelRow(){
   document.querySelectorAll("#levelRow .level-btn").forEach(b=>{
@@ -9692,6 +9898,16 @@ function buildModuleChooser(){
       <span class="card-lvl">Wie ein Könnernachweis – mit Punkten</span>`;
     kachel.onclick=openTestTraining;
     grid.appendChild(kachel);
+  }
+  // 💪 Stark mit Leo (Mindset & Freundschaft, fachübergreifend)
+  {
+    const M=store.mutSatz||{};
+    const st=document.createElement("div");
+    st.className="choice gruppe stark-kachel";
+    st.innerHTML=`<span class="emoji">💪</span>Stark mit Leo
+      <span class="card-lvl">${M.tag===heuteKey() ? "🦁 „"+STARK_SAETZE[M.idx].slice(0,26)+"…“" : "Mut & Freundschaft"}</span>`;
+    st.onclick=()=>openModule("stark");
+    grid.appendChild(st);
   }
   // 🧠 Konzentrations-Training (fachübergreifend, ohne Münz-Kosten)
   {

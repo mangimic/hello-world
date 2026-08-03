@@ -94,8 +94,8 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Start & Klassenfilter");
   await fresh();
   check("Startseite sichtbar", (await page.locator("#screen-home.active").count()) > 0);
-  check("Aufgeräumte Startseite: 3 Gruppen + Test + Konzentration + Reise + Fit-für-4 + Spielhalle",
-    (await page.locator("#moduleChooser .choice").count()) === 8
+  check("Aufgeräumte Startseite: 3 Gruppen + Test + Stark + Konzentration + Reise + Fit-für-4 + Spielhalle",
+    (await page.locator("#moduleChooser .choice").count()) === 9
     && (await page.locator("#moduleChooser .choice.spielhalle").count()) === 1
     && (await page.locator("#moduleChooser .choice.test-kachel").count()) === 1
     && (await page.locator("#moduleChooser .choice.fit4-kachel").count()) === 1);
@@ -125,8 +125,8 @@ function section(t) { console.log("\n== " + t + " =="); }
       goHome();
       return n;
     }, l);
-    // "konz" hat eine eigene Startseiten-Kachel statt einer Gruppe
-    const expect = await page.evaluate(lv => Object.keys(MODULES).filter(id => id !== "konz")
+    // "konz" und "stark" haben eigene Startseiten-Kacheln statt einer Gruppe
+    const expect = await page.evaluate(lv => Object.keys(MODULES).filter(id => !["konz", "stark"].includes(id))
       .filter(id => lv === 0 || (MODUL_KLASSE[id] || [3, 4]).includes(lv)).length, l);
     check(`Klassenfilter ${l === 0 ? "Alle" : "Klasse " + l}: ${shown} Felder in Gruppen+Spielhalle`, shown === expect, `erwartet ${expect}`);
   }
@@ -2079,6 +2079,77 @@ function section(t) { console.log("\n== " + t + " =="); }
     load();
     return store.blitz.runden.length === 5 && store.blitz.runden[0] === 5
       && store.blitz.best === 80;
+  }));
+
+  // ---------- 8j) Stark mit Leo (Mindset & Freundschaft) ----------
+  section("Stark mit Leo (v1.75)");
+  await fresh();
+  check("Stark-Daten: 12 + 12 Situationen, sauber und bestärkend", await page.evaluate(() => {
+    const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard);
+    return STARK_DATEN.easy.length === 12 && STARK_DATEN.hard.length === 12
+      && alle.every(a => a.x.length === 2 && !a.x.includes(a.r) && a.tipp)
+      && STARK_SAETZE.length === 12;
+  }));
+  check("Kein Diagnose-/Beschämungs-Vokabular in Fragen, Lösungen und Tipps", await page.evaluate(() =>
+    STARK_DATEN.easy.concat(STARK_DATEN.hard).every(a =>
+      !/ADHS|Störung|unmotiviert|schwach|Versager|dumm/i.test((a.kontext || "") + a.f + a.r + a.tipp))));
+  check("Kern-Themen abgedeckt: Mitspielen fragen, eigenes Hobby, Stehauf-Löwe", await page.evaluate(() => {
+    const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard).map(a => (a.kontext || "") + a.f + a.r);
+    return alle.some(t => t.includes("Darf ich mitspielen"))
+      && alle.some(t => t.includes("Fußball") && t.includes("Schach"))
+      && alle.some(t => t.includes("Stehauf-Löwe"));
+  }));
+  check("Kachel auf der Startseite (beide Fächer)", await page.evaluate(() => {
+    const de = document.querySelectorAll(".stark-kachel").length;
+    store.fach = "mathe"; buildModuleChooser();
+    const ma = document.querySelectorAll(".stark-kachel").length;
+    store.fach = "deutsch"; buildModuleChooser();
+    return de === 1 && ma === 1;
+  }));
+  await page.locator(".stark-kachel").click(); await page.waitForTimeout(200);
+  check("Leo-Seite: Werkzeugkiste mit Hilfe-Sätzen", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Werkzeugkiste") && t.includes("Darf ich mitspielen?") && t.includes("Stopp, das mag ich nicht.");
+  }));
+  await page.evaluate(() => goSection("ueben")); await page.waitForTimeout(200);
+  check("Situations-Training läuft im Fokus-Modus mit Kontext", await page.evaluate(() =>
+    document.getElementById("screen-content").classList.contains("uebung-fokus")
+    && document.querySelectorAll(".mathe-opt").length === 3));
+  const stR = await page.evaluate(() => gwsChunk("stark").S[matheIdx].r);
+  const stB = page.locator(".mathe-opt");
+  for (let k = 0; k < await stB.count(); k++) {
+    if ((await stB.nth(k).textContent()) === stR) { await stB.nth(k).click(); break; }
+  }
+  await page.waitForTimeout(120);
+  check("Antwort: bestärkender Leo-Tipp + zählt für Runde/Mission", /Richtig/.test(await page.locator("#mfb").textContent())
+    && await page.evaluate(() => scoreRuns["stark"].solved === 1 && missionAufg >= 1));
+  check("Stufe 2 = Gruppendruck & eigene Interessen (hard-Pool)", await page.evaluate(() => {
+    store.progress["stark"] = { unlocked: 2, runs: 1 };
+    const p2 = fieldPool("stark");
+    delete store.progress["stark"];
+    return p2.some(a => (a.kontext || "").includes("Fußball"));
+  }));
+  // Mut-Satz des Tages
+  await page.evaluate(() => goSection("mut")); await page.waitForTimeout(150);
+  check("Mut-Seite: 12 Sätze zur Wahl", (await page.locator(".mut-satz").count()) === 12);
+  await page.locator(".mut-satz").nth(4).click(); await page.waitForTimeout(150);
+  check("Satz gewählt: gilt heute, keine zweite Wahl, Kachel zeigt ihn", await page.evaluate(() => {
+    const ok1 = store.mutSatz.tag === heuteKey() && store.mutSatz.idx === 4
+      && document.querySelectorAll(".mut-satz").length === 0
+      && document.getElementById("moduleContent").textContent.includes(STARK_SAETZE[4]);
+    goHome();
+    return ok1 && document.querySelector(".stark-kachel").textContent.includes(STARK_SAETZE[4].slice(0, 20));
+  }));
+  check("Blume: Selbstcheck mit Freundlichkeits-Fragen", await page.evaluate(() => {
+    openModule("stark"); goSection("blume");
+    return document.getElementById("moduleContent").textContent.includes("ausreden");
+  }));
+  check("Migration bereinigt Mut-Satz", await page.evaluate(() => {
+    const raw = JSON.parse(localStorage.getItem("lernapp_v1") || "{}");
+    raw.mutSatz = { tag: 12, idx: 99 };
+    localStorage.setItem("lernapp_v1", JSON.stringify(raw));
+    load();
+    return store.mutSatz.tag === "" && store.mutSatz.idx === STARK_SAETZE.length - 1;
   }));
 
   // ---------- 9) Version & Release Notes ----------
