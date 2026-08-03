@@ -511,8 +511,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.75.0";
+const APP_VERSION = "1.76.0";
 const RELEASE_NOTES = [
+  {v:"1.76.0", datum:"03.08.2026", punkte:[
+    "💪 „Stark mit Leo“ kennt jetzt auch den Fußballplatz: 5 neue Situationen rund um Ben – was tun, wenn jemand sagt „Du müsstest bei den Kleinen spielen“? Warum sind die Vereins-Freunde weiter (sie ÜBEN mehr – du bist deshalb kein bisschen weniger wert)? Und wie traut man sich wieder auf den Platz – oder lädt die Freunde einfach zum eigenen Lieblingsspiel ein?",
+    "⚽ Dazu ein Praxis-Trick fürs Pausenspiel: Frag nach der Rolle, die dir liegt („Ich gehe ins Tor!“ · „Gib mir mal einen Pass!“) – mitmachen zählt, nicht Tore.",
+    "🦁 Zwei neue Mut-Sätze: „Ich vergleiche mich mit mir von gestern – nicht mit anderen.“ und „Ich darf üben, statt perfekt zu sein.“"
+  ]},
   {v:"1.75.0", datum:"28.07.2026", punkte:[
     "💪 NEU: „Stark mit Leo“ – dein Mindset- und Freundschafts-Training auf der Startseite! Hier übst du, was stärker macht als Muskeln: freundlich ankommen, dazugehören ohne dich zu verbiegen – und nach blöden Momenten wieder aufstehen wie ein Stehauf-Löwe.",
     "🤝 Situations-Training: Du triffst Kinder wie Ben, Mia und Tom in echten Momenten (Mitspielen fragen, Streit, Verlieren, neues Kind in der Klasse, „alle machen das – ich eigentlich nicht“) und entscheidest, was am besten wirkt. Jede Antwort bringt einen bestärkenden Leo-Tipp – Stufe 2 wird kniffliger (Gruppendruck, zu den eigenen Hobbys stehen).",
@@ -7589,6 +7594,10 @@ const STARK_DATEN={
      r:"Sofort aufhören",
      x:["Weitermachen – war ja nur Spaß","Noch wilder toben"],
      tipp:"„Stopp“ gilt immer. Wer es respektiert, dem vertrauen die anderen."},
+    {kontext:"Beim Pausenfußball kommt Ben kaum an den Ball.",
+     f:"Was kann er sagen, um gut mitzumachen?", r:"„Ich gehe ins Tor!“ oder „Gib mir mal einen Pass!“",
+     x:["Beleidigt vom Platz gehen","Heimlich den Ball nehmen und wegrennen"],
+     tipp:"Ein Spiel hat viele Rollen – frag nach der, die dir liegt. Mitmachen zählt, nicht Tore."},
     {f:"Wie zeigst du jemandem, dass du wirklich zuhörst?",
      r:"Anschauen, nicken, nachfragen",
      x:["Nebenbei etwas anderes machen","Schnell vom eigenen Thema anfangen"],
@@ -7639,6 +7648,22 @@ const STARK_DATEN={
      f:"Was antwortest du selbstbewusst und freundlich?", r:"„Ich mag es. Willst du mal eine Partie gegen mich probieren?“",
      x:["„Stimmt … ich höre lieber auf.“","„Du bist doch selbst langweilig!“"],
      tipp:"Zu deinem Hobby stehen UND freundlich bleiben – das ist echtes Selbstbewusstsein."},
+    {kontext:"Ben spielt in der Pause Fußball mit. Ein Kind sagt: „Du müsstest bei den Kleinen spielen!“",
+     f:"Was ist eine starke Antwort?", r:"„Ich spiele, um Spaß zu haben – und der ist genau richtig für mich.“",
+     x:["Nie wieder mitspielen","„Du bist doch selbst schlecht!“"],
+     tipp:"So ein Spruch sagt nichts über dich. Wer mitspielt, wird besser – wer aufhört, nicht. Und wer andere klein macht, ist selbst gerade nicht stark."},
+    {kontext:"Bens Freunde trainieren zwei- bis dreimal pro Woche im Verein. Ben nicht – und er merkt den Unterschied.",
+     f:"Was stimmt wirklich?", r:"Sie sind weiter, weil sie mehr ÜBEN – nicht, weil Ben weniger wert ist",
+     x:["Ben ist einfach als Mensch schlechter","Mitspielen darf nur, wer im Verein ist"],
+     tipp:"Übung macht den Unterschied – niemals der Wert eines Menschen. Der Bolzplatz gehört allen, die Lust haben."},
+    {kontext:"Ben traut sich nicht auf den Fußballplatz, weil die anderen besser sind.",
+     f:"Was hilft Ben wirklich weiter?", r:"Trotzdem hingehen – oder die Freunde zu SEINEM Lieblingsspiel einladen",
+     x:["Zu Hause bleiben, bis er perfekt ist","So tun, als wäre Fußball sowieso doof"],
+     tipp:"Mut wächst beim Machen, nicht beim Warten. Und Freundschaft braucht keinen Fußballplatz – sie kann genauso bei DEINEM Spiel entstehen."},
+    {f:"Jemand ist in etwas viel besser als du. Was bedeutet das?",
+     r:"Er hat darin mehr geübt – du bist dafür in anderen Dingen stark",
+     x:["Er ist der bessere Mensch","Du solltest ganz aufgeben"],
+     tipp:"Jeder hat sein Ding: Der eine kickt, der andere kennt jeden Schachzug, angelt oder baut Welten. Alles davon zählt."},
     {f:"Leo sagt: „Sei ein Stehauf-Löwe!“ Was meint er damit?",
      r:"Nach einem blöden Tag wieder aufstehen und weitermachen",
      x:["Niemals traurig sein dürfen","Immer und überall gewinnen"],
@@ -7657,7 +7682,9 @@ const STARK_SAETZE=[
   "Zuhören macht mich stark.",
   "Ein Lächeln öffnet Türen.",
   "Ich bleibe ruhig, auch wenn es schwer ist.",
-  "Heute mache ich etwas, das MIR Spaß macht."
+  "Heute mache ich etwas, das MIR Spaß macht.",
+  "Ich vergleiche mich mit mir von gestern – nicht mit anderen.",
+  "Ich darf üben, statt perfekt zu sein."
 ];
 const KRIT_STARK=[
   "Habe ich jemanden ausreden lassen?",

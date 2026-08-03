@@ -2084,11 +2084,18 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 8j) Stark mit Leo (Mindset & Freundschaft) ----------
   section("Stark mit Leo (v1.75)");
   await fresh();
-  check("Stark-Daten: 12 + 12 Situationen, sauber und bestärkend", await page.evaluate(() => {
+  check("Stark-Daten: 13 + 16 Situationen, sauber und bestärkend", await page.evaluate(() => {
     const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard);
-    return STARK_DATEN.easy.length === 12 && STARK_DATEN.hard.length === 12
+    return STARK_DATEN.easy.length === 13 && STARK_DATEN.hard.length === 16
       && alle.every(a => a.x.length === 2 && !a.x.includes(a.r) && a.tipp)
-      && STARK_SAETZE.length === 12;
+      && STARK_SAETZE.length === 14;
+  }));
+  check("Fußball-Situation abgedeckt: Spruch, Vereins-Vergleich, Sich-Trauen", await page.evaluate(() => {
+    const alle = STARK_DATEN.hard.map(a => (a.kontext || "") + a.f + a.r + a.tipp);
+    return alle.some(t => t.includes("bei den Kleinen"))
+      && alle.some(t => t.includes("mehr ÜBEN") && t.includes("weniger wert"))
+      && alle.some(t => t.includes("traut sich nicht"))
+      && STARK_SAETZE.some(z => z.includes("gestern"));
   }));
   check("Kein Diagnose-/Beschämungs-Vokabular in Fragen, Lösungen und Tipps", await page.evaluate(() =>
     STARK_DATEN.easy.concat(STARK_DATEN.hard).every(a =>
@@ -2131,7 +2138,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   }));
   // Mut-Satz des Tages
   await page.evaluate(() => goSection("mut")); await page.waitForTimeout(150);
-  check("Mut-Seite: 12 Sätze zur Wahl", (await page.locator(".mut-satz").count()) === 12);
+  check("Mut-Seite: 14 Sätze zur Wahl", (await page.locator(".mut-satz").count()) === 14);
   await page.locator(".mut-satz").nth(4).click(); await page.waitForTimeout(150);
   check("Satz gewählt: gilt heute, keine zweite Wahl, Kachel zeigt ihn", await page.evaluate(() => {
     const ok1 = store.mutSatz.tag === heuteKey() && store.mutSatz.idx === 4
