@@ -2173,6 +2173,50 @@ function section(t) { console.log("\n== " + t + " =="); }
     return store.mutSatz.tag === "" && store.mutSatz.idx === STARK_SAETZE.length - 1;
   }));
 
+  // ---------- 8k) Vorlesen: Stimmen-Qualität + Sprachpaket-Anleitung ----------
+  section("Vorlesen: Sprachpaket & Stimmen-Wahl (v1.78)");
+  await fresh();
+  check("Stimmen-Sortierung: Qualität > lokal(offline) > de-DE", await page.evaluate(() => {
+    const mk = (name, lang, local) => ({ name, lang, localService: local, voiceURI: name });
+    const netzNatural = mk("Google Natural de", "de-DE", false);
+    const lokalNatural = mk("Neural Anna", "de-DE", true);
+    const lokalEinfach = mk("Standard-Stimme", "de-DE", true);
+    const deAT = mk("Neural Wien", "de-AT", true);
+    const s = [netzNatural, lokalEinfach, deAT, lokalNatural].sort(stimmenVergleich).map(v => v.name);
+    // Erwartung: bei gleicher Qualität lokal vor Netz, de-DE vor de-AT; einfache Stimme zuletzt
+    return s.join("|") === "Neural Anna|Neural Wien|Google Natural de|Standard-Stimme";
+  }));
+  check("Qualitäts-Ampel: top / gut / einfach / keine", await page.evaluate(() => {
+    const mk = (name) => ({ name, lang: "de-DE", localService: true, voiceURI: name });
+    return stimmQualitaet([mk("Siri Premium")]).stufe === "top"
+      && stimmQualitaet([mk("Google Deutsch")]).stufe === "gut"
+      && stimmQualitaet([mk("Roboterstimme 1")]).stufe === "einfach"
+      && stimmQualitaet([]).stufe === "keine";
+  }));
+  check("Sprachpaket-Guide: alle 5 Plattformen mit Schritten, offline-Versprechen", await page.evaluate(() =>
+    SPRACHPAKET_GUIDE.length === 5
+    && SPRACHPAKET_GUIDE.every(g => g.schritte.length >= 2)
+    && ["android","ios","windows","mac","sonst"].every(id => SPRACHPAKET_GUIDE.some(g => g.id === id))));
+  await page.locator("#adminLink").click(); await page.waitForTimeout(150);
+  await page.locator('.chip[data-tab="vorlesen"]').click(); await page.waitForTimeout(150);
+  check("Eltern-Tab: Ampel + Sprachpaket-Karte + Neu-prüfen-Knopf", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return !!document.getElementById("sprachpaketKarte")
+      && !!document.getElementById("stimmenPruefen")
+      && t.includes("kostenloses Sprachpaket") && t.includes("komplett offline")
+      && document.querySelectorAll("#sprachpaketKarte details.regel-klapp").length === 5;
+  }));
+  check("Guide der eigenen Plattform ist vorgeklappt und markiert", await page.evaluate(() => {
+    const offen = document.querySelector("#sprachpaketKarte details[open]");
+    return !!offen && offen.textContent.includes("dein Gerät");
+  }));
+  await page.locator("#stimmenPruefen").click(); await page.waitForTimeout(400);
+  check("„Neu prüfen“ rendert neu + meldet Ergebnis als Toast", await page.evaluate(() =>
+    !!document.getElementById("sprachpaketKarte")
+    && document.getElementById("appToast").textContent.includes("Geprüft")));
+  check("Schlank geblieben: keine externen Downloads im Code", await page.evaluate(() =>
+    !document.documentElement.outerHTML.match(/huggingface|cdn\.|\.onnx|piper|\.wasm/i)));
+
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
   await fresh();
