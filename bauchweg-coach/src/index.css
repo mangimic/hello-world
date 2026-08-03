@@ -1,0 +1,45 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Validierte Diagrammfarben (hell/dunkel getrennt abgestuft). */
+:root {
+  --chart-1: #2a78d6;
+  --chart-2: #eb6834;
+  --chart-grid: #e1e0d9;
+  --chart-ink: #52514e;
+}
+.dark {
+  --chart-1: #3987e5;
+  --chart-2: #d95926;
+  --chart-grid: #2c2c2a;
+  --chart-ink: #c3c2b7;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Große Touch-Flächen und sichtbarer Fokus für Tastaturbedienung. */
+button,
+a,
+input,
+select,
+textarea {
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600;
+}
