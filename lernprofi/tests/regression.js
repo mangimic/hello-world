@@ -554,8 +554,22 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.waitForTimeout(120);
   await openMod("Prädikat", null);
   await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(120);
-  check("Einstellung „aus“: sofort frei ohne Frage", !(await page.locator("#toLesen, #toUeben").first().isDisabled())
+  check("„Nur bestätigen“: sofort frei ohne Frage", !(await page.locator("#toLesen, #toUeben").first().isDisabled())
     && (await page.locator(".gate-opt").count()) === 0);
+  // Einstellung „ganz aus": überhaupt kein Gate mehr
+  await page.evaluate(() => { store.leseKontrolle = "ganzaus"; save(); goHome(); });
+  await page.waitForTimeout(120);
+  await openMod("Zeitformen", null);
+  check("„Ganz aus“: kein Lese-Gate, Weiter sofort frei", (await page.locator(".gate-row").count()) === 0
+    && !(await page.locator("#toLesen, #toUeben").first().isDisabled()));
+  check("Elternbereich bietet 4 Lese-Check-Stufen", await page.evaluate(() => {
+    openAdmin(); adminTab = "spiele"; renderAdmin(document.getElementById("moduleContent"));
+    return document.querySelectorAll(".seg[data-lese]").length === 4
+      && !!document.querySelector('.seg[data-lese="ganzaus"]');
+  }));
+  check("Migration erhält „ganzaus“", await page.evaluate(() => {
+    save(); load(); return store.leseKontrolle === "ganzaus";
+  }));
 
   section("See-Abenteuer");
   await fresh(); await setLevel(3);

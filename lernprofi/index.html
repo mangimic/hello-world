@@ -511,8 +511,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.76.0";
+const APP_VERSION = "1.77.0";
 const RELEASE_NOTES = [
+  {v:"1.77.0", datum:"03.08.2026", punkte:[
+    "🔧 Der Lese-Check („Habe ich gelesen“) ist jetzt komplett konfigurierbar – im Elternbereich unter „Spiele & Zeit“ gibt es 4 Stufen: Immer (Mindest-Lesezeit + Lücken-Frage) · Stichprobe · Nur bestätigen (ohne Wartezeit und Frage, aber mit Bestätigungs-Knopf) · GANZ AUS (keinerlei Bestätigung nötig, der Weiter-Knopf ist sofort frei)."
+  ]},
   {v:"1.76.0", datum:"03.08.2026", punkte:[
     "💪 „Stark mit Leo“ kennt jetzt auch den Fußballplatz: 5 neue Situationen rund um Ben – was tun, wenn jemand sagt „Du müsstest bei den Kleinen spielen“? Warum sind die Vereins-Freunde weiter (sie ÜBEN mehr – du bist deshalb kein bisschen weniger wert)? Und wie traut man sich wieder auf den Platz – oder lädt die Freunde einfach zum eigenen Lieblingsspiel ein?",
     "⚽ Dazu ein Praxis-Trick fürs Pausenspiel: Frag nach der Rolle, die dir liegt („Ich gehe ins Tor!“ · „Gib mir mal einen Pass!“) – mitmachen zählt, nicht Tore.",
@@ -1152,8 +1155,9 @@ function gateFrage(text){
 }
 function readGate(host, btn, text){
   if(!btn || !host) return;
-  btn.disabled=true; btn.classList.add("locked");
   const modus=store.leseKontrolle||"immer";
+  if(modus==="ganzaus") return; // Eltern-Einstellung: gar kein Lese-Gate
+  btn.disabled=true; btn.classList.add("locked");
   const row=document.createElement("div"); row.className="gate-row";
   const hear=document.createElement("button"); hear.type="button"; hear.className="btn-secondary btn-small";
   hear.textContent="🔊 Anhören";
@@ -8282,14 +8286,15 @@ function renderAdminSpiele(c){
     <div class="card">
       <h3>🕵️ Lese-Check (gegen schnelles Durchklicken)</h3>
       <p class="muted">Erklärungen lassen sich erst nach einer <b>Mindest-Lesezeit</b>
-        bestätigen. Danach prüft eine kleine <b>Lücken-Frage</b> aus dem Text,
-        ob wirklich gelesen wurde. „Anhören" schaltet erst frei, wenn zu Ende
-        vorgelesen wurde.</p>
+        bestätigen, danach prüft eine kleine <b>Lücken-Frage</b> aus dem Text.
+        <b>Nur bestätigen</b> = ohne Wartezeit und Frage, aber mit
+        „✓ Habe ich gelesen“-Knopf · <b>Ganz aus</b> = keinerlei Bestätigung nötig.</p>
       <div class="seg-line"><span class="seg-label">Lese-Check</span>
         <div class="seg-row">
           <button class="seg${(store.leseKontrolle||"immer")==="immer"?" on":""}" data-lese="immer">Immer</button>
           <button class="seg${store.leseKontrolle==="mix"?" on":""}" data-lese="mix">Stichprobe</button>
-          <button class="seg${store.leseKontrolle==="aus"?" on":""}" data-lese="aus">Aus</button>
+          <button class="seg${store.leseKontrolle==="aus"?" on":""}" data-lese="aus">Nur bestätigen</button>
+          <button class="seg${store.leseKontrolle==="ganzaus"?" on":""}" data-lese="ganzaus">Ganz aus</button>
         </div></div>
     </div>
     <div class="card">
@@ -9276,7 +9281,7 @@ let store = {
   spieleAktiv:{ spiel:true, tennis:true, fussball:true, schach:true, blockwelt:true }, // Elternbereich: Spiele an/aus
   zeitLimit:20,                 // Time-Boxing: Lernzeit pro Tag in Minuten (0 = aus)
   zeit:{ tag:"", sek:0 },       // heute verbrauchte Lernzeit
-  leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" (Stichprobe) | "aus"
+  leseKontrolle:"immer",        // Lese-Check: "immer" | "mix" | "aus" (nur bestätigen) | "ganzaus"
   stimme:"",                    // Vorlese-Stimme (voiceURI); "" = beste automatisch
   leseTempo:"normal",           // Vorlese-Tempo: "langsam" | "normal" | "schnell"
   profil:null,                  // Einwertung: {r:0..2, g:0..2, datum} (🐣/🦊/🦁)
@@ -9397,7 +9402,7 @@ function load(){
       ["spiel","tennis","fussball","schach","blockwelt"].forEach(k=>{ if(k in d.spieleAktiv) store.spieleAktiv[k]=d.spieleAktiv[k]!==false; });
     }
     if("zeitLimit" in d){ const v=parseInt(d.zeitLimit,10); if(v>=0 && v<=180) store.zeitLimit=v; }
-    if(["immer","mix","aus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
+    if(["immer","mix","aus","ganzaus"].includes(d.leseKontrolle)) store.leseKontrolle=d.leseKontrolle;
     if(typeof d.stimme==="string") store.stimme=d.stimme;
     if(["langsam","normal","schnell"].includes(d.leseTempo)) store.leseTempo=d.leseTempo;
     if(d.profil && typeof d.profil==="object"){
