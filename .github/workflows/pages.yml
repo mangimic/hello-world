@@ -1,0 +1,41 @@
+# Veröffentlicht das Repository als statische Site auf GitHub Pages.
+# - läuft bei jedem Push auf master (und manuell über "Run workflow")
+# - aktiviert GitHub Pages beim ersten Lauf automatisch (enablement)
+# - deployt das Repo-Root: die Start-Seite leitet zu lernprofi/ weiter,
+#   die übrigen App-Ordner (felix/, leon/, bauchweg/) sind mit dabei
+name: GitHub Pages deployen
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Repository auschecken
+        uses: actions/checkout@v4
+      - name: Pages konfigurieren (aktiviert Pages beim ersten Lauf)
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+      - name: Statische Site paketieren
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+      - name: Auf GitHub Pages veröffentlichen
+        id: deployment
+        uses: actions/deploy-pages@v4
