@@ -511,8 +511,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.79.0";
+const APP_VERSION = "1.80.0";
 const RELEASE_NOTES = [
+  {v:"1.80.0", datum:"03.08.2026", punkte:[
+    "💬 Neuer Eltern-Tab „Gespräche“: 16 Gesprächsimpulse in 4 Bereichen (🚧 Grenzen · 💪 Stehauf-Kraft · 🧠 Denkweise · 🔍 Probleme lösen) – kindgerecht für 8–10 Jahre. Mit täglich wechselnder „Frage des Tages“ und Tipps, wie das Gespräch gelingt (nebenbei fragen, selbst zuerst erzählen, nicht sofort trösten).",
+    "💪 6 neue „Stark mit Leo“-Situationen aus denselben Themen: Was tun, wenn jemand dein STOPP ignoriert? Woran erkennt man eine Freundschaft, die nicht guttut? Das Zauberwort NOCH („Ich kann es NOCH nicht“), Was bedeutet Erfolg für DICH, Wiedergutmachen nach einem Versehen – und Riesen-Aufgaben in Mini-Schritte zerlegen.",
+    "🦁 So üben Kind (in der App) und Eltern (im Gespräch) die gleichen Themen – von zwei Seiten."
+  ]},
   {v:"1.79.0", datum:"03.08.2026", punkte:[
     "🎁 NEU: Die Lernprofi-Stimme – eine natürliche deutsche Stimme direkt in der App, unabhängig von den Systemstimmen! Im Elternbereich → „Vorlesen“ einmalig ~30 MB laden (im WLAN), danach funktioniert sie KOMPLETT OFFLINE. Beim Laden wird nur die Stimm-Datei geholt – es werden keine Daten gesendet.",
     "🔀 Frei wählbar: Lernprofi-Stimme an/aus (dann übernimmt wieder die Systemstimme), mit Probehören und der Möglichkeit, das Paket jederzeit wieder vom Gerät zu löschen. Fällt etwas aus, springt automatisch die Systemstimme ein.",
@@ -7716,6 +7721,14 @@ const STARK_DATEN={
      f:"Was kann er sagen, um gut mitzumachen?", r:"„Ich gehe ins Tor!“ oder „Gib mir mal einen Pass!“",
      x:["Beleidigt vom Platz gehen","Heimlich den Ball nehmen und wegrennen"],
      tipp:"Ein Spiel hat viele Rollen – frag nach der, die dir liegt. Mitmachen zählt, nicht Tore."},
+    {kontext:"Ben stöhnt: „Ich kann einfach kein Fußball!“",
+     f:"Was stimmt wirklich?", r:"Er kann es NOCH nicht so gut – Üben verändert das",
+     x:["Können ist angeboren – da kann man nichts machen","Dann soll er es eben lassen"],
+     tipp:"Das Zauberwort heißt NOCH. Alles, was du kannst, konntest du mal nicht."},
+    {kontext:"Ben hat aus Versehen Lukas' Bauklotz-Turm umgeworfen. Lukas ist richtig traurig.",
+     f:"Wie macht Ben es wieder gut?", r:"Sich entschuldigen und anbieten, beim Neubauen zu helfen",
+     x:["So tun, als wäre nichts gewesen","Sagen: „Ist doch nur ein Turm!“"],
+     tipp:"Fehler passieren – Wiedergutmachen macht sie kleiner und dich größer."},
     {f:"Wie zeigst du jemandem, dass du wirklich zuhörst?",
      r:"Anschauen, nicken, nachfragen",
      x:["Nebenbei etwas anderes machen","Schnell vom eigenen Thema anfangen"],
@@ -7782,6 +7795,22 @@ const STARK_DATEN={
      r:"Er hat darin mehr geübt – du bist dafür in anderen Dingen stark",
      x:["Er ist der bessere Mensch","Du solltest ganz aufgeben"],
      tipp:"Jeder hat sein Ding: Der eine kickt, der andere kennt jeden Schachzug, angelt oder baut Welten. Alles davon zählt."},
+    {kontext:"Beim Raufen sagt Ben „Stopp!“ – aber das andere Kind macht einfach weiter.",
+     f:"Was ist jetzt richtig?", r:"Laut und deutlich nochmal „Stopp!“ – und wenn es nicht hört: weggehen und einem Erwachsenen sagen",
+     x:["Einfach aushalten, sonst ist man eine Memme","Zurückhauen, so fest es geht"],
+     tipp:"DEIN Stopp gilt genauso wie das der anderen. Hilfe holen ist kein Petzen, wenn jemand deine Grenze ignoriert."},
+    {kontext:"Nach dem Spielen mit Jan fühlt sich Ben oft schlecht: Jan bestimmt alles und lacht über Bens Fehler.",
+     f:"Woran merkt man, dass eine Freundschaft nicht guttut?", r:"Wenn du dich nach dem Spielen oft schlechter fühlst als vorher",
+     x:["Wenn man nicht jeden Tag zusammen spielt","Das gibt es nicht – Freund ist Freund"],
+     tipp:"Echte Freunde geben dir Kraft. Du darfst dir Freunde suchen, bei denen du dich wohlfühlst – das ist keine Untreue."},
+    {f:"Was bedeutet Erfolg wirklich – für DICH?",
+     r:"Wenn ich etwas besser kann als gestern oder mich etwas getraut habe",
+     x:["Wenn alle klatschen und zuschauen","Besser sein als alle anderen"],
+     tipp:"Erfolg misst man an sich selbst, nicht an den anderen. Dein Maßstab bist du von gestern."},
+    {kontext:"Die Aufgabe wirkt riesig – Ben denkt: „Das schaffe ich NIE!“",
+     f:"Was hilft, wenn etwas aussichtslos wirkt?", r:"In Mini-Schritte zerlegen und nur den ersten kleinen Schritt machen",
+     x:["Sofort aufgeben – ist eh zu schwer","Warten, bis es jemand anderes macht"],
+     tipp:"Kein Berg wird auf einmal bestiegen. Schritt eins reicht für heute – wie bei deinen Mini-Missionen!"},
     {f:"Leo sagt: „Sei ein Stehauf-Löwe!“ Was meint er damit?",
      r:"Nach einem blöden Tag wieder aufstehen und weitermachen",
      x:["Niemals traurig sein dürfen","Immer und überall gewinnen"],
@@ -8313,6 +8342,7 @@ function admHeader(active){
       <button class="chip${active==="woerter"?" on":""}" data-tab="woerter">📚 Wörter</button>
       <button class="chip${active==="spiele"?" on":""}" data-tab="spiele">🎮 Spiele &amp; Zeit</button>
       <button class="chip${active==="lernen"?" on":""}" data-tab="lernen">🧭 Lernen</button>
+      <button class="chip${active==="gespraech"?" on":""}" data-tab="gespraech">💬 Gespräche</button>
       <button class="chip${active==="vorlesen"?" on":""}" data-tab="vorlesen">🔊 Vorlesen</button>
     </div></div>`;
 }
@@ -8323,6 +8353,7 @@ function renderAdmin(c){
   if(adminTab==="woerter") renderAdminWoerter(c);
   else if(adminTab==="spiele") renderAdminSpiele(c);
   else if(adminTab==="lernen") renderAdminLernen(c);
+  else if(adminTab==="gespraech") renderAdminGespraech(c);
   else if(adminTab==="vorlesen") renderAdminVorlesen(c);
   else renderAdminStufen(c);
 }
@@ -8598,6 +8629,63 @@ function renderAdminSpiele(c){
     const y=window.scrollY; renderAdminSpiele(c); window.scrollTo(0,y);
     c.querySelector("#spieleStatus").style.display="block";
   };
+}
+
+/* --- Tab „Gespräche": Gesprächsimpulse für Eltern – offene Fragen
+   in 4 Bereichen (nach einer Coaching-Fragensammlung, kindgerecht für
+   8–10 Jahre übersetzt). Keine Tests, sondern Tür-Öffner: am besten
+   nebenbei stellen (Auto, Abendessen) und selbst zuerst etwas teilen. --- */
+const GESPRAECH_BEREICHE=[
+  {emoji:"🚧", titel:"Grenzen", fragen:[
+    "Was machst du, wenn dich jemand zu etwas überreden will, das du nicht willst?",
+    "Was tust du, wenn du „Stopp“ sagst – und jemand macht trotzdem weiter?",
+    "Darf man auch zu einem Erwachsenen Nein sagen? Wann?",
+    "Woran merkst du, dass dir eine Freundschaft eher schadet als guttut?"]},
+  {emoji:"💪", titel:"Stehauf-Kraft", fragen:[
+    "Was machst du, wenn sich etwas völlig aussichtslos anfühlt?",
+    "Erzähl mal: Wann ist dir etwas so richtig danebengegangen – und was hast du danach gemacht?",
+    "Wie machst du weiter, wenn du am liebsten aufgeben würdest?",
+    "Was hilft dir, wenn jemand deine Gefühle richtig verletzt hat?"]},
+  {emoji:"🧠", titel:"Denkweise", fragen:[
+    "Glaubst du, man kann in etwas besser werden, das man noch nicht gut kann? Wie?",
+    "Was sagst du zu dir selbst, wenn du einen Fehler machst?",
+    "Wie geht es dir, wenn jemand besser ist in etwas, das dir wichtig ist?",
+    "Was bedeutet Erfolg für DICH – nicht für deine Freunde, nicht für uns – für dich?"]},
+  {emoji:"🔍", titel:"Probleme lösen", fragen:[
+    "Wenn du ein Problem hast – was machst du als Erstes?",
+    "Was machst du, wenn du und ein Freund völlig verschiedener Meinung seid?",
+    "Stell dir vor, du hast aus Versehen jemanden verletzt – wie würdest du es wiedergutmachen?",
+    "Was würdest du tun, wenn sich etwas falsch anfühlt – aber alle anderen finden es okay?"]}
+];
+function gespraechDesTages(){
+  const alle=GESPRAECH_BEREICHE.flatMap(b=>b.fragen.map(f=>({b:b.emoji+" "+b.titel, f:f})));
+  return alle[Math.floor(Date.now()/86400000)%alle.length];
+}
+function renderAdminGespraech(c){
+  const heute=gespraechDesTages();
+  c.innerHTML = admHeader("gespraech") + `
+    <div class="card">
+      <h3>💬 Gesprächsimpulse</h3>
+      <p class="muted">Das sind keine Tests, sondern <b>Tür-Öffner</b> – Gespräche, die
+        prägen, lange bevor es darauf ankommt. Sie passen gut zu dem, was dein Kind
+        in „💪 Stark mit Leo“ übt.</p>
+      <div class="hint">🌟 <b>Frage des Tages</b> (${heute.b}):<br>„${heute.f}“</div>
+      <div class="example-box" style="font-size:14px;">💡 <b>So klappt es am besten:</b>
+        nebenbei fragen (Auto, Abendessen, Zähneputzen) statt im Verhör-Modus ·
+        selbst zuerst etwas Eigenes erzählen · Antworten stehen lassen, nicht sofort
+        verbessern oder trösten · eine Frage pro Tag reicht völlig.</div>
+    </div>
+    <div class="card">
+      <h3>📚 Alle Fragen</h3>
+      ${GESPRAECH_BEREICHE.map(b=>`<details class="regel-klapp"><summary>${b.emoji} ${b.titel}</summary>
+        <div class="klapp-body"><ol style="margin:4px 0 4px 18px; padding:0;">
+          ${b.fragen.map(f=>`<li style="margin-bottom:8px;">${f}</li>`).join("")}
+        </ol></div></details>`).join("")}
+      <p class="muted" style="margin-top:8px; font-size:12.5px;">Alles bleibt auf dem Gerät –
+        die App speichert keine Antworten. Die Fragen sind an eine Coaching-Fragensammlung
+        angelehnt und für 8–10 Jahre übersetzt.</p>
+    </div>`;
+  admBindTabs(c);
 }
 
 /* --- Tab „Lernen": Tagesform-Frage, Mini-Missionen, Bewegungspausen,
