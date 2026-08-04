@@ -2098,11 +2098,19 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 8j) Stark mit Leo (Mindset & Freundschaft) ----------
   section("Stark mit Leo (v1.75)");
   await fresh();
-  check("Stark-Daten: 13 + 16 Situationen, sauber und bestärkend", await page.evaluate(() => {
+  check("Stark-Daten: 15 + 20 Situationen, sauber und bestärkend", await page.evaluate(() => {
     const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard);
-    return STARK_DATEN.easy.length === 13 && STARK_DATEN.hard.length === 16
+    return STARK_DATEN.easy.length === 15 && STARK_DATEN.hard.length === 20
       && alle.every(a => a.x.length === 2 && !a.x.includes(a.r) && a.tipp)
       && STARK_SAETZE.length === 14;
+  }));
+  check("Neue Themen abgedeckt: Stopp ignoriert, Freundschafts-Check, NOCH, Erfolg, Mini-Schritte", await page.evaluate(() => {
+    const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard).map(a => (a.kontext || "") + a.f + a.r + a.tipp);
+    return alle.some(t => t.includes("Grenze ignoriert"))
+      && alle.some(t => t.includes("schlechter fühlst als vorher"))
+      && alle.some(t => t.includes("NOCH nicht"))
+      && alle.some(t => t.includes("besser kann als gestern"))
+      && alle.some(t => t.includes("Mini-Schritte"));
   }));
   check("Fußball-Situation abgedeckt: Spruch, Vereins-Vergleich, Sich-Trauen", await page.evaluate(() => {
     const alle = STARK_DATEN.hard.map(a => (a.kontext || "") + a.f + a.r + a.tipp);
@@ -2287,6 +2295,26 @@ function section(t) { console.log("\n== " + t + " =="); }
   check("Engine-Dateien liegen in der App (stimme/)", await page.evaluate(() => true)
     && ["vits-bundle.js", "piper_phonemize.wasm", "piper_phonemize.data", "ort-wasm-simd.wasm", "ort-wasm.wasm"]
       .every(f => fs.existsSync(path.resolve(__dirname, "..", "stimme", f))));
+
+  // ---------- 8m) Eltern-Tab „Gespräche" ----------
+  section("Eltern-Gesprächsimpulse (v1.80)");
+  await fresh();
+  check("Gesprächs-Daten: 4 Bereiche à 4 Fragen, kindgerecht", await page.evaluate(() =>
+    GESPRAECH_BEREICHE.length === 4 && GESPRAECH_BEREICHE.every(b => b.fragen.length === 4)
+    && GESPRAECH_BEREICHE.flatMap(b => b.fragen).every(f => f.endsWith("?"))));
+  check("Frage des Tages rotiert deterministisch über alle 16", await page.evaluate(() => {
+    const h = gespraechDesTages();
+    return !!h.f && !!h.b && GESPRAECH_BEREICHE.some(b => b.fragen.includes(h.f));
+  }));
+  await page.locator("#adminLink").click(); await page.waitForTimeout(150);
+  await page.locator('.chip[data-tab="gespraech"]').click(); await page.waitForTimeout(150);
+  check("Tab „Gespräche“: Frage des Tages + 4 Aufklapp-Bereiche + Anleitung", await page.evaluate(() => {
+    const t = document.getElementById("moduleContent").textContent;
+    return t.includes("Frage des Tages") && t.includes("Tür-Öffner")
+      && t.includes("nebenbei fragen")
+      && document.querySelectorAll("#moduleContent details.regel-klapp").length === 4;
+  }));
+  check("Keine Antworten-Speicherung, Hinweis vorhanden", (await page.locator("#moduleContent").textContent()).includes("speichert keine Antworten"));
 
   // ---------- 9) Version & Release Notes ----------
   section("Version & Release Notes");
