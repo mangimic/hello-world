@@ -65,7 +65,7 @@ Empfohlener Rhythmus während der Beta:
 
 > Hallo! Wir testen unsere Deutsch-Lern-App „Lernprofi“ (Klasse 3/4,
 > kostenlos, werbefrei, alles bleibt auf dem Gerät):
-> 👉 https://mangimic.github.io/lernprofi/
+> 👉 https://mangimic.github.io/hello-world/lernprofi/
 > Am besten installieren: Safari → Teilen → „Zum Home-Bildschirm“
 > bzw. Chrome → Menü → „App installieren“.
 > **Bitte nach 2–3 Nutzungen unten auf der Startseite auf
