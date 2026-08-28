@@ -78,6 +78,7 @@ button:active{transform:scale(0.97);}
 /* Klassenstufen-Auswahl */
 .level-row{display:flex; gap:8px; margin:6px 0 12px;}
 .level-btn{flex:1; background:var(--soft); color:var(--text); font-weight:700; border-radius:14px; min-height:46px; font-size:16px;}
+#levelRow .level-btn{font-size:14.5px; line-height:1.15; padding:4px 2px;}
 .level-btn.active{background:var(--primary); color:#fff;}
 /* Themen-Auswahl (2x2) */
 .theme-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:6px 0 4px;}
@@ -452,10 +453,11 @@ button.locked{opacity:.45; pointer-events:none;}
     <div class="card">
       <h2>Was möchtest du machen?</h2>
       <div class="level-row" id="levelRow">
-        <button class="level-btn" data-level="3">Klasse 3</button>
+        <button class="level-btn" data-level="3">Vorbereitung auf 4</button>
         <button class="level-btn" data-level="4">Klasse 4</button>
         <button class="level-btn" data-level="0">Alle</button>
       </div>
+      <div class="muted" id="levelHinweis" style="font-size:13px; margin:-4px 2px 10px;"></div>
       <div class="choice-grid" id="moduleChooser"></div>
     </div>
     <p style="text-align:center; margin:4px 0 2px;">
@@ -511,8 +513,12 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.81.0";
+const APP_VERSION = "1.82.0";
 const RELEASE_NOTES = [
+  {v:"1.82.0", datum:"28.08.2026", punkte:[
+    "🚀 Aus „Klasse 3“ wird „Vorbereitung auf 4“: Die Sommerferien sind fast rum – der ganze Klasse-3-Stoff ist jetzt deine Wiederholung zum Startklar-Machen für die 4. Klasse. Alle Übungen, Stufen und dein Fortschritt bleiben genau, wie sie waren – nur der Name ist neu.",
+    "💡 Kleiner Mut-Hinweis auf der Startseite, wenn „Vorbereitung auf 4“ gewählt ist – und auch die Arbeitsblatt-Köpfe und der Elternbereich zeigen den neuen Namen."
+  ]},
   {v:"1.81.0", datum:"28.08.2026", punkte:[
     "💬 Feinschliff bei den Eltern-Gesprächsimpulsen: Die Grenzen-Frage zur Freundschaft heißt jetzt „Woran merkst du, dass eine Freundschaft dich klein fühlen lässt statt stark?“ – näher an der Original-Formulierung und leichter zu beantworten."
   ]},
@@ -1357,7 +1363,7 @@ function byLevel(base, extra){
   return base; // Klasse 3
 }
 // Beschriftung der gewählten Klassenstufe (für Arbeitsblätter)
-function klasseLabel(){ return store.level===3 ? "Klasse 3" : store.level===4 ? "Klasse 4" : "Klasse 3 & 4"; }
+function klasseLabel(){ return store.level===3 ? "Vorbereitung auf 4" : store.level===4 ? "Klasse 4" : "Vorbereitung & Klasse 4"; }
 
 /* ============================================================
    GEMEINSAME BAUSTEINE
@@ -6802,7 +6808,7 @@ function openTestTraining(){
   const knoepfe=verfuegbar.length
     ? verfuegbar.map(t=>`<button class="btn-primary mt test-start" data-typ="${t.typ}" style="width:100%;">${t.titel}<br>
         <span style="font-size:13px; font-weight:400;">${t.untertitel}</span></button>`).join("")
-    : `<div class="hint">Für Klasse ${store.level} kommen bald eigene Tests – schau später wieder vorbei!</div>`;
+    : `<div class="hint">Für diese Stufe kommen bald eigene Tests – schau später wieder vorbei!</div>`;
   $("moduleContent").innerHTML=`
     <div class="card">
       <h2>🧪 Test-Training</h2>
@@ -8874,7 +8880,7 @@ function renderAdminStufen(c){
       gespeichert und gilt wieder, sobald „Auto" gewählt ist.<br>
       Vorrang: <b>Bereich</b> vor <b>Klassenstufe</b> vor <b>Global</b>.</p>
       ${segLine("🌍 Global (alle Bereiche)","global",3)}
-      ${segLine("📗 Nur Klasse 3","klasse:3",3)}
+      ${segLine("📗 Nur Vorbereitung auf 4 (Klasse-3-Stoff)","klasse:3",3)}
       ${segLine("📘 Nur Klasse 4","klasse:4",3)}
     </div>
     <div class="card"><h3>Je Lernfeld</h3>${feldRows}</div>
@@ -9842,6 +9848,9 @@ function buildLevelRow(){
     b.classList.toggle("active", parseInt(b.dataset.level,10)===store.level);
     b.onclick=()=>{ store.level=parseInt(b.dataset.level,10); save(); buildLevelRow(); buildModuleChooser(); };
   });
+  // Kleiner Kontext-Hinweis: der Klasse-3-Stoff ist jetzt die Wiederholung für den Start in Klasse 4
+  const lh=document.getElementById("levelHinweis");
+  if(lh) lh.textContent = store.level===3 ? "Alles Wichtige aus Klasse 3 – so machst du dich startklar für die 4. Klasse! 💪" : "";
 }
 // Fach-Umschaltung (Deutsch / Mathe): filtert die Gruppen der Startseite
 function buildFachRow(){

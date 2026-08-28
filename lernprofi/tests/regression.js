@@ -1064,7 +1064,18 @@ function section(t) { console.log("\n== " + t + " =="); }
   section("Test-Training (Könnernachweis)");
   await fresh(); await setLevel(3);
   check("Startseite hat die Test-Training-Kachel (Klasse 3)", (await page.locator(".test-kachel").count()) === 1);
+  check("Stufen-Knopf heißt „Vorbereitung auf 4“ (interner Wert 3 bleibt)", await page.evaluate(() =>
+    document.querySelector('#levelRow .level-btn[data-level="3"]').textContent.trim() === "Vorbereitung auf 4"
+    && store.level === 3));
+  check("Mut-Hinweis unter der Stufen-Leiste bei Vorbereitung auf 4", await page.evaluate(() =>
+    document.getElementById("levelHinweis").textContent.includes("startklar")));
+  check("klasseLabel: „Vorbereitung auf 4“ (3) · „Vorbereitung & Klasse 4“ (Alle)", await page.evaluate(() => {
+    const alt = store.level; store.level = 3; const a = klasseLabel();
+    store.level = 0; const b = klasseLabel(); store.level = alt;
+    return a === "Vorbereitung auf 4" && b === "Vorbereitung & Klasse 4"; }));
   await setLevel(4);
+  check("Klasse 4: Hinweis weg, klasseLabel „Klasse 4“", await page.evaluate(() =>
+    document.getElementById("levelHinweis").textContent === "" && klasseLabel() === "Klasse 4"));
   check("Klasse 4: Kachel da – nur der Fit-Test (Klasse-3-Tests gefiltert)", (await page.locator(".test-kachel").count()) === 1
     && await page.evaluate(() => testsFuerKlasse().map(t => t.typ).join(",") === "fit"));
   await setLevel(0);
