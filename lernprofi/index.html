@@ -513,8 +513,13 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.82.0";
+const APP_VERSION = "1.83.0";
 const RELEASE_NOTES = [
+  {v:"1.83.0", datum:"10.09.2026", punkte:[
+    "💪 6 neue „Stark mit Leo“-Situationen rund um die 7 Freundschafts-Regeln: Bei echten Freunden musst du dir deinen Platz nicht verdienen · Weggehen bei einer Mutprobe braucht mehr Mut als Mitmachen · „Nein. Ich will das nicht.“ genügt – ohne Begründung · Freunde färben ab · Versprechen halten · Nicht mitlachen, wenn jemand ausgelacht wird.",
+    "🦁 2 neue Mut-Sätze: „Weggehen kann mutiger sein als mitmachen.“ und „Mein Nein ist genug.“ (jetzt 16 zur Auswahl).",
+    "💬 4 neue Eltern-Gesprächsimpulse (jetzt 20): Was machst du bei „Trau dich doch – alle machen das“? · Bei wem kannst du ganz du selbst sein? · Was für ein Freund möchtest DU sein? · Was tust du, wenn alle über jemanden lachen?"
+  ]},
   {v:"1.82.0", datum:"28.08.2026", punkte:[
     "🚀 Aus „Klasse 3“ wird „Vorbereitung auf 4“: Die Sommerferien sind fast rum – der ganze Klasse-3-Stoff ist jetzt deine Wiederholung zum Startklar-Machen für die 4. Klasse. Alle Übungen, Stufen und dein Fortschritt bleiben genau, wie sie waren – nur der Name ist neu.",
     "💡 Kleiner Mut-Hinweis auf der Startseite, wenn „Vorbereitung auf 4“ gewählt ist – und auch die Arbeitsblatt-Köpfe und der Elternbereich zeigen den neuen Namen."
@@ -7741,7 +7746,15 @@ const STARK_DATEN={
     {f:"Wie zeigst du jemandem, dass du wirklich zuhörst?",
      r:"Anschauen, nicken, nachfragen",
      x:["Nebenbei etwas anderes machen","Schnell vom eigenen Thema anfangen"],
-     tipp:"Zuhören ist ein Geschenk – und kommt fast immer zu dir zurück."}
+     tipp:"Zuhören ist ein Geschenk – und kommt fast immer zu dir zurück."},
+    {kontext:"Ein Kind stolpert im Flur, ein paar lachen los.",
+     f:"Was machst du?", r:"Nicht mitlachen – hingehen und fragen: „Alles okay?“",
+     x:["Mitlachen, damit du dazugehörst","Schnell weitergehen"],
+     tipp:"Freundlich sein ist keine Schwäche – es ist deine Superkraft."},
+    {kontext:"Du hast Tom versprochen, heute mit ihm zu spielen. Jetzt lädt dich ein anderes Kind zu etwas ein, das cooler klingt.",
+     f:"Was macht ein guter Freund?", r:"Zu Tom stehen – ein Versprechen gilt",
+     x:["Einfach nicht zu Tom gehen","Tom erzählen, du wärst krank"],
+     tipp:"Wer sein Wort hält, dem vertrauen die anderen. Das ist mehr wert als jedes coole Angebot."}
   ],
   hard:[
     {kontext:"Ben spielt im Verein Fußball, weil fast alle aus seiner Klasse dort sind. Aber eigentlich mag er viel lieber Schach und Klettern.",
@@ -7823,7 +7836,23 @@ const STARK_DATEN={
     {f:"Leo sagt: „Sei ein Stehauf-Löwe!“ Was meint er damit?",
      r:"Nach einem blöden Tag wieder aufstehen und weitermachen",
      x:["Niemals traurig sein dürfen","Immer und überall gewinnen"],
-     tipp:"Stark ist nicht, wer nie hinfällt – stark ist, wer wieder aufsteht. Traurig sein ist erlaubt!"}
+     tipp:"Stark ist nicht, wer nie hinfällt – stark ist, wer wieder aufsteht. Traurig sein ist erlaubt!"},
+    {kontext:"In einer Gruppe darfst du nur dabei sein, wenn du dich ständig beweist: immer cool, immer witzig, immer mutig.",
+     f:"Was stimmt über echte Freunde?", r:"Bei echten Freunden musst du dir deinen Platz nicht verdienen – du darfst DU sein",
+     x:["Dazugehören muss man sich eben verdienen","Dann streng dich mehr an, um cool zu wirken"],
+     tipp:"Es geht nicht um die größte Gruppe – sondern um ein paar Menschen, denen du wirklich vertrauen kannst."},
+    {kontext:"Am Bach sagt ein Kind: „Spring über die Steine! Trau dich – alle machen das!“ Ben findet es zu gefährlich.",
+     f:"Was ist wirklich mutig?", r:"„Nein, das ist mir zu gefährlich“ sagen – und gehen",
+     x:["Springen, damit keiner lacht","Warten, bis keiner hinschaut, und es heimlich versuchen"],
+     tipp:"Weggehen braucht oft MEHR Mut als Mitmachen. Niemand, der dich mag, verlangt etwas Gefährliches von dir."},
+    {kontext:"Die anderen bohren nach: „Warum willst du nicht? Sag schon! Nenn einen Grund!“",
+     f:"Was reicht als Antwort?", r:"„Nein. Ich will das nicht.“ – das genügt",
+     x:["Eine lange Ausrede erfinden","Doch mitmachen, damit die Fragerei aufhört"],
+     tipp:"Dein Nein ist genug. Du schuldest niemandem eine Begründung für deine Grenze."},
+    {kontext:"Tom merkt: Seit er viel mit Nick unterwegs ist, redet er gemeiner über andere – genau wie Nick.",
+     f:"Was ist hier wichtig zu wissen?", r:"Freunde färben ab – such dir welche, deren Art du gut findest",
+     x:["Wie man redet, ist reiner Zufall","Hauptsache, man hat überhaupt Freunde"],
+     tipp:"Freunde beeinflussen, was sich normal anfühlt. Bleib nah bei Menschen, die dich besser machen."}
   ]
 };
 const STARK_SAETZE=[
@@ -7840,7 +7869,9 @@ const STARK_SAETZE=[
   "Ich bleibe ruhig, auch wenn es schwer ist.",
   "Heute mache ich etwas, das MIR Spaß macht.",
   "Ich vergleiche mich mit mir von gestern – nicht mit anderen.",
-  "Ich darf üben, statt perfekt zu sein."
+  "Ich darf üben, statt perfekt zu sein.",
+  "Weggehen kann mutiger sein als mitmachen.",
+  "Mein Nein ist genug."
 ];
 const KRIT_STARK=[
   "Habe ich jemanden ausreden lassen?",
@@ -8649,22 +8680,26 @@ const GESPRAECH_BEREICHE=[
     "Was machst du, wenn dich jemand zu etwas überreden will, das du nicht willst?",
     "Was tust du, wenn du „Stopp“ sagst – und jemand macht trotzdem weiter?",
     "Darf man auch zu einem Erwachsenen Nein sagen? Wann?",
-    "Woran merkst du, dass eine Freundschaft dich klein fühlen lässt statt stark?"]},
+    "Woran merkst du, dass eine Freundschaft dich klein fühlen lässt statt stark?",
+    "Was machst du, wenn jemand sagt: „Trau dich doch – alle machen das“?"]},
   {emoji:"💪", titel:"Stehauf-Kraft", fragen:[
     "Was machst du, wenn sich etwas völlig aussichtslos anfühlt?",
     "Erzähl mal: Wann ist dir etwas so richtig danebengegangen – und was hast du danach gemacht?",
     "Wie machst du weiter, wenn du am liebsten aufgeben würdest?",
-    "Was hilft dir, wenn jemand deine Gefühle richtig verletzt hat?"]},
+    "Was hilft dir, wenn jemand deine Gefühle richtig verletzt hat?",
+    "Bei welchen Freunden kannst du ganz du selbst sein – und woran merkst du das?"]},
   {emoji:"🧠", titel:"Denkweise", fragen:[
     "Glaubst du, man kann in etwas besser werden, das man noch nicht gut kann? Wie?",
     "Was sagst du zu dir selbst, wenn du einen Fehler machst?",
     "Wie geht es dir, wenn jemand besser ist in etwas, das dir wichtig ist?",
-    "Was bedeutet Erfolg für DICH – nicht für deine Freunde, nicht für uns – für dich?"]},
+    "Was bedeutet Erfolg für DICH – nicht für deine Freunde, nicht für uns – für dich?",
+    "Was für ein Freund möchtest DU sein – was sollen andere über dich sagen können?"]},
   {emoji:"🔍", titel:"Probleme lösen", fragen:[
     "Wenn du ein Problem hast – was machst du als Erstes?",
     "Was machst du, wenn du und ein Freund völlig verschiedener Meinung seid?",
     "Stell dir vor, du hast aus Versehen jemanden verletzt – wie würdest du es wiedergutmachen?",
-    "Was würdest du tun, wenn sich etwas falsch anfühlt – aber alle anderen finden es okay?"]}
+    "Was würdest du tun, wenn sich etwas falsch anfühlt – aber alle anderen finden es okay?",
+    "Was kannst du tun, wenn alle über jemanden lachen – und du merkst, dass es ihn verletzt?"]}
 ];
 function gespraechDesTages(){
   const alle=GESPRAECH_BEREICHE.flatMap(b=>b.fragen.map(f=>({b:b.emoji+" "+b.titel, f:f})));
