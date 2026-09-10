@@ -513,8 +513,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.83.0";
+const APP_VERSION = "1.84.0";
 const RELEASE_NOTES = [
+  {v:"1.84.0", datum:"10.09.2026", punkte:[
+    "⏱️ Die Lesepause ist weg: „✓ Habe ich gelesen“ lässt sich jetzt SOFORT antippen – kein Countdown, keine Wartezeit mehr. Der Lese-Check (Lücken-Frage aus dem Text) bleibt wie eingestellt: Immer · Stichprobe · Nur bestätigen · Ganz aus."
+  ]},
   {v:"1.83.0", datum:"10.09.2026", punkte:[
     "💪 6 neue „Stark mit Leo“-Situationen rund um die 7 Freundschafts-Regeln: Bei echten Freunden musst du dir deinen Platz nicht verdienen · Weggehen bei einer Mutprobe braucht mehr Mut als Mitmachen · „Nein. Ich will das nicht.“ genügt – ohne Begründung · Freunde färben ab · Versprechen halten · Nicht mitlachen, wenn jemand ausgelacht wird.",
     "🦁 2 neue Mut-Sätze: „Weggehen kann mutiger sein als mitmachen.“ und „Mein Nein ist genug.“ (jetzt 16 zur Auswahl).",
@@ -1259,10 +1262,11 @@ function addSpeakButtons(root){
 /* „Gelesen oder angehört?" – die Erklärung muss bestätigt werden,
    bevor der Weiter-Knopf freigeschaltet wird.
    LESE-KONTROLLE gegen schnelles Durchklicken:
-   1) Mindest-Lesezeit (~250 ms pro Wort) sperrt die Bestätigung.
-   2) Danach kommt ein Lese-Check: eine automatisch erzeugte
-      Lücken-Frage aus dem Text – erst die richtige Antwort schaltet frei.
-   3) „Anhören" schaltet erst frei, wenn die Sprachausgabe fertig ist.
+   1) Lese-Check: eine automatisch erzeugte Lücken-Frage aus dem
+      Text – erst die richtige Antwort schaltet frei.
+   2) „Anhören" schaltet erst frei, wenn die Sprachausgabe fertig ist.
+   (Die frühere Mindest-Lesezeit mit Countdown wurde auf Eltern-Wunsch
+   entfernt – bestätigen geht sofort.)
    Einstellbar im Elternbereich (immer / Stichprobe / aus). */
 function gateFrage(text){
   const roh=String(text||"").replace(/\s+/g," ").trim();
@@ -1322,19 +1326,6 @@ function readGate(host, btn, text){
       }
     });
   };
-  // Mindest-Lesezeit: erst danach lässt sich bestätigen
-  const nWorte=String(text||"").trim().split(/\s+/).length;
-  const wartezeit = modus==="aus" ? 0 : Math.min(15000, Math.max(3000, nWorte*250));
-  if(wartezeit>0){
-    ok.disabled=true;
-    const dauer=spielT(wartezeit), start=Date.now();
-    const tick=setInterval(()=>{
-      if(!ok.isConnected){ clearInterval(tick); return; }
-      const restMs=dauer-(Date.now()-start);
-      if(restMs<=0){ clearInterval(tick); if(!row.classList.contains("done")){ ok.disabled=false; ok.textContent="✓ Habe ich gelesen"; } }
-      else ok.textContent="✓ Habe ich gelesen ("+Math.ceil(restMs/1000)+")";
-    }, 200);
-  }
   ok.onclick=()=>{ if(!ok.disabled) kontrolle(); };
   // Anhören zählt erst, wenn wirklich zu Ende gesprochen wurde
   hear.onclick=()=>{
@@ -8596,9 +8587,9 @@ function renderAdminSpiele(c){
     </div>
     <div class="card">
       <h3>🕵️ Lese-Check (gegen schnelles Durchklicken)</h3>
-      <p class="muted">Erklärungen lassen sich erst nach einer <b>Mindest-Lesezeit</b>
-        bestätigen, danach prüft eine kleine <b>Lücken-Frage</b> aus dem Text.
-        <b>Nur bestätigen</b> = ohne Wartezeit und Frage, aber mit
+      <p class="muted">Nach dem Bestätigen prüft eine kleine <b>Lücken-Frage</b>
+        aus dem Text, ob wirklich gelesen wurde – ganz ohne Wartezeit.
+        <b>Nur bestätigen</b> = ohne Frage, aber mit
         „✓ Habe ich gelesen“-Knopf · <b>Ganz aus</b> = keinerlei Bestätigung nötig.</p>
       <div class="seg-line"><span class="seg-label">Lese-Check</span>
         <div class="seg-row">
