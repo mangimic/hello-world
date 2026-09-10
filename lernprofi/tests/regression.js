@@ -2109,11 +2109,21 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 8j) Stark mit Leo (Mindset & Freundschaft) ----------
   section("Stark mit Leo (v1.75)");
   await fresh();
-  check("Stark-Daten: 15 + 20 Situationen, sauber und bestärkend", await page.evaluate(() => {
+  check("Stark-Daten: 17 + 24 Situationen, sauber und bestärkend", await page.evaluate(() => {
     const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard);
-    return STARK_DATEN.easy.length === 15 && STARK_DATEN.hard.length === 20
+    return STARK_DATEN.easy.length === 17 && STARK_DATEN.hard.length === 24
       && alle.every(a => a.x.length === 2 && !a.x.includes(a.r) && a.tipp)
-      && STARK_SAETZE.length === 14;
+      && STARK_SAETZE.length === 16;
+  }));
+  check("Freundschafts-Regeln (v1.83): Platz nicht verdienen, Mutprobe, Nein genügt, Freunde färben ab, Wort halten, nicht mitlachen", await page.evaluate(() => {
+    const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard).map(a => (a.kontext || "") + a.f + a.r + a.tipp);
+    return alle.some(t => t.includes("Platz nicht verdienen"))
+      && alle.some(t => t.includes("zu gefährlich") && t.includes("MEHR Mut"))
+      && alle.some(t => t.includes("das genügt") && t.includes("Nein ist genug"))
+      && alle.some(t => t.includes("färben ab"))
+      && alle.some(t => t.includes("Versprechen gilt"))
+      && alle.some(t => t.includes("Alles okay"))
+      && STARK_SAETZE.some(z => z.includes("Weggehen")) && STARK_SAETZE.some(z => z.includes("Nein ist genug"));
   }));
   check("Neue Themen abgedeckt: Stopp ignoriert, Freundschafts-Check, NOCH, Erfolg, Mini-Schritte", await page.evaluate(() => {
     const alle = STARK_DATEN.easy.concat(STARK_DATEN.hard).map(a => (a.kontext || "") + a.f + a.r + a.tipp);
@@ -2171,7 +2181,7 @@ function section(t) { console.log("\n== " + t + " =="); }
   }));
   // Mut-Satz des Tages
   await page.evaluate(() => goSection("mut")); await page.waitForTimeout(150);
-  check("Mut-Seite: 14 Sätze zur Wahl", (await page.locator(".mut-satz").count()) === 14);
+  check("Mut-Seite: 16 Sätze zur Wahl", (await page.locator(".mut-satz").count()) === 16);
   await page.locator(".mut-satz").nth(4).click(); await page.waitForTimeout(150);
   check("Satz gewählt: gilt heute, keine zweite Wahl, Kachel zeigt ihn", await page.evaluate(() => {
     const ok1 = store.mutSatz.tag === heuteKey() && store.mutSatz.idx === 4
@@ -2310,10 +2320,15 @@ function section(t) { console.log("\n== " + t + " =="); }
   // ---------- 8m) Eltern-Tab „Gespräche" ----------
   section("Eltern-Gesprächsimpulse (v1.80)");
   await fresh();
-  check("Gesprächs-Daten: 4 Bereiche à 4 Fragen, kindgerecht", await page.evaluate(() =>
-    GESPRAECH_BEREICHE.length === 4 && GESPRAECH_BEREICHE.every(b => b.fragen.length === 4)
+  check("Gesprächs-Daten: 4 Bereiche à 5 Fragen, kindgerecht", await page.evaluate(() =>
+    GESPRAECH_BEREICHE.length === 4 && GESPRAECH_BEREICHE.every(b => b.fragen.length === 5)
     && GESPRAECH_BEREICHE.flatMap(b => b.fragen).every(f => f.endsWith("?"))));
-  check("Frage des Tages rotiert deterministisch über alle 16", await page.evaluate(() => {
+  check("Neue Impulse (v1.83): Mutprobe, Du-selbst-sein, Freund-sein, Mitlachen", await page.evaluate(() => {
+    const alle = GESPRAECH_BEREICHE.flatMap(b => b.fragen).join(" ");
+    return alle.includes("Trau dich doch") && alle.includes("ganz du selbst")
+      && alle.includes("Freund möchtest DU sein") && alle.includes("alle über jemanden lachen");
+  }));
+  check("Frage des Tages rotiert deterministisch über alle 20", await page.evaluate(() => {
     const h = gespraechDesTages();
     return !!h.f && !!h.b && GESPRAECH_BEREICHE.some(b => b.fragen.includes(h.f));
   }));
