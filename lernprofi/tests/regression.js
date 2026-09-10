@@ -57,7 +57,7 @@ function section(t) { console.log("\n== " + t + " =="); }
     await page.locator("#moduleContent .choice >> text=" + label).first().click(); await page.waitForTimeout(90);
     if (section2) { await page.locator("#bottomNav >> text=" + section2).first().click(); await page.waitForTimeout(90); }
   };
-  // Lese-Gate bestehen: warten bis Mindest-Lesezeit um, bestätigen, Lücken-Frage lösen
+  // Lese-Gate bestehen: bestätigen (sofort frei), Lücken-Frage lösen
   const passGate = async (scope) => {
     const pre = scope ? scope + " " : "";
     await page.waitForFunction(sc => {
@@ -536,12 +536,9 @@ function section(t) { console.log("\n== " + t + " =="); }
   await fresh(); await setLevel(3);
   await page.evaluate(() => { window.__SPIEL_SCHNELL__ = true; });
   await openMod("Subjekte", null);
-  check("Bestätigen erst nach Mindest-Lesezeit möglich", await page.evaluate(() => {
+  check("Bestätigen sofort möglich – keine Lesepause/Countdown mehr (v1.84)", await page.evaluate(() => {
     const b = [...document.querySelectorAll(".gate-row button")].find(x => x.textContent.includes("Habe ich gelesen"));
-    return b && b.disabled; }));
-  await page.waitForFunction(() => {
-    const b = [...document.querySelectorAll(".gate-row button")].find(x => x.textContent.includes("Habe ich gelesen"));
-    return b && !b.disabled; }, null, { timeout: 25000 });
+    return b && !b.disabled && !/\(\d+\)/.test(b.textContent); }));
   await page.locator(".gate-row >> text=Habe ich gelesen").click(); await page.waitForTimeout(140);
   check("Lücken-Frage aus dem Text (3 Wörter)", (await page.locator(".gate-opt").count()) === 3);
   await page.locator(".gate-opt:not([data-ok])").first().click(); await page.waitForTimeout(120);
