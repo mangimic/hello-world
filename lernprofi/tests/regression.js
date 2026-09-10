@@ -1824,6 +1824,68 @@ function section(t) { console.log("\n== " + t + " =="); }
   await page.setViewportSize({ width: 1280, height: 720 });
   await page.evaluate(() => { store.fach = "deutsch"; save(); goHome(); }); await page.waitForTimeout(100);
 
+  // ---------- 8f0) Sachkunde (drittes Fach, v1.85) ----------
+  section("Sachkunde (Bildungsplan BW, v1.85)");
+  await fresh();
+  check("Sach-Daten: 6 Lernfelder, je 10 leichte + 10 schwere Fragen", await page.evaluate(() => {
+    const keys = ["sstrom", "srad", "skarte", "sgemeinde", "skoerper", "szeit"];
+    return keys.length === 6 && keys.every(k =>
+      SACH_DATEN[k].easy.length === 10 && SACH_DATEN[k].hard.length === 10);
+  }));
+  check("Sach-Daten: 2 Falsch-Antworten, Lösung nie darunter, Tipp überall", await page.evaluate(() =>
+    Object.keys(SACH_DATEN).every(k => SACH_DATEN[k].easy.concat(SACH_DATEN[k].hard).every(a =>
+      a.x.length === 2 && !a.x.includes(a.r) && a.tipp && a.f))));
+  check("Kernthemen Klasse 4 abgedeckt: Stromkreis, Vorfahrt, Stuttgart, Gemeinderat, Herz, Limes", await page.evaluate(() => {
+    const t = k => SACH_DATEN[k].easy.concat(SACH_DATEN[k].hard).map(a => (a.kontext || "") + a.f + a.r + a.tipp).join(" ");
+    return t("sstrom").includes("Stromkreis") && t("srad").includes("rechts vor links")
+      && t("skarte").includes("Stuttgart") && t("sgemeinde").includes("Gemeinderat")
+      && t("skoerper").includes("Herz") && t("szeit").includes("Limes");
+  }));
+  check("Kein Diagnose-/Beschämungs-Vokabular in den Sach-Fragen", await page.evaluate(() =>
+    Object.keys(SACH_DATEN).every(k => SACH_DATEN[k].easy.concat(SACH_DATEN[k].hard).every(a =>
+      !/ADHS|Störung|unmotiviert|Versager|dumm/i.test((a.kontext || "") + a.f + a.r + a.tipp)))));
+  // Fach-Umschaltung: dritter Knopf ist jetzt aktiv
+  check("Sachkunde-Knopf ist freigeschaltet (nicht mehr „bald“)", await page.evaluate(() => {
+    const b = document.querySelector('#fachRow .level-btn[data-fach="sachkunde"]');
+    return !!b && !b.disabled && !document.getElementById("fachRow").textContent.includes("bald");
+  }));
+  await page.locator('#fachRow .level-btn[data-fach="sachkunde"]').click(); await page.waitForTimeout(150);
+  check("Fach Sachkunde: 2 Gruppen, Deutsch/Mathe-Kacheln weg, kein Test-Training", await page.evaluate(() => {
+    const t = document.getElementById("moduleChooser").textContent;
+    return t.includes("Natur, Technik & Verkehr") && t.includes("Heimat, Gemeinde & Zeit")
+      && !t.includes("Sätze & Grammatik") && !t.includes("Zahlen & Rechnen")
+      && document.querySelectorAll(".test-kachel").length === 0;
+  }));
+  check("Fach Sachkunde übersteht Reload", await page.evaluate(() => { save(); load(); return store.fach === "sachkunde"; }));
+  await page.evaluate(() => openGruppe("stechnik")); await page.waitForTimeout(150);
+  check("Sach-Gruppe: 3 Lernfelder, keine Themen-Wahl", await page.evaluate(() =>
+    document.querySelectorAll("#gruppenGrid .choice").length === 3
+    && !document.getElementById("moduleContent").textContent.includes("Thema")));
+  await page.evaluate(() => openModule("srad")); await page.waitForTimeout(200);
+  check("Radfahrprüfung: Lernen-Seite mit Prüfungs-Tipp", (await page.locator("#moduleContent").textContent()).includes("Schulterblick"));
+  await page.evaluate(() => goSection("ueben")); await page.waitForTimeout(200);
+  check("Sach-Übung: Fokus-Modus + Stufen-Anzeige", await page.evaluate(() =>
+    document.getElementById("screen-content").classList.contains("uebung-fokus")
+    && /Aktive Stufe \d\/3/.test(document.querySelector(".lvl-badge").textContent)));
+  const sRichtig = await page.evaluate(() => gwsChunk("srad").S[matheIdx].r);
+  const sBtns = page.locator(".mathe-opt");
+  for (let k = 0; k < await sBtns.count(); k++) {
+    if ((await sBtns.nth(k).textContent()) === sRichtig) { await sBtns.nth(k).click(); break; }
+  }
+  await page.waitForTimeout(120);
+  check("Sach-Frage: richtige Antwort erkannt + Erklär-Tipp", /Richtig/.test(await page.locator("#mfb").textContent()));
+  check("Sachkunde zählt für Runde und Mini-Mission", await page.evaluate(() =>
+    scoreRuns["srad"].solved === 1 && missionAufg >= 1));
+  check("Eltern-Stufen: Sach-Lernfelder steuerbar", await page.evaluate(() => {
+    openAdmin(); adminTab = "stufen"; renderAdmin(document.getElementById("moduleContent"));
+    const ok = !!document.querySelector('.seg[data-scope="feld:srad"]') && !!document.querySelector('.seg[data-scope="feld:sstrom"]');
+    goHome(); return ok;
+  }));
+  await page.setViewportSize({ width: 360, height: 640 });
+  check("Sach-Übung passt ohne Scrollen (360×640)", await passt("skarte", "ueben"));
+  await page.setViewportSize({ width: 1280, height: 720 });
+  await page.evaluate(() => { store.fach = "deutsch"; save(); goHome(); }); await page.waitForTimeout(100);
+
   // ---------- 8f) Leos Sommer-Reise (Ferienprogramm) ----------
   section("Leos Sommer-Reise (Ferienprogramm, v1.70)");
   await fresh();
