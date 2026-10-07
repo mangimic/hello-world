@@ -3,6 +3,25 @@
 Stand: 07.10.2026 · Basis: Architektur-Prompt „Lern-App auf den Tech-Stack von
 mangieriERP bringen“ + Bestandsaufnahme v1.85.0. **Noch kein Code verändert.**
 
+## 0. Bereits getroffene Entscheidungen (07.10.2026)
+
+1. **Vorlesefunktion wird NICHT übernommen.** Weder die eingebettete
+   Lernprofi-Stimme (Piper/VITS, 39 MB Engine + 30-MB-Modell) noch das
+   System-Vorlesen mit Karaoke wandern in den Neubau. Damit entfallen:
+   der größte CSP-/Hosting-Konflikt (§3.1 alt), die 25-MiB-Frage, OPFS,
+   `wasm-unsafe-eval`, der Eltern-Tab „Vorlesen“ und das „Anhören“ im
+   Lese-Check (dort bleibt nur Lesen + Lücken-Frage). Falls später doch
+   gewünscht, ist die System-Sprachausgabe (Web Speech API) jederzeit
+   günstig nachrüstbar – ohne eigene Modelle.
+2. **Hauptgerät: iPad.** UI wird iPad-zuerst gebaut (Viewports 820×1180 /
+   1180×820), iPhone 390×844 als Zweitformat – wie im Prompt vorgesehen.
+3. **Zugang: Felix entsperrt selbständig** → Variante (b): Das Kind
+   entsperrt den Lernbereich mit einer eigenen, kurzen **Lern-PIN**;
+   der Elternbereich (Einstellungen, Berichte, Export) liegt zusätzlich
+   hinter dem **Eltern-Passwort** (Tresor-Passwort). Technisch: Der
+   Tresor-Schlüssel wird einmalig von den Eltern pro Gerät abgeleitet und
+   nicht exportierbar in IndexedDB abgelegt; die Kinder-PIN gibt ihn frei.
+
 ## 1. Gesamturteil
 
 **Ja, die Architektur ist anwendbar – als Neubau mit Parallelbetrieb, nicht als
@@ -37,10 +56,9 @@ fällt sofort auf. **Größter Aufwand**: Etappen 3+4 (Logik + ~40 Ansichten).
 
 ## 3. Besondere Konfliktpunkte (vorab klären)
 
-1. **Lernprofi-Stimme vs. CSP/Hosting**
-   - CSP `connect-src 'self'` verbietet den heutigen Modell-Download von huggingface.co → Modell **selbst ausliefern**.
-   - Aber: Cloudflare Pages hat ein **25-MiB-Limit pro Datei**, das Stimmmodell hat ~30 MB → Modell **in 2 Teile zerlegen** (beim Laden zusammensetzen) oder über **R2** (ein weiterer Baustein) ausliefern. Entscheidung nötig.
-   - `script-src 'wasm-unsafe-eval' blob:` ist im Prompt bereits vorgesehen – reicht für ONNX-Runtime.
+1. ~~Lernprofi-Stimme vs. CSP/Hosting~~ **Erledigt durch Entscheidung §0.1:
+   Die Vorlesefunktion wird nicht übernommen.** Kein Modell-Hosting, kein
+   `wasm-unsafe-eval`, CSP kann strikt bleiben (`default-src 'self'`).
 2. **Offline vs. Access**: Cloudflare Access schützt die Domain – nach Cookie-Ablauf wäre die App ohne Netz nicht neu installierbar, aber eine installierte PWA startet aus dem Cache. Muss im Parallelbetrieb ausdrücklich getestet werden (Flugmodus-Test).
 3. **Export aus der Alt-App fehlt**: Für Etappe 5 (Datenübernahme) braucht die Alt-App einen **Lernstand-Export-Knopf** (JSON) im Elternbereich. → Kleines Alt-App-Release vorab (v1.86), bewusst die einzige Codeänderung vor der Freigabe.
 4. **Monorepo**: `hello-world` enthält mehrere Apps; GitHub-Pages-Workflow deployt das Repo-Root. Empfehlung: Neubau in **eigenem Repo** (`lernprofi-neu` o. ä.) mit eigenem Cloudflare-Projekt; Alt-App bleibt unangetastet bis zur Umstellung.
@@ -50,7 +68,7 @@ fällt sofort auf. **Größter Aufwand**: Etappen 3+4 (Logik + ~40 Ansichten).
 
 1. Alt-App v1.86: Elternbereich-Knopf „Lernstand sichern“ → Datei `lernprofi-lernstand.json` (kompletter `store` + `APP_VERSION` + Datum).
 2. Neubau: `src/calc/importAltdaten.js` (rein, getestet) bildet `lernapp_v1` auf das neue Schema ab: Stufen-Fortschritt, Münzen, Lerntage/Lernspur, Mut-Satz, Rekorde, Einstellungen. **Nichts geht verloren** (Prompt-Regel) – Prüfbericht zeigt je Feld „übernommen/ignoriert, Grund“.
-3. OPFS-Stimmmodell wird nicht migriert, sondern im Neubau neu geladen (eigene Auslieferung, §3.1).
+3. OPFS-Stimmmodell wird **nicht** migriert – die Vorlesefunktion entfällt im Neubau (§0.1); `store.stimmPaket` und Stimmen-Einstellungen werden beim Import bewusst verworfen (im Prüfbericht ausgewiesen).
 4. Abnahme: Migrationstest mit echtem (anonymisiertem) Export-Fixture; Parallelbetrieb vergleicht Münzen/Stufen wöchentlich.
 
 ## 5. Etappenplan mit Aufwand und Risiken
@@ -61,9 +79,9 @@ fällt sofort auf. **Größter Aufwand**: Etappen 3+4 (Logik + ~40 Ansichten).
 | 1 | Gerüst: Vite+React, oxlint, Vitest, regression.mjs, Tokens, App-Shell, Release-Notes, Smoke | M | gering |
 | 2 | Tresor: crypto, vault, IndexedDB, Sperrbildschirm, Profile Kind/Eltern, Export/Import, migrateData | M | mittel (Krypto sorgfältig testen) |
 | 3 | Fachlogik nach `src/calc/*`: Pools (Deutsch/Mathe/Sachkunde/Stark/Gespräche), Runden/Stufen/Münzen/Missionen/Lernspur/Treppe/Tests/Anti-Schummel | **L–XL** | hoch (Funktionsparität; 453-Checks-Katalog als Abnahme) |
-| 4 | UI nach `src/features/*`: ~40 Ansichten, Fokus-Modus, Elternbereich, Vorlesen/Karaoke, hell/dunkel | **XL** | hoch (Kind merkt jede Abweichung) |
+| 4 | UI nach `src/features/*`: ~40 Ansichten (iPad zuerst, §0.2), Fokus-Modus, Elternbereich, hell/dunkel – ohne Vorlesen (§0.1) | **XL** | hoch (Kind merkt jede Abweichung) |
 | 5 | Datenübernahme (Import + Bericht) | S–M | mittel |
-| 6 | Betrieb: Cloudflare Pages+KV+Access, vaultApi, Header, version.json, Doku | M | mittel (Modell-Auslieferung §3.1) |
+| 6 | Betrieb: Cloudflare Pages+KV+Access, vaultApi, Header, version.json, Doku | M | mittel |
 | 7 | KI-Funktionen (optional, mit Freigabe/Deckel/Protokoll) | M | gering (abschaltbar) |
 | 8 | Parallelbetrieb (≥ 1 Woche), Lernstand-Abgleich, Umstellung | S | gering |
 
@@ -75,14 +93,14 @@ Spezial-Übungen, dann Spiele/Mindset/TTS).
 **Alternative „Light“ (falls der Vollausbau zu groß ist):** gleiches Gerüst
 (Vite, React, oxlint, Vitest, calc/features-Schnitt, Tokens, Tresor lokal),
 aber weiter GitHub Pages und **ohne** Cloudflare Functions/KV/Access – Sync
-später als Etappe nachrüstbar. Spart §3.1/3.2/3.4 und laufende
+später als Etappe nachrüstbar. Spart §3.2/3.4 und laufende
 Cloud-Konfiguration; verzichtet zunächst auf Geräte-Sync.
 
 ## 6. Offene Fragen (bitte entscheiden)
 
-1. **Geräte**: Auf welchen Geräten lernt Felix heute (Handy? iPad? Familien-PC)? iPad als Hauptgerät wie im Prompt?
-2. **Zugang**: Variante (a) „Eltern entsperren je Gerät, PIN-Sperre“ oder (b) „Profile: Kind-PIN / Eltern-Passwort“? (Empfehlung: **b** – passt zum bestehenden Elternbereich.)
-3. **Cloudflare**: Welche Eltern-E-Mails für Access? Gibt es schon das Cloudflare-Konto/Zone von mangieriERP mitzunutzen? R2 verfügbar (für das 30-MB-Stimmmodell), oder Modell in Teilen über Pages?
+1. ~~Geräte~~ **Entschieden (§0.2): iPad ist das Hauptgerät.** Noch offen: Gibt es ein Zweitgerät (Handy/Familien-PC), das syncen soll – oder reicht vorerst das eine iPad?
+2. ~~Zugang~~ **Entschieden (§0.3): Felix entsperrt selbständig per Lern-PIN (Variante b).** Noch offen: Wie viele Stellen soll die PIN haben (Vorschlag: 4)?
+3. **Cloudflare**: Welche Eltern-E-Mails für Access? Konto/Zone von mangieriERP mitnutzen? (R2 wird nicht mehr gebraucht – Vorlesefunktion entfällt.)
 4. **Repo**: Neues eigenes Repository für den Neubau (Empfehlung: ja) – Name?
 5. **Umfang**: Vollausbau (mit Sync) oder zuerst Alternative „Light“?
 6. **KI**: Ja/nein, und wenn ja mit welchem monatlichen Kostendeckel? (Vorschlag Start: nur „Freitext-Feedback Aufsatz“ + „Wochenbericht“, Deckel 5 €/Monat.)
