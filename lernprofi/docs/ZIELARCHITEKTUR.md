@@ -96,14 +96,23 @@ aber weiter GitHub Pages und **ohne** Cloudflare Functions/KV/Access – Sync
 später als Etappe nachrüstbar. Spart §3.2/3.4 und laufende
 Cloud-Konfiguration; verzichtet zunächst auf Geräte-Sync.
 
-## 6. Offene Fragen (bitte entscheiden)
+## 6. Entscheidungen (alle getroffen, 07.10.2026 – Freigabe erteilt)
 
-1. ~~Geräte~~ **Entschieden (§0.2): iPad ist das Hauptgerät.** Noch offen: Gibt es ein Zweitgerät (Handy/Familien-PC), das syncen soll – oder reicht vorerst das eine iPad?
-2. ~~Zugang~~ **Entschieden (§0.3): Felix entsperrt selbständig per Lern-PIN (Variante b).** Noch offen: Wie viele Stellen soll die PIN haben (Vorschlag: 4)?
-3. **Cloudflare**: Welche Eltern-E-Mails für Access? Konto/Zone von mangieriERP mitnutzen? (R2 wird nicht mehr gebraucht – Vorlesefunktion entfällt.)
-4. **Repo**: Neues eigenes Repository für den Neubau (Empfehlung: ja) – Name?
-5. **Umfang**: Vollausbau (mit Sync) oder zuerst Alternative „Light“?
-6. **KI**: Ja/nein, und wenn ja mit welchem monatlichen Kostendeckel? (Vorschlag Start: nur „Freitext-Feedback Aufsatz“ + „Wochenbericht“, Deckel 5 €/Monat.)
-7. **Daten**: Alles übernehmen (Empfehlung) oder etwas bewusst zurücklassen (z. B. abgelaufene Sommer-Reise)?
-8. **Gemeinsame Bausteine** mit mangieriERP (crypto, vault, Tokens, Smoke-Gerüst): kopieren (einfach, empfohlen für den Start) oder gemeinsames Paket (sauber, mehr Pflege)?
-9. **Klassenstufe**: Felix ist jetzt in Klasse 4 – soll der Neubau die Stufen „Wiederholung (Kl. 3)“ / „Klasse 4“ nennen und Klasse 4 als Standard setzen?
+1. **Geräte**: iPad ist Hauptgerät (§0.2); **Sync zusätzlich auf Eltern-Laptop und Eltern-Handy** (3 Geräte).
+2. **Zugang**: Felix entsperrt selbständig per **4-stelliger Lern-PIN** (§0.3); Elternbereich hinter dem Eltern-Passwort.
+3. **Cloudflare**: Bestehendes Konto wird mitgenutzt; Access-Policy mit der **bestehenden Eltern-E-Mail-Adresse** (wird in Cloudflare konfiguriert, steht bewusst nicht im Repo).
+4. **Repo**: Neues eigenes Repository **`lernprofi`** (privat).
+5. **Umfang**: **Vollausbau mit Sync** (Pages + Functions + KV + Access).
+6. **KI**: **Ja, mit monatlichem Kostendeckel** (Start: 5 €/Monat, im Elternbereich änderbar); Start-Zwecke: Freitext-Feedback Aufsatz + Wochenbericht, je einzeln freizugeben.
+7. **Daten**: **Komplette Übernahme** des Lernstands – ohne Stimm-Einstellungen (Vorlesen entfällt, §0.1) und ohne die abgelaufene Sommer-Reise.
+8. **Bausteine**: Aus mangieriERP **kopieren** (kein gemeinsames Paket). Hinweis: Das mangieriERP-Repo ist in den Lernprofi-Sessions nicht angebunden – crypto/vault/Tokens werden nach der Spezifikation dieses Prompts neu geschrieben; wer 1:1-Kopien möchte, stellt die Dateien bereit oder bindet das Repo an.
+9. **Klassenstufe**: Neubau nennt die Stufen „Wiederholung (Kl. 3)“ / „Klasse 4“, **Standard: Klasse 4** (Felix' aktuelle Stufe).
+
+## 7. Etappenstatus
+
+| Etappe | Status |
+|---|---|
+| 0 – Bestandsaufnahme + Zielarchitektur | ✅ abgeschlossen |
+| 0.5 – Export-Knopf in der Alt-App (v1.86) | 🔨 in Arbeit |
+| 1 – Gerüst im neuen Repo `lernprofi` | 🔨 in Arbeit |
+| 2–8 | ⏳ offen |
