@@ -515,8 +515,11 @@ const $ = (id)=>document.getElementById(id);
    (lern-app-v20 -> 1.20.0). Bei jedem Release beides erhöhen
    und hier einen Eintrag ergänzen (neueste zuerst).
    ============================================================ */
-const APP_VERSION = "1.85.0";
+const APP_VERSION = "1.86.0";
 const RELEASE_NOTES = [
+  {v:"1.86.0", datum:"07.10.2026", punkte:[
+    "💾 NEU im Elternbereich (Tab „Lernen“): „Lernstand sichern“ – speichert den kompletten Lernstand (Stufen, Münzen, Lerntage, Rekorde, Einstellungen) als Datei auf dem Gerät. Perfekt als Backup und als Vorbereitung für den Umzug auf die neue App-Generation. Es werden keine Daten ins Internet geschickt."
+  ]},
   {v:"1.85.0", datum:"10.09.2026", punkte:[
     "🌍 NEU: Das Fach SACHKUNDE ist da! Der dritte Knopf bei „Dein Fach“ ist jetzt freigeschaltet – mit 6 Lernfeldern nach dem Bildungsplan Baden-Württemberg für Klasse 3/4 und 120 neuen Frage-Karten.",
     "⚡ Natur, Technik & Verkehr: Strom & Energie (Stromkreis, Leiter, Strom sparen) · 🫀 Körper & Gesundheit (Herz, Sinne, gesund leben) · 🚲 Radfahrprüfung (Vorfahrt, Schulterblick, verkehrssicheres Rad – genau wie bei der echten Prüfung in Klasse 4!).",
@@ -8828,10 +8831,29 @@ function renderAdminLernen(c){
         ${zeilen}</table></div>
       <p class="muted" style="margin-top:8px; font-size:12.5px;">🎁 = freiwillige Bonus-Mission · Die Tagesform sagt nur, wie sich der Tag angefühlt hat.</p>`
       :`<p class="muted">Noch keine Lerntage aufgezeichnet – die Übersicht füllt sich beim Üben.</p>`}
+    </div>
+    <div class="card">
+      <h3>💾 Lernstand sichern</h3>
+      <p class="muted">Speichert den <b>kompletten Lernstand</b> (Stufen, Münzen,
+        Lerntage, Rekorde, Einstellungen) als Datei auf diesem Gerät – als Backup
+        oder für den Umzug auf eine neue App-Version. Es werden <b>keine Daten
+        ins Internet geschickt</b>.</p>
+      <button class="btn-secondary" id="lernstandExport" style="width:100%;">💾 Lernstand als Datei sichern</button>
     </div>`;
   admBindTabs(c);
   const neu=()=>{ save(); const y=window.scrollY; renderAdminLernen(c); window.scrollTo(0,y);
     c.querySelector("#lernenStatus").style.display="block"; };
+  c.querySelector("#lernstandExport").onclick=()=>{
+    try{
+      const blob=new Blob([lernstandExportJson()], {type:"application/json"});
+      const a=document.createElement("a");
+      a.href=URL.createObjectURL(blob);
+      a.download="lernprofi-lernstand-"+heuteKey()+".json";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(a.href), 2000);
+      toast("💾 Lernstand gesichert – Datei ist im Download-Ordner.");
+    }catch(e){ toast("Das hat nicht geklappt – bitte noch einmal versuchen."); }
+  };
   c.querySelectorAll(".seg[data-tf]").forEach(b=>b.onclick=()=>{ store.tagesformAktiv=b.dataset.tf==="1"; neu(); });
   c.querySelectorAll(".seg[data-mziel]").forEach(b=>b.onclick=()=>{ store.missionsZiel=parseInt(b.dataset.mziel,10); neu(); });
   c.querySelectorAll(".seg[data-bonus]").forEach(b=>b.onclick=()=>{ store.bonusErlaubt=b.dataset.bonus==="1"; neu(); });
@@ -9976,6 +9998,12 @@ let store = {
 };
 const KEY = "lernapp_v1";
 function save(){ try{ localStorage.setItem(KEY, JSON.stringify(store)); }catch(e){} }
+// Lernstand-Export (Elternbereich): kompletter Stand als JSON-Datei –
+// Backup und Grundlage für die Datenübernahme in den App-Neubau.
+function lernstandExportJson(){
+  return JSON.stringify({ app:"lernprofi", version:APP_VERSION,
+    exportiert:new Date().toISOString(), daten:store }, null, 2);
+}
 function load(){
   try{
     const d=JSON.parse(localStorage.getItem(KEY)||"null");

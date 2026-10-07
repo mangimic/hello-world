@@ -1641,6 +1641,13 @@ function section(t) { console.log("\n== " + t + " =="); }
     lernTab.includes("Tagesform-Frage") && lernTab.includes("Mini-Missionen") && lernTab.includes("Bewegungspausen")
     && lernTab.includes("Kontroll-Blick") && lernTab.includes("Anzeige ruhiger") && lernTab.includes("Lern-Übersicht"));
   check("Keine Diagnose-Begriffe im Eltern-Tab", !/ADHS|Konzentrationsstörung|Defizit|unmotiviert/i.test(lernTab));
+  check("Lernstand-Export (v1.86): Knopf da, JSON vollständig und ohne Internet", await page.evaluate(() => {
+    if (!document.getElementById("lernstandExport")) return false;
+    const e = JSON.parse(lernstandExportJson());
+    return e.app === "lernprofi" && e.version === APP_VERSION && !!e.exportiert
+      && e.daten && typeof e.daten.level === "number" && "muenzen" in e.daten
+      && "progress" in e.daten && "lerntage" in e.daten;
+  }));
   await page.locator('.seg[data-mziel="3"]').click(); await page.waitForTimeout(100);
   check("Missionsziel umstellbar (3)", await page.evaluate(() => store.missionsZiel === 3));
   await page.locator('.seg[data-anim="reduziert"]').click(); await page.waitForTimeout(100);
