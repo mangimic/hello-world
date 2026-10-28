@@ -2,14 +2,31 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Lokal eingebettete Schriften (keine externen Anfragen, offline nutzbar).
+   Variable Fonts, Latin-Subset – Paarung „Lora/Raleway“ aus dem
+   ui-ux-pro-max-Designsystem (ruhig, Wellness, erwachsen). */
+@font-face {
+  font-family: 'Raleway';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/raleway-latin.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/lora-latin.woff2') format('woff2');
+}
+
 @theme {
-  --color-brand-50: #f0fdfa;
-  --color-brand-100: #ccfbf1;
-  --color-brand-200: #99f6e4;
-  --color-brand-600: #0d9488;
-  --color-brand-700: #0f766e;
-  --color-brand-800: #115e59;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  /* Healthcare-Palette „Calm cyan + health green“ (ui-ux-pro-max, Domain color).
+     Primary #0891b2 = cyan-600, Accent #059669 = emerald-600 –
+     wir nutzen die Standard-Tailwind-Stufen derselben Hues. */
+  --font-sans:
+    'Raleway', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-display: 'Lora', Georgia, 'Times New Roman', serif;
 }
 
 html {
@@ -31,8 +48,14 @@ html {
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+  @apply bg-cyan-50/60 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Überschriften in der Serifen-Displayschrift. */
+h1,
+h2 {
+  font-family: var(--font-display);
 }
 
 /* Große Touch-Flächen und sichtbarer Fokus für Tastaturbedienung. */
@@ -41,5 +64,16 @@ a,
 input,
 select,
 textarea {
-  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-600;
+  @apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cyan-600;
+}
+
+/* Reduzierte Bewegung respektieren (ui-ux-pro-max-Checkliste). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
 }

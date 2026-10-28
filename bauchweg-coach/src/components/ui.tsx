@@ -33,10 +33,10 @@ type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
 
 const buttonStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-teal-700 text-white hover:bg-teal-800 active:bg-teal-900 disabled:bg-slate-300 dark:disabled:bg-slate-700',
+    'bg-cyan-700 text-white hover:bg-cyan-800 active:bg-cyan-900 disabled:bg-slate-300 dark:disabled:bg-slate-700',
   secondary:
     'border border-slate-300 bg-white text-slate-800 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800',
-  ghost: 'text-teal-700 hover:bg-teal-50 dark:text-teal-300 dark:hover:bg-slate-800',
+  ghost: 'text-cyan-700 hover:bg-cyan-50 dark:text-cyan-300 dark:hover:bg-slate-800',
   danger:
     'border border-rose-300 bg-white text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:bg-slate-900 dark:text-rose-300 dark:hover:bg-slate-800',
 };
@@ -50,7 +50,7 @@ export function Button({
   return (
     <button
       type={type}
-      className={`min-h-12 rounded-xl px-4 py-3 text-base font-medium transition-colors disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
+      className={`min-h-12 cursor-pointer rounded-xl px-4 py-3 text-base font-medium transition-colors duration-200 disabled:cursor-not-allowed ${buttonStyles[variant]} ${className}`}
       {...props}
     />
   );
@@ -157,9 +157,9 @@ export function ScaleInput({
             aria-checked={value === n}
             aria-label={`${label}: ${n} von 5`}
             onClick={() => onChange(n)}
-            className={`min-h-12 flex-1 rounded-xl border text-base font-medium transition-colors ${
+            className={`min-h-12 flex-1 cursor-pointer rounded-xl border text-base font-medium transition-colors duration-200 ${
               value === n
-                ? 'border-teal-700 bg-teal-700 text-white'
+                ? 'border-cyan-700 bg-cyan-700 text-white'
                 : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:hover:bg-slate-800'
             }`}
           >

@@ -5,7 +5,7 @@ import { Card, CardTitle } from './ui';
 
 /** Symbol + Text, damit die Ampel auch ohne Farbwahrnehmung verständlich ist. */
 const ampelStyle: Record<AmpelLevel, { symbol: string; label: string; className: string }> = {
-  gut: { symbol: '●', label: 'Gut', className: 'text-teal-700 dark:text-teal-300' },
+  gut: { symbol: '●', label: 'Gut', className: 'text-emerald-700 dark:text-emerald-400' },
   ok: { symbol: '◐', label: 'Okay', className: 'text-amber-600 dark:text-amber-300' },
   beobachten: { symbol: '○', label: 'Beobachten', className: 'text-slate-600 dark:text-slate-300' },
 };
@@ -53,8 +53,8 @@ export function EvaluationCard({
         ))}
       </ul>
 
-      <div className="mb-4 rounded-xl bg-teal-50 p-3 dark:bg-slate-800">
-        <h3 className="text-sm font-semibold text-teal-800 dark:text-teal-300">Dein Tagesfokus</h3>
+      <div className="mb-4 rounded-xl bg-cyan-50 p-3 dark:bg-slate-800">
+        <h3 className="text-sm font-semibold text-cyan-800 dark:text-cyan-300">Dein Tagesfokus</h3>
         <p className="mt-1 text-sm">{evaluation.focus}</p>
       </div>
 

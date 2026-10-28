@@ -60,6 +60,8 @@ const tooltipStyle = {
 export function HistoryPage() {
   const { entries } = useAppData();
   const [range, setRange] = useState<RangeDays>(30);
+  // Diagramm-Animationen bei reduzierter Bewegung abschalten.
+  const animate = useMemo(() => !window.matchMedia('(prefers-reduced-motion: reduce)').matches, []);
 
   const series: TrendPoint[] = useMemo(() => buildTrendSeries(entries, range), [entries, range]);
   const hasWeight = series.some((p) => p.weightKg !== null);
@@ -90,9 +92,9 @@ export function HistoryPage() {
             type="button"
             aria-pressed={range === days}
             onClick={() => setRange(days)}
-            className={`min-h-12 flex-1 rounded-xl border text-base font-medium transition-colors ${
+            className={`min-h-12 flex-1 cursor-pointer rounded-xl border text-base font-medium transition-colors duration-200 ${
               range === days
-                ? 'border-teal-700 bg-teal-700 text-white'
+                ? 'border-cyan-700 bg-cyan-700 text-white'
                 : 'border-slate-300 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
             }`}
           >
@@ -127,6 +129,7 @@ export function HistoryPage() {
             />
             <Legend />
             <Line
+              isAnimationActive={animate}
               name="Gewicht (kg)"
               dataKey="weightKg"
               stroke="var(--chart-1)"
@@ -135,6 +138,7 @@ export function HistoryPage() {
               connectNulls
             />
             <Line
+              isAnimationActive={animate}
               name="7-Tage-Durchschnitt"
               dataKey="average7"
               stroke="var(--chart-2)"
@@ -163,6 +167,7 @@ export function HistoryPage() {
               contentStyle={tooltipStyle}
             />
             <Line
+              isAnimationActive={animate}
               name="Bauchumfang (cm)"
               dataKey="waistCm"
               stroke="var(--chart-1)"
@@ -185,6 +190,7 @@ export function HistoryPage() {
               contentStyle={tooltipStyle}
             />
             <Line
+              isAnimationActive={animate}
               name="Schlaf (h)"
               dataKey="sleepHours"
               stroke="var(--chart-1)"
@@ -207,6 +213,7 @@ export function HistoryPage() {
               contentStyle={tooltipStyle}
             />
             <Line
+              isAnimationActive={animate}
               name="Energie (1–5)"
               dataKey="energy"
               stroke="var(--chart-1)"
@@ -233,6 +240,7 @@ export function HistoryPage() {
               contentStyle={tooltipStyle}
             />
             <Bar
+              isAnimationActive={animate}
               name="Training (min)"
               dataKey="trainingMinutes"
               fill="var(--chart-1)"

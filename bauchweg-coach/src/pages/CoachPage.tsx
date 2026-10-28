@@ -25,9 +25,9 @@ export function CoachPage() {
               role="radio"
               aria-checked={trigger === key}
               onClick={() => setTrigger(key)}
-              className={`min-h-12 rounded-xl border px-4 py-3 text-left text-base font-medium transition-colors ${
+              className={`min-h-12 cursor-pointer rounded-xl border px-4 py-3 text-left text-base font-medium transition-colors duration-200 ${
                 trigger === key
-                  ? 'border-teal-700 bg-teal-700 text-white'
+                  ? 'border-cyan-700 bg-cyan-700 text-white'
                   : 'border-slate-300 bg-white hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-900 dark:hover:bg-slate-800'
               }`}
             >

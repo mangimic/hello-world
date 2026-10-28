@@ -106,7 +106,7 @@ export function OnboardingPage() {
         <div className="mt-4" aria-hidden="true">
           <div className="h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-800">
             <div
-              className="h-full rounded-full bg-teal-700 transition-all"
+              className="h-full rounded-full bg-cyan-700 transition-all"
               style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
             />
           </div>

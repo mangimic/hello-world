@@ -22,8 +22,8 @@ export default defineConfig({
         lang: 'de',
         start_url: '.',
         display: 'standalone',
-        background_color: '#f8fafc',
-        theme_color: '#0f766e',
+        background_color: '#ecfeff',
+        theme_color: '#0e7490',
         icons: [
           {
             src: 'icons/icon-192.png',
