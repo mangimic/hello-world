@@ -153,7 +153,7 @@ export function ProfilePage() {
       {status && (
         <p
           role="status"
-          className="mb-4 rounded-xl bg-teal-50 p-3 text-sm font-medium text-teal-800 dark:bg-slate-800 dark:text-teal-300"
+          className="mb-4 rounded-xl bg-cyan-50 p-3 text-sm font-medium text-cyan-800 dark:bg-slate-800 dark:text-cyan-300"
         >
           {status}
         </p>
@@ -375,7 +375,7 @@ export function ProfilePage() {
       <Card>
         <CardTitle>Hinweise</CardTitle>
         <p className="mb-2 text-sm text-slate-600 dark:text-slate-300">
-          🔒 Alle Daten bleiben auf diesem Gerät. Es gibt keine Registrierung, keine Cloud und keine
+          Alle Daten bleiben auf diesem Gerät. Es gibt keine Registrierung, keine Cloud und keine
           Weitergabe an Dritte.
         </p>
         <p className="text-sm text-slate-600 dark:text-slate-300">

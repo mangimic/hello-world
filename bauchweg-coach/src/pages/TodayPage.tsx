@@ -366,7 +366,10 @@ export function TodayPage() {
             )}
           </div>
           {saved && (
-            <p role="status" className="mt-3 text-sm font-medium text-teal-700 dark:text-teal-300">
+            <p
+              role="status"
+              className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-400"
+            >
               Gespeichert – deine Auswertung steht unten.
             </p>
           )}
